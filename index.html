@@ -70,9 +70,11 @@
 <div id="loginScreen" class="screen active">
   <div class="login-box card">
     <h2>Welcome</h2>
-    <p class="muted">Enter your name to start studying. Your progress saves to the shared study group.</p>
+    <p class="muted">Enter your name and password to sign in. New users set a password on first login.</p>
     <input id="loginName" placeholder="Your name" autocomplete="off">
-    <button class="btn" style="width:100%" onclick="login()">Start Studying</button>
+    <input type="password" id="loginPass" placeholder="Password" autocomplete="off">
+    <button class="btn" style="width:100%" onclick="login()">Sign In</button>
+    <p class="muted" id="loginMsg" style="margin-top:8px"></p>
   </div>
 </div>
 
@@ -293,24 +295,44 @@ let quizFilter = "all";
 let cardFilter = "all";
 
 /* ============ LOGIN ============ */
-function login(){
+async function login(){
   const name = document.getElementById('loginName').value.trim();
-  if(!name){ alert('Enter your name'); return; }
-  currentUser = name;
-  document.getElementById('whoami').textContent = 'Studying as: ' + name;
-  document.getElementById('loginScreen').classList.remove('active');
-  document.getElementById('appScreen').classList.add('active');
-  // Initialize card list so flashcards show immediately
-  cardState.list = FLASHCARDS.slice();
-  cardState.idx = 0; cardState.flipped = false;
-  renderQuizFilter(); renderCardFilter(); showScreen('quiz');
-  loadUserProgress();
+  const pass = document.getElementById('loginPass').value;
+  const msg = document.getElementById('loginMsg');
+  if(!name || !pass){ msg.textContent = 'Enter your name and password.'; return; }
+  msg.textContent = 'Signing in...';
+  try {
+    // Check if user exists
+    const {data,error} = await sbClient.from('progress').select('*').eq('user_name',name).maybeSingle();
+    if(error){ msg.textContent = 'Could not reach the server. Try again.'; return; }
+    if(data){
+      // Existing user - verify password
+      if(data.password !== pass){ msg.textContent = 'Incorrect password.'; return; }
+      window.userProgress = data;
+    } else {
+      // New user - create account with password
+      const newUser = {user_name:name, password:pass, answered:0, correct:0, known:0, sessions:0, streak:0, last_study:null, answers:{}, wrong:{}, known_cards:{}, topic_stats:{}};
+      const {error:insErr} = await sbClient.from('progress').insert(newUser);
+      if(insErr){ msg.textContent = 'Could not create account. Try again.'; return; }
+      window.userProgress = newUser;
+    }
+    currentUser = name;
+    saveLocal(window.userProgress);
+    document.getElementById('whoami').textContent = 'Studying as: ' + name;
+    document.getElementById('loginScreen').classList.remove('active');
+    document.getElementById('appScreen').classList.add('active');
+    cardState.list = FLASHCARDS.slice();
+    cardState.idx = 0; cardState.flipped = false;
+    renderQuizFilter(); renderCardFilter(); showScreen('quiz');
+    msg.textContent = '';
+  } catch(e){ msg.textContent = 'Could not sign in. Check your connection.'; }
 }
 function logout(){
   currentUser = null;
   document.getElementById('appScreen').classList.remove('active');
   document.getElementById('loginScreen').classList.add('active');
   document.getElementById('loginName').value='';
+  document.getElementById('loginPass').value='';
 }
 
 /* ============ NAV ============ */
@@ -353,6 +375,7 @@ async function saveProgress(){
   try {
     await sbClient.from('progress').upsert({
       user_name: currentUser,
+      password: p.password || null,
       answered: p.answered||0, correct: p.correct||0, known: p.known||0,
       sessions: p.sessions||0, streak: p.streak||0, last_study: p.last_study||null,
       answers: p.answers||{}, wrong: p.wrong||{}, known_cards: p.known_cards||{}, topic_stats: p.topic_stats||{}
