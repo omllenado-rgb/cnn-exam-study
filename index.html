@@ -83,6 +83,7 @@
 <div id="appScreen" class="screen">
   <nav>
     <button id="navQuiz" class="active" onclick="showScreen('quiz')">Quiz</button>
+    <button id="navLessons" onclick="showScreen('lessons')">Lessons</button>
     <button id="navCards" onclick="showScreen('cards')">Flashcards</button>
     <button id="navTrack" onclick="showScreen('track')">Trackers</button>
     <button id="navAdd" onclick="showScreen('add')">Add Content</button>
@@ -126,6 +127,20 @@
             <button class="btn" onclick="startQuiz()">Take Again</button>
             <button class="btn secondary" onclick="showScreen('cards')">Study Cards</button>
           </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- LESSONS -->
+    <div id="screen-lessons" class="screen">
+      <div class="filter" id="lessonFilter"></div>
+      <div id="lessonList"></div>
+      <div id="lessonView" style="display:none">
+        <button class="btn secondary" onclick="backToLessons()">&#9664; All Lessons</button>
+        <div class="card" style="margin-top:12px">
+          <div class="tag" id="lessonTopic"></div>
+          <h2 id="lessonTitle"></h2>
+          <div id="lessonBody" style="font-size:15px;line-height:1.6;color:var(--ink)"></div>
         </div>
       </div>
     </div>
@@ -495,6 +510,51 @@ function addFlashcard(){
   document.getElementById('addFront').value=''; document.getElementById('addBack').value='';
 }
 
+/* ============ LESSONS ============ */
+let lessonFilter = "all";
+function renderLessonFilter(){
+  const el = document.getElementById('lessonFilter');
+  let html='<button class="active" data-f="all" onclick="setLessonFilter(this,\'all\')">All</button>';
+  topics.forEach(t=>html+=`<button data-f="${t}" onclick="setLessonFilter(this,'${t}')">${t}</button>`);
+  el.innerHTML = html;
+}
+function setLessonFilter(el,t){
+  lessonFilter = t;
+  document.querySelectorAll('#lessonFilter button').forEach(b=>b.classList.remove('active'));
+  el.classList.add('active');
+  renderLessons();
+}
+function renderLessons(){
+  renderLessonFilter();
+  const list = lessonFilter==="all" ? LESSONS.slice() : LESSONS.filter(l=>l.topic===lessonFilter);
+  const listEl = document.getElementById('lessonList');
+  const viewEl = document.getElementById('lessonView');
+  listEl.style.display='block';
+  viewEl.style.display='none';
+  if(list.length===0){ listEl.innerHTML='<div class="card"><p class="muted">No lessons in this topic yet.</p></div>'; return; }
+  let html='';
+  list.forEach((l,i)=>{
+    html+=`<div class="card" style="cursor:pointer" onclick="openLesson(${i})">
+      <div class="tag">${l.topic}</div>
+      <h2 style="font-size:16px;margin:0">${l.title}</h2>
+    </div>`;
+  });
+  listEl.innerHTML = html;
+}
+function openLesson(i){
+  const list = lessonFilter==="all" ? LESSONS : LESSONS.filter(l=>l.topic===lessonFilter);
+  const l = list[i];
+  document.getElementById('lessonList').style.display='none';
+  document.getElementById('lessonView').style.display='block';
+  document.getElementById('lessonTopic').textContent = l.topic;
+  document.getElementById('lessonTitle').textContent = l.title;
+  document.getElementById('lessonBody').innerHTML = l.body.split('\n').map(p=>`<p style="margin:0 0 10px">${p}</p>`).join('');
+}
+function backToLessons(){
+  document.getElementById('lessonView').style.display='none';
+  document.getElementById('lessonList').style.display='block';
+}
+
 /* ============ ADMIN (password-protected) ============ */
 let adminUnlocked = false;
 
@@ -547,9 +607,10 @@ function addLogout(){
 function showScreen(s){
   document.querySelectorAll('#appScreen .screen').forEach(el=>el.classList.remove('active'));
   document.getElementById('screen-'+s).classList.add('active');
-  ['quiz','cards','track','add','admin'].forEach(x=>{
+  ['quiz','lessons','cards','track','add','admin'].forEach(x=>{
     document.getElementById('nav'+x.charAt(0).toUpperCase()+x.slice(1)).classList.toggle('active',x===s);
   });
+  if(s==='lessons') renderLessons();
   if(s==='cards') renderCard();
   if(s==='track') renderTrackers();
   if(s==='add'){
