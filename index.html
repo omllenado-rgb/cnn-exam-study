@@ -379,7 +379,7 @@ async function saveProgress(){
       answered: p.answered||0, correct: p.correct||0, known: p.known||0,
       sessions: p.sessions||0, streak: p.streak||0, last_study: p.last_study||null,
       answers: p.answers||{}, wrong: p.wrong||{}, known_cards: p.known_cards||{}, topic_stats: p.topic_stats||{}
-    });
+    }, { onConflict: 'user_name' });
   } catch(e){ /* backend unavailable - local save is enough for now */ }
 }
 function recordAnswer(q, isCorrect){
