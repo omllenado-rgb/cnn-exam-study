@@ -6,8 +6,8 @@
 <title>Certified Nephrology Nurse Exam Prep Course</title>
 <style>
   :root{--navy:#022851;--gold:#ffbf00;--cyan:#00b2e3;--blue:#0a4f50;--light:#eef4f8;--ink:#1c2b39;--gray:#5b6b7a;--green:#2e7d32;--red:#c62828;--aggie-blue:#022851;--aggie-gold:#ffbf00;--aggie-light:#00b2e3;--aggie-green:#00573f;--aggie-red:#c10230;
-    --bg:#f5f7fa;--card:#fff;--border:#e3e8ee;--input-border:#d5dde5;--stat:#fff;}
-  body.dark{--bg:#0f1520;--card:#1b2533;--border:#2c3a4d;--input-border:#33425a;--stat:#1b2533;--ink:#e6edf5;--gray:#9aa8b8;--light:#22303f;--blue:#00b2e3;}
+    --bg:#f5f7fa;--card:#fff;--border:#e3e8ee;--input-border:#d5dde5;--stat:#fff;--link:#022851;}
+  body.dark{--bg:#0f1520;--card:#1b2533;--border:#2c3a4d;--input-border:#33425a;--stat:#1b2533;--ink:#e6edf5;--gray:#9aa8b8;--light:#22303f;--blue:#00b2e3;--link:#ffbf00;}
   *{box-sizing:border-box;margin:0;padding:0;}
   body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--ink);transition:background .2s,color .2s;}
   .topbar,nav,main{position:relative;z-index:1;}
@@ -760,7 +760,7 @@ function renderLessons(){
       <div class="tag">${l.topic}</div>
       <h2 style="font-size:16px;margin:0 0 4px">${l.title}</h2>
       <p class="muted" style="margin:0 0 6px">${preview}</p>
-      <span style="color:var(--navy);font-weight:600;font-size:13px">Read lesson &#9654;</span>
+      <span style="color:var(--link);font-weight:600;font-size:13px">Read lesson &#9654;</span>
     </div>`;
   });
   listEl.innerHTML = html;
@@ -874,7 +874,7 @@ function renderStrategies(){
       <div class="tag">${s.category}</div>
       <h2 style="font-size:16px;margin:0 0 4px">${s.title}</h2>
       <p class="muted" style="margin:0 0 6px">${preview}</p>
-      <span style="color:var(--navy);font-weight:600;font-size:13px">Read strategy &#9654;</span>
+      <span style="color:var(--link);font-weight:600;font-size:13px">Read strategy &#9654;</span>
     </div>`;
   });
   listEl.innerHTML = html;
@@ -990,7 +990,7 @@ async function loadAdmin(){
       const acc=u.answered?Math.round(u.correct/u.answered*100)+'%':'0%';
       const studyTime = fmtHours(u.study_seconds||0);
       html+=`<tr>
-        <td><a href="javascript:void(0)" onclick="viewUser('${u.user_name}')" style="color:var(--navy);font-weight:600">${u.user_name}</a></td>
+        <td><a href="javascript:void(0)" onclick="viewUser('${u.user_name}')" style="color:var(--link);font-weight:600">${u.user_name}</a></td>
         <td>${u.answered||0}</td>
         <td>${u.correct||0}</td>
         <td>${acc}</td>
