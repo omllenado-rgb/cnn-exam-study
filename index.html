@@ -231,6 +231,9 @@ function login(){
   document.getElementById('whoami').textContent = 'Studying as: ' + name;
   document.getElementById('loginScreen').classList.remove('active');
   document.getElementById('appScreen').classList.add('active');
+  // Initialize card list so flashcards show immediately
+  cardState.list = FLASHCARDS.slice();
+  cardState.idx = 0; cardState.flipped = false;
   renderQuizFilter(); renderCardFilter(); showScreen('quiz');
   loadUserProgress();
 }
