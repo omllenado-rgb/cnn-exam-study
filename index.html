@@ -62,6 +62,10 @@
   .muted{color:var(--gray);font-size:13px;}
   .bar{background:var(--border);border-radius:6px;height:8px;overflow:hidden;}
   .bar>div{background:var(--gold);height:100%;}
+  .focus-row{background:var(--light);color:var(--ink);}
+  .focus-row.focus-weak{background:#fff3f3;color:var(--ink);}
+  body.dark .focus-row{background:#22303f;color:#e6edf5;}
+  body.dark .focus-row.focus-weak{background:#3d2020;color:#f2c2c2;}
   input,select,textarea{width:100%;padding:12px;border:1.5px solid var(--input-border);border-radius:10px;font-size:15px;margin:6px 0;font-family:inherit;background:var(--card);color:var(--ink);}
   label{font-size:13px;font-weight:600;color:var(--gray);}
   .login-box{max-width:400px;margin:40px auto;text-align:center;}
@@ -640,7 +644,7 @@ function renderFocusSuggestions(){
     const pct=Math.round(s.pct*100);
     const isWeakest=(i===0);
     const label = isWeakest ? ' <span style="color:var(--aggie-red);font-weight:700">(weakest)</span>' : '';
-    html+=`<div style="margin:8px 0;padding:8px;background:${isWeakest?'#fff3f3':'#f5f7fa'};border-radius:8px">
+    html+=`<div class="focus-row ${isWeakest?'focus-weak':''}" style="margin:8px 0;padding:8px;border-radius:8px">
       <div style="display:flex;justify-content:space-between;font-size:13px">
         <span style="font-weight:${isWeakest?'700':'600'}">${s.topic}${label}</span>
         <span>${s.correct}/${s.answered} (${pct}%)</span>
@@ -999,9 +1003,9 @@ async function loadAdmin(){
         <td>${u.streak||0}</td>
         <td>${studyTime}</td>
         <td>
-          <button onclick="resetPassword('${u.user_name}')" style="font-size:11px;padding:4px 8px;margin:2px">Reset PW</button>
-          <button onclick="resetUser('${u.user_name}')" style="font-size:11px;padding:4px 8px;margin:2px">Reset</button>
-          <button onclick="deleteUser('${u.user_name}')" style="font-size:11px;padding:4px 8px;margin:2px;background:#c62828;color:#fff;border:none;border-radius:6px">Delete</button>
+          <button onclick="resetPassword('${u.user_name}')" style="font-size:11px;padding:4px 8px;margin:2px;background:var(--light);color:var(--ink);border:1px solid var(--border);border-radius:6px">Reset PW</button>
+          <button onclick="resetUser('${u.user_name}')" style="font-size:11px;padding:4px 8px;margin:2px;background:var(--light);color:var(--ink);border:1px solid var(--border);border-radius:6px">Reset</button>
+          <button onclick="deleteUser('${u.user_name}')" style="font-size:11px;padding:4px 8px;margin:2px;background:var(--aggie-red);color:#fff;border:none;border-radius:6px">Delete</button>
         </td>
       </tr>`;
     });
