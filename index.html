@@ -133,11 +133,18 @@
       <div class="filter" id="lessonFilter"></div>
       <div id="lessonList"></div>
       <div id="lessonView" style="display:none">
-        <button class="btn secondary" onclick="backToLessons()">&#9664; All Lessons</button>
-        <div class="card" style="margin-top:12px">
+        <div class="btn-row" style="margin-bottom:12px">
+          <button class="btn secondary" onclick="backToLessons()">&#9664; All Lessons</button>
+        </div>
+        <div class="card" style="margin-top:0">
           <div class="tag" id="lessonTopic"></div>
-          <h2 id="lessonTitle"></h2>
-          <div id="lessonBody" style="font-size:15px;line-height:1.6;color:var(--ink)"></div>
+          <h2 id="lessonTitle" style="font-size:20px;line-height:1.3;margin:4px 0 12px"></h2>
+          <div id="lessonBody" style="font-size:16px;line-height:1.7;color:var(--ink)"></div>
+        </div>
+        <div class="btn-row" style="justify-content:space-between;margin-top:4px">
+          <button class="btn secondary" id="lessonPrev" onclick="lessonNav(-1)">&#9664; Prev</button>
+          <span class="count" id="lessonPos" style="align-self:center"></span>
+          <button class="btn" id="lessonNext" onclick="lessonNav(1)">Next &#9654;</button>
         </div>
       </div>
     </div>
@@ -531,21 +538,49 @@ function renderLessons(){
   if(list.length===0){ listEl.innerHTML='<div class="card"><p class="muted">No lessons in this topic yet.</p></div>'; return; }
   let html='';
   list.forEach((l,i)=>{
-    html+=`<div class="card" style="cursor:pointer" onclick="openLesson(${i})">
+    const preview = (l.body||'').replace(/\n/g,' ').slice(0,90) + '...';
+    html+=`<div class="card" style="cursor:pointer;border-left:4px solid var(--gold)" onclick="openLesson(${i})">
       <div class="tag">${l.topic}</div>
-      <h2 style="font-size:16px;margin:0">${l.title}</h2>
+      <h2 style="font-size:16px;margin:0 0 4px">${l.title}</h2>
+      <p class="muted" style="margin:0 0 6px">${preview}</p>
+      <span style="color:var(--navy);font-weight:600;font-size:13px">Read lesson &#9654;</span>
     </div>`;
   });
   listEl.innerHTML = html;
 }
+let lessonIndex = 0;
 function openLesson(i){
   const list = lessonFilter==="all" ? LESSONS : LESSONS.filter(l=>l.topic===lessonFilter);
+  lessonIndex = i;
   const l = list[i];
   document.getElementById('lessonList').style.display='none';
   document.getElementById('lessonView').style.display='block';
   document.getElementById('lessonTopic').textContent = l.topic;
   document.getElementById('lessonTitle').textContent = l.title;
-  document.getElementById('lessonBody').innerHTML = l.body.split('\n').map(p=>`<p style="margin:0 0 10px">${p}</p>`).join('');
+  // Render body as readable paragraphs, highlighting key terms
+  const paras = l.body.split('\n').map(p=>p.trim()).filter(p=>p.length>0);
+  document.getElementById('lessonBody').innerHTML = paras.map(p=>`<p style="margin:0 0 14px">${highlightKey(p)}</p>`).join('');
+  // Prev/Next nav
+  document.getElementById('lessonPos').textContent = `Lesson ${i+1} of ${list.length}`;
+  document.getElementById('lessonPrev').style.visibility = i>0 ? 'visible' : 'hidden';
+  document.getElementById('lessonNext').style.visibility = i<list.length-1 ? 'visible' : 'hidden';
+}
+function lessonNav(dir){
+  const list = lessonFilter==="all" ? LESSONS : LESSONS.filter(l=>l.topic===lessonFilter);
+  const ni = lessonIndex + dir;
+  if(ni<0 || ni>=list.length) return;
+  openLesson(ni);
+  window.scrollTo(0,0);
+}
+// Highlight key clinical terms in bold for scannability
+function highlightKey(text){
+  const terms = ['prerenal','intrarenal','postrenal','ATN','AKI','CKD','ESRD','Kt/V','URR','CRRT','CVVH','CVVHD','CVVHDF','SCUF','SLED','peritonitis','hyperkalemia','hypokalemia','hyperphosphatemia','hypocalcemia','hypercalcemia','erythropoietin','ESA','PTH','bicarbonate','citrate','heparin','diffusion','convection','ultrafiltration','osmosis','KDOQI','KDIGO','ISPD','ANCC','NNCC'];
+  let out = text;
+  terms.forEach(t=>{
+    const re = new RegExp('\\b('+t+')\\b','gi');
+    out = out.replace(re, '<strong>$1</strong>');
+  });
+  return out;
 }
 function backToLessons(){
   document.getElementById('lessonView').style.display='none';
