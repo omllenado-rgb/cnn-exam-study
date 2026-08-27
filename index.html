@@ -194,14 +194,25 @@
 
     <!-- ADMIN -->
     <div id="screen-admin" class="screen">
-      <div class="admin-note">Admin view: see all users' progress and export to a spreadsheet.</div>
-      <div class="btn-row" style="margin-bottom:12px">
-        <button class="btn" onclick="loadAdmin()">Refresh</button>
-        <button class="btn secondary" onclick="exportCSV()">Export to Spreadsheet (CSV)</button>
+      <!-- Password gate -->
+      <div id="adminLogin" class="card" style="max-width:400px;margin:20px auto;text-align:center">
+        <h2>Admin Access</h2>
+        <p class="muted">Enter the admin password to manage users and export the spreadsheet.</p>
+        <input type="password" id="adminPass" placeholder="Admin password" style="text-align:center">
+        <button class="btn" style="width:100%" onclick="adminLogin()">Unlock Admin</button>
       </div>
-      <div class="card">
-        <h2>All Users</h2>
-        <div class="table-wrap"><table id="adminTable"></table></div>
+      <!-- Admin panel (hidden until unlocked) -->
+      <div id="adminPanel" style="display:none">
+        <div class="admin-note">Admin view: manage users and export the spreadsheet.</div>
+        <div class="btn-row" style="margin-bottom:12px">
+          <button class="btn" onclick="loadAdmin()">Refresh</button>
+          <button class="btn secondary" onclick="exportCSV()">Export to Spreadsheet (CSV)</button>
+          <button class="btn secondary" onclick="adminLogout()">Lock Admin</button>
+        </div>
+        <div class="card">
+          <h2>All Users</h2>
+          <div class="table-wrap"><table id="adminTable"></table></div>
+        </div>
       </div>
     </div>
   </main>
@@ -467,21 +478,77 @@ function addFlashcard(){
   document.getElementById('addFront').value=''; document.getElementById('addBack').value='';
 }
 
-/* ============ ADMIN ============ */
+/* ============ ADMIN (password-protected) ============ */
+let adminUnlocked = false;
+
+async function adminLogin(){
+  const pass = document.getElementById('adminPass').value.trim();
+  if(!pass){ alert('Enter the admin password.'); return; }
+  try {
+    const {data,error} = await sbClient.from('app_settings').select('value').eq('key','admin_password').single();
+    if(error || !data){ alert('Admin password not set up. Run the app_settings SQL in Supabase.'); return; }
+    if(pass === data.value){
+      adminUnlocked = true;
+      document.getElementById('adminLogin').style.display='none';
+      document.getElementById('adminPanel').style.display='block';
+      document.getElementById('adminPass').value='';
+      loadAdmin();
+    } else {
+      alert('Incorrect password.');
+    }
+  } catch(e){ alert('Could not verify password. Check backend connection.'); }
+}
+function adminLogout(){
+  adminUnlocked = false;
+  document.getElementById('adminPanel').style.display='none';
+  document.getElementById('adminLogin').style.display='block';
+}
+function showScreen(s){
+  document.querySelectorAll('#appScreen .screen').forEach(el=>el.classList.remove('active'));
+  document.getElementById('screen-'+s).classList.add('active');
+  ['quiz','cards','track','add','admin'].forEach(x=>{
+    document.getElementById('nav'+x.charAt(0).toUpperCase()+x.slice(1)).classList.toggle('active',x===s);
+  });
+  if(s==='cards') renderCard();
+  if(s==='track') renderTrackers();
+  if(s==='add') renderAddTopics();
+  if(s==='admin'){
+    // Reset admin gate each time it's opened
+    adminUnlocked = false;
+    document.getElementById('adminPanel').style.display='none';
+    document.getElementById('adminLogin').style.display='block';
+    document.getElementById('adminPass').value='';
+  }
+}
+
 async function loadAdmin(){
+  if(!adminUnlocked) return;
   try {
     const {data,error}=await sbClient.from('progress').select('*').order('user_name');
-    if(error){ document.getElementById('adminTable').innerHTML=`<tr><td>Backend not ready: ${error.message}. Run the setup SQL in Supabase.</td></tr>`; return; }
-    let html='<tr><th>User</th><th>Answered</th><th>Correct</th><th>Accuracy</th><th>Cards Known</th><th>Sessions</th><th>Streak</th></tr>';
+    if(error){ document.getElementById('adminTable').innerHTML=`<tr><td>Backend not ready: ${error.message}.</td></tr>`; return; }
+    let html='<tr><th>User</th><th>Answered</th><th>Correct</th><th>Accuracy</th><th>Cards Known</th><th>Sessions</th><th>Streak</th><th>Actions</th></tr>';
     (data||[]).forEach(u=>{
       const acc=u.answered?Math.round(u.correct/u.answered*100)+'%':'0%';
-      html+=`<tr><td>${u.user_name}</td><td>${u.answered||0}</td><td>${u.correct||0}</td><td>${acc}</td><td>${u.known||0}</td><td>${u.sessions||0}</td><td>${u.streak||0}</td></tr>`;
+      html+=`<tr>
+        <td>${u.user_name}</td>
+        <td>${u.answered||0}</td>
+        <td>${u.correct||0}</td>
+        <td>${acc}</td>
+        <td>${u.known||0}</td>
+        <td>${u.sessions||0}</td>
+        <td>${u.streak||0}</td>
+        <td>
+          <button onclick="resetUser('${u.user_name}')" style="font-size:11px;padding:4px 8px;margin:2px">Reset</button>
+          <button onclick="deleteUser('${u.user_name}')" style="font-size:11px;padding:4px 8px;margin:2px;background:#c62828;color:#fff;border:none;border-radius:6px">Delete</button>
+        </td>
+      </tr>`;
     });
-    if(!data||data.length===0) html+='<tr><td colspan="7">No users yet.</td></tr>';
+    if(!data||data.length===0) html+='<tr><td colspan="8">No users yet.</td></tr>';
     document.getElementById('adminTable').innerHTML=html;
-  } catch(e){ document.getElementById('adminTable').innerHTML='<tr><td>Backend not ready. Run the setup SQL in Supabase.</td></tr>'; }
+  } catch(e){ document.getElementById('adminTable').innerHTML='<tr><td>Backend not ready.</td></tr>'; }
 }
 function exportCSV(){
+  if(!adminUnlocked) return;
   let csv='User,Answered,Correct,Accuracy,Cards Known,Sessions,Streak\n';
   sbClient.from('progress').select('*').order('user_name').then(({data,error})=>{
     if(error){ alert('Backend not ready: '+error.message); return; }
@@ -492,7 +559,28 @@ function exportCSV(){
     const blob=new Blob([csv],{type:'text/csv'});
     const a=document.createElement('a');
     a.href=URL.createObjectURL(blob); a.download='cnn_study_progress.csv'; a.click();
-  }).catch(e=>alert('Backend not ready. Run the setup SQL in Supabase.'));
+  }).catch(e=>alert('Backend not ready.'));
+}
+async function resetUser(name){
+  if(!adminUnlocked) return;
+  if(!confirm('Reset all progress for "'+name+'"?')) return;
+  try {
+    await sbClient.from('progress').update({
+      answered:0, correct:0, known:0, sessions:0, streak:0, last_study:null,
+      answers:{}, wrong:{}, known_cards:{}, topic_stats:{}
+    }).eq('user_name',name);
+    alert('User "'+name+'" reset.');
+    loadAdmin();
+  } catch(e){ alert('Could not reset user.'); }
+}
+async function deleteUser(name){
+  if(!adminUnlocked) return;
+  if(!confirm('Delete user "'+name+'" and all their progress? This cannot be undone.')) return;
+  try {
+    await sbClient.from('progress').delete().eq('user_name',name);
+    alert('User "'+name+'" deleted.');
+    loadAdmin();
+  } catch(e){ alert('Could not delete user.'); }
 }
 
 /* ============ INIT ============ */
