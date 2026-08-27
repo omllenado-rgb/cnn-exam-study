@@ -254,24 +254,38 @@ function showScreen(s){
   if(s==='admin') loadAdmin();
 }
 
-/* ============ SUPABASE HELPERS ============ */
+/* ============ SUPABASE HELPERS (resilient - never blocks the app) ============ */
+// Local fallback so the app works even if the backend isn't ready
+function localKey(){ return 'cnnStudy_' + (currentUser||'anon'); }
+function loadLocal(){ try { return JSON.parse(localStorage.getItem(localKey())) || null; } catch(e){ return null; } }
+function saveLocal(p){ try { localStorage.setItem(localKey(), JSON.stringify(p)); } catch(e){} }
+
+function defaultProgress(){
+  return {user_name:currentUser, answered:0, correct:0, known:0, sessions:0, streak:0, last_study:null, answers:{}, wrong:{}, known_cards:{}, topic_stats:{}};
+}
+
 async function loadUserProgress(){
   if(!currentUser) return;
-  const {data,error} = await sbClient.from('progress').select('*').eq('user_name',currentUser).single();
-  if(error && error.code!=='PGRST116'){ console.log('load err',error); }
-  if(data){ window.userProgress = data; }
-  else { window.userProgress = {user_name:currentUser, answered:0, correct:0, known:0, sessions:0, streak:0, last_study:null, answers:{}, wrong:{}, known_cards:{}, topic_stats:{}}; }
+  // Start with local data immediately so the app never waits
+  window.userProgress = loadLocal() || defaultProgress();
+  // Try to fetch from Supabase in the background (non-blocking)
+  try {
+    const {data,error} = await sbClient.from('progress').select('*').eq('user_name',currentUser).single();
+    if(data){ window.userProgress = data; saveLocal(data); }
+  } catch(e){ /* backend unavailable - local data is fine */ }
 }
 async function saveProgress(){
   if(!currentUser) return;
   const p = window.userProgress || {};
-  const {error} = await sbClient.from('progress').upsert({
-    user_name: currentUser,
-    answered: p.answered||0, correct: p.correct||0, known: p.known||0,
-    sessions: p.sessions||0, streak: p.streak||0, last_study: p.last_study||null,
-    answers: p.answers||{}, wrong: p.wrong||{}, known_cards: p.known_cards||{}, topic_stats: p.topic_stats||{}
-  });
-  if(error) console.log('save err',error);
+  saveLocal(p); // always save locally first
+  try {
+    await sbClient.from('progress').upsert({
+      user_name: currentUser,
+      answered: p.answered||0, correct: p.correct||0, known: p.known||0,
+      sessions: p.sessions||0, streak: p.streak||0, last_study: p.last_study||null,
+      answers: p.answers||{}, wrong: p.wrong||{}, known_cards: p.known_cards||{}, topic_stats: p.topic_stats||{}
+    });
+  } catch(e){ /* backend unavailable - local save is enough for now */ }
 }
 function recordAnswer(q, isCorrect){
   const p = window.userProgress;
@@ -452,21 +466,22 @@ function addFlashcard(){
 
 /* ============ ADMIN ============ */
 async function loadAdmin(){
-  const {data,error}=await sbClient.from('progress').select('*').order('user_name');
-  if(error){ document.getElementById('adminTable').innerHTML=`<tr><td>Error: ${error.message}</td></tr>`; return; }
-  let html='<tr><th>User</th><th>Answered</th><th>Correct</th><th>Accuracy</th><th>Cards Known</th><th>Sessions</th><th>Streak</th></tr>';
-  (data||[]).forEach(u=>{
-    const acc=u.answered?Math.round(u.correct/u.answered*100)+'%':'0%';
-    html+=`<tr><td>${u.user_name}</td><td>${u.answered||0}</td><td>${u.correct||0}</td><td>${acc}</td><td>${u.known||0}</td><td>${u.sessions||0}</td><td>${u.streak||0}</td></tr>`;
-  });
-  if(!data||data.length===0) html+='<tr><td colspan="7">No users yet.</td></tr>';
-  document.getElementById('adminTable').innerHTML=html;
+  try {
+    const {data,error}=await sbClient.from('progress').select('*').order('user_name');
+    if(error){ document.getElementById('adminTable').innerHTML=`<tr><td>Backend not ready: ${error.message}. Run the setup SQL in Supabase.</td></tr>`; return; }
+    let html='<tr><th>User</th><th>Answered</th><th>Correct</th><th>Accuracy</th><th>Cards Known</th><th>Sessions</th><th>Streak</th></tr>';
+    (data||[]).forEach(u=>{
+      const acc=u.answered?Math.round(u.correct/u.answered*100)+'%':'0%';
+      html+=`<tr><td>${u.user_name}</td><td>${u.answered||0}</td><td>${u.correct||0}</td><td>${acc}</td><td>${u.known||0}</td><td>${u.sessions||0}</td><td>${u.streak||0}</td></tr>`;
+    });
+    if(!data||data.length===0) html+='<tr><td colspan="7">No users yet.</td></tr>';
+    document.getElementById('adminTable').innerHTML=html;
+  } catch(e){ document.getElementById('adminTable').innerHTML='<tr><td>Backend not ready. Run the setup SQL in Supabase.</td></tr>'; }
 }
 function exportCSV(){
   let csv='User,Answered,Correct,Accuracy,Cards Known,Sessions,Streak\n';
-  // We need all users - fetch then build
   sbClient.from('progress').select('*').order('user_name').then(({data,error})=>{
-    if(error){ alert('Error: '+error.message); return; }
+    if(error){ alert('Backend not ready: '+error.message); return; }
     (data||[]).forEach(u=>{
       const acc=u.answered?Math.round(u.correct/u.answered*100)+'%':'0%';
       csv+=`${u.user_name},${u.answered||0},${u.correct||0},${acc},${u.known||0},${u.sessions||0},${u.streak||0}\n`;
@@ -474,7 +489,7 @@ function exportCSV(){
     const blob=new Blob([csv],{type:'text/csv'});
     const a=document.createElement('a');
     a.href=URL.createObjectURL(blob); a.download='cnn_study_progress.csv'; a.click();
-  });
+  }).catch(e=>alert('Backend not ready. Run the setup SQL in Supabase.'));
 }
 
 /* ============ INIT ============ */
