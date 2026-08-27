@@ -213,7 +213,7 @@
 /* ============ SUPABASE (fill in your keys) ============ */
 const SUPABASE_URL = "https://ymvaslldugwzgjeaxabz.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_EpbSQ2PEnEzOxAPkzkCe1g__Y0ozzi9";
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 /* ============ STATE ============ */
 const topics = [...new Set(QUESTIONS.map(q=>q.topic))];
@@ -257,7 +257,7 @@ function showScreen(s){
 /* ============ SUPABASE HELPERS ============ */
 async function loadUserProgress(){
   if(!currentUser) return;
-  const {data,error} = await supabase.from('progress').select('*').eq('user_name',currentUser).single();
+  const {data,error} = await sbClient.from('progress').select('*').eq('user_name',currentUser).single();
   if(error && error.code!=='PGRST116'){ console.log('load err',error); }
   if(data){ window.userProgress = data; }
   else { window.userProgress = {user_name:currentUser, answered:0, correct:0, known:0, sessions:0, streak:0, last_study:null, answers:{}, wrong:{}, known_cards:{}, topic_stats:{}}; }
@@ -265,7 +265,7 @@ async function loadUserProgress(){
 async function saveProgress(){
   if(!currentUser) return;
   const p = window.userProgress || {};
-  const {error} = await supabase.from('progress').upsert({
+  const {error} = await sbClient.from('progress').upsert({
     user_name: currentUser,
     answered: p.answered||0, correct: p.correct||0, known: p.known||0,
     sessions: p.sessions||0, streak: p.streak||0, last_study: p.last_study||null,
@@ -452,7 +452,7 @@ function addFlashcard(){
 
 /* ============ ADMIN ============ */
 async function loadAdmin(){
-  const {data,error}=await supabase.from('progress').select('*').order('user_name');
+  const {data,error}=await sbClient.from('progress').select('*').order('user_name');
   if(error){ document.getElementById('adminTable').innerHTML=`<tr><td>Error: ${error.message}</td></tr>`; return; }
   let html='<tr><th>User</th><th>Answered</th><th>Correct</th><th>Accuracy</th><th>Cards Known</th><th>Sessions</th><th>Streak</th></tr>';
   (data||[]).forEach(u=>{
@@ -465,7 +465,7 @@ async function loadAdmin(){
 function exportCSV(){
   let csv='User,Answered,Correct,Accuracy,Cards Known,Sessions,Streak\n';
   // We need all users - fetch then build
-  supabase.from('progress').select('*').order('user_name').then(({data,error})=>{
+  sbClient.from('progress').select('*').order('user_name').then(({data,error})=>{
     if(error){ alert('Error: '+error.message); return; }
     (data||[]).forEach(u=>{
       const acc=u.answered?Math.round(u.correct/u.answered*100)+'%':'0%';
