@@ -710,12 +710,14 @@ function openLesson(i){
   const list = lessonFilter==="all" ? LESSONS : LESSONS.filter(l=>l.topic===lessonFilter);
   lessonIndex = i;
   const l = list[i];
+  // Global index into LESSONS for the per-lesson image map
+  const globalIdx = LESSONS.indexOf(l);
   document.getElementById('lessonList').style.display='none';
   document.getElementById('lessonView').style.display='block';
   document.getElementById('lessonTopic').textContent = l.topic;
   document.getElementById('lessonTitle').textContent = l.title;
-  // Show topic image if available
-  const img = lessonImageFor(l.topic);
+  // Show lesson-specific image if available, else topic image
+  const img = l.image || lessonImageFor(l.topic, globalIdx);
   const imgWrap = document.getElementById('lessonImage');
   if(img){
     document.getElementById('lessonImg').src = img;
@@ -731,9 +733,25 @@ function openLesson(i){
   document.getElementById('lessonPrev').style.visibility = i>0 ? 'visible' : 'hidden';
   document.getElementById('lessonNext').style.visibility = i<list.length-1 ? 'visible' : 'hidden';
 }
-// Map each topic to a public-domain medical illustration
-function lessonImageFor(topic){
-  const map = {
+// Map each lesson to its specific labeled diagram (by lesson index in LESSONS array)
+function lessonImageFor(topic, globalIdx){
+  // Per-lesson images keyed by global index (0-based) into the LESSONS array
+  const perLesson = {
+    0:'images/kd1.svg',1:'images/kd2.svg',2:'images/kd3.svg',3:'images/kd4.svg',4:'images/kd5.svg',
+    5:'images/kd6.svg',6:'images/kd7.svg',7:'images/kd8.svg',8:'images/kd9.svg',
+    9:'images/hd1.svg',10:'images/hd2.svg',11:'images/hd3.svg',12:'images/hd4.svg',13:'images/hd5.svg',
+    14:'images/hd6.svg',15:'images/hd7.svg',16:'images/hd8.svg',17:'images/hd9.svg',
+    18:'images/pd1.svg',19:'images/pd2.svg',20:'images/pd3.svg',21:'images/pd4.svg',22:'images/pd5.svg',
+    23:'images/pd6.svg',24:'images/pd7.svg',25:'images/pd8.svg',26:'images/pd9.svg',
+    27:'images/tx1.svg',28:'images/tx2.svg',29:'images/tx3.svg',30:'images/tx4.svg',31:'images/tx5.svg',
+    32:'images/tx6.svg',33:'images/tx7.svg',34:'images/tx8.svg',35:'images/tx9.svg',
+    36:'images/ac1.svg',37:'images/ac2.svg',38:'images/ac3.svg',39:'images/ac4.svg',40:'images/ac5.svg',
+    41:'images/ac6.svg',42:'images/ac7.svg',43:'images/ac8.svg',44:'images/ac9.svg',
+    45:'images/ck1.svg',46:'images/ck2.svg',47:'images/ck3.svg',48:'images/ck4.svg',49:'images/ck5.svg',
+    50:'images/ck6.svg',51:'images/ck7.svg',52:'images/ck8.svg',53:'images/ck9.svg'
+  };
+  // Fallback by topic
+  const topicFallback = {
     'Kidney Disease': 'images/nephron.svg',
     'Hemodialysis': 'images/hemodialysis.svg',
     'Peritoneal Dialysis': 'images/kidney.svg',
@@ -741,7 +759,7 @@ function lessonImageFor(topic){
     'Acute Therapies': 'images/cvvh.svg',
     'CKD Complications': 'images/kidney.svg'
   };
-  return map[topic] || null;
+  return perLesson[globalIdx] || topicFallback[topic] || null;
 }
 function lessonNav(dir){
   const list = lessonFilter==="all" ? LESSONS : LESSONS.filter(l=>l.topic===lessonFilter);
