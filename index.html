@@ -142,6 +142,9 @@
         <div class="card" style="margin-top:0">
           <div class="tag" id="lessonTopic"></div>
           <h2 id="lessonTitle" style="font-size:20px;line-height:1.3;margin:4px 0 12px"></h2>
+          <div id="lessonImage" style="text-align:center;margin-bottom:14px;display:none">
+            <img id="lessonImg" alt="" style="max-width:100%;max-height:260px;border-radius:10px;border:1px solid #e3e8ee">
+          </div>
           <div id="lessonBody" style="font-size:16px;line-height:1.7;color:var(--ink)"></div>
         </div>
         <div class="btn-row" style="justify-content:space-between;margin-top:4px">
@@ -711,6 +714,15 @@ function openLesson(i){
   document.getElementById('lessonView').style.display='block';
   document.getElementById('lessonTopic').textContent = l.topic;
   document.getElementById('lessonTitle').textContent = l.title;
+  // Show topic image if available
+  const img = lessonImageFor(l.topic);
+  const imgWrap = document.getElementById('lessonImage');
+  if(img){
+    document.getElementById('lessonImg').src = img;
+    imgWrap.style.display = 'block';
+  } else {
+    imgWrap.style.display = 'none';
+  }
   // Render body as readable paragraphs, highlighting key terms
   const paras = l.body.split('\n').map(p=>p.trim()).filter(p=>p.length>0);
   document.getElementById('lessonBody').innerHTML = paras.map(p=>`<p style="margin:0 0 14px">${highlightKey(p)}</p>`).join('');
@@ -718,6 +730,18 @@ function openLesson(i){
   document.getElementById('lessonPos').textContent = `Lesson ${i+1} of ${list.length}`;
   document.getElementById('lessonPrev').style.visibility = i>0 ? 'visible' : 'hidden';
   document.getElementById('lessonNext').style.visibility = i<list.length-1 ? 'visible' : 'hidden';
+}
+// Map each topic to a public-domain medical illustration
+function lessonImageFor(topic){
+  const map = {
+    'Kidney Disease': 'images/nephron.svg',
+    'Hemodialysis': 'images/hemodialysis.svg',
+    'Peritoneal Dialysis': 'images/kidney.svg',
+    'Transplant': 'images/kidney.svg',
+    'Acute Therapies': 'images/cvvh.svg',
+    'CKD Complications': 'images/kidney.svg'
+  };
+  return map[topic] || null;
 }
 function lessonNav(dir){
   const list = lessonFilter==="all" ? LESSONS : LESSONS.filter(l=>l.topic===lessonFilter);
