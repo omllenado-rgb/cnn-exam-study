@@ -5,65 +5,83 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Certified Nephrology Nurse Exam Prep Course</title>
 <style>
-  :root{--navy:#022851;--gold:#ffbf00;--cyan:#00b2e3;--blue:#0a4f50;--light:#eef4f8;--ink:#1c2b39;--gray:#5b6b7a;--green:#2e7d32;--red:#c62828;--aggie-blue:#022851;--aggie-gold:#ffbf00;--aggie-light:#00b2e3;--aggie-green:#00573f;--aggie-red:#c10230;}
+  :root{--navy:#022851;--gold:#ffbf00;--cyan:#00b2e3;--blue:#0a4f50;--light:#eef4f8;--ink:#1c2b39;--gray:#5b6b7a;--green:#2e7d32;--red:#c62828;--aggie-blue:#022851;--aggie-gold:#ffbf00;--aggie-light:#00b2e3;--aggie-green:#00573f;--aggie-red:#c10230;
+    --bg:#f5f7fa;--card:#fff;--border:#e3e8ee;--input-border:#d5dde5;--stat:#fff;}
+  body.dark{--bg:#0f1520;--card:#1b2533;--border:#2c3a4d;--input-border:#33425a;--stat:#1b2533;--ink:#e6edf5;--gray:#9aa8b8;--light:#22303f;--blue:#00b2e3;}
   *{box-sizing:border-box;margin:0;padding:0;}
-  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:#f5f7fa;color:var(--ink);}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--ink);transition:background .2s,color .2s;}
   .topbar,nav,main{position:relative;z-index:1;}
-  .topbar{background:linear-gradient(135deg,var(--aggie-blue) 0%,#003a6b 100%);color:#fff;padding:18px 20px;border-bottom:4px solid var(--aggie-gold);}
+  .topbar{background:linear-gradient(135deg,var(--aggie-blue) 0%,#003a6b 100%);color:#fff;padding:18px 20px;border-bottom:4px solid var(--aggie-gold);display:flex;justify-content:space-between;align-items:center;gap:10px;}
+  .topbar .tb-text{min-width:0;}
   .topbar h1{font-size:19px;line-height:1.25;font-weight:700;}
   .topbar p{font-size:12px;opacity:.9;margin-top:2px;color:#ffd966;}
-  nav{display:flex;background:#fff;border-bottom:1px solid #e3e8ee;overflow-x:auto;}
+  .theme-toggle{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.4);color:#fff;border-radius:20px;padding:7px 12px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;}
+  nav{display:flex;background:var(--card);border-bottom:1px solid var(--border);overflow-x:auto;}
   nav button{flex:1;min-width:90px;padding:14px 4px;border:none;background:none;font-size:14px;font-weight:600;color:var(--gray);cursor:pointer;border-bottom:3px solid transparent;white-space:nowrap;}
   nav button.active{color:var(--aggie-blue);border-bottom-color:var(--aggie-gold);}
+  body.dark nav button.active{color:var(--aggie-gold);}
   main{max-width:760px;margin:0 auto;padding:16px;}
   .screen{display:none;}
   .screen.active{display:block;}
-  .card{background:#fff;border-radius:12px;padding:18px;margin-bottom:14px;box-shadow:0 1px 4px rgba(0,0,0,.08);}
+  .card{background:var(--card);border-radius:12px;padding:18px;margin-bottom:14px;box-shadow:0 1px 4px rgba(0,0,0,.08);}
   h2{font-size:18px;margin-bottom:10px;}
   .stat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px;}
-  .stat{background:#fff;border-radius:10px;padding:14px;text-align:center;box-shadow:0 1px 4px rgba(0,0,0,.08);}
-  .stat .num{font-size:24px;font-weight:700;color:var(--navy);}
+  .stat{background:var(--stat);border-radius:10px;padding:14px;text-align:center;box-shadow:0 1px 4px rgba(0,0,0,.08);}
+  .stat .num{font-size:24px;font-weight:700;color:var(--aggie-blue);}
+  body.dark .stat .num{color:var(--aggie-gold);}
   .stat .lbl{font-size:11px;color:var(--gray);margin-top:2px;}
-  .option{display:block;width:100%;text-align:left;background:#fff;border:1.5px solid #d5dde5;border-radius:10px;padding:13px 14px;margin:8px 0;font-size:15px;cursor:pointer;transition:all .15s;}
+  .option{display:block;width:100%;text-align:left;background:var(--card);border:1.5px solid var(--input-border);border-radius:10px;padding:13px 14px;margin:8px 0;font-size:15px;cursor:pointer;transition:all .15s;}
   .option:hover{border-color:var(--blue);}
-  .option.correct{border-color:var(--green);background:#e8f5e9;}
-  .option.wrong{border-color:var(--red);background:#ffebee;}
+  .option.correct{border-color:var(--green);background:#e8f5e9;color:#1c2b39;}
+  body.dark .option.correct{background:#1e3a2a;color:#b9e4c6;}
+  .option.wrong{border-color:var(--red);background:#ffebee;color:#1c2b39;}
+  body.dark .option.wrong{background:#3d2020;color:#f2c2c2;}
   .btn{background:var(--aggie-blue);color:#fff;border:none;border-radius:10px;padding:13px 18px;font-size:15px;font-weight:600;cursor:pointer;margin-top:10px;}
-  .btn.secondary{background:#fff;color:var(--aggie-blue);border:1.5px solid var(--aggie-blue);}
+  .btn.secondary{background:var(--card);color:var(--aggie-blue);border:1.5px solid var(--aggie-blue);}
+  body.dark .btn.secondary{color:var(--aggie-gold);border-color:var(--aggie-gold);}
   .btn:disabled{opacity:.5;cursor:not-allowed;}
   .explain{background:var(--light);border-left:4px solid var(--blue);padding:12px;border-radius:8px;margin-top:12px;font-size:14px;}
-  .tag{display:inline-block;background:var(--light);color:var(--navy);font-size:11px;font-weight:600;padding:3px 9px;border-radius:20px;margin-bottom:8px;}
-  .fcard{background:#fff;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.1);margin:12px 0;cursor:pointer;user-select:none;min-height:200px;display:flex;align-items:center;justify-content:center;text-align:center;border:2px solid var(--navy);}
+  .tag{display:inline-block;background:var(--light);color:var(--aggie-blue);font-size:11px;font-weight:600;padding:3px 9px;border-radius:20px;margin-bottom:8px;}
+  body.dark .tag{color:var(--aggie-gold);}
+  .fcard{background:var(--card);border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.1);margin:12px 0;cursor:pointer;user-select:none;min-height:200px;display:flex;align-items:center;justify-content:center;text-align:center;border:2px solid var(--aggie-blue);}
   .fcard .inner{padding:24px;font-size:19px;line-height:1.4;}
   .fcard .front{font-weight:600;}
-  .fcard .back{color:var(--navy);}
+  .fcard .back{color:var(--aggie-blue);}
+  body.dark .fcard .back{color:var(--aggie-gold);}
   .fcard .hint{font-size:11px;color:var(--gray);margin-top:12px;}
   .flip-btn{display:flex;gap:10px;justify-content:center;margin:10px 0;flex-wrap:wrap;}
-  .flip-btn button{background:#fff;border:1.5px solid var(--navy);color:var(--navy);border-radius:8px;padding:8px 14px;font-size:13px;font-weight:600;cursor:pointer;}
-  .flip-btn button.primary{background:var(--navy);color:#fff;}
+  .flip-btn button{background:var(--card);border:1.5px solid var(--aggie-blue);color:var(--aggie-blue);border-radius:8px;padding:8px 14px;font-size:13px;font-weight:600;cursor:pointer;}
+  body.dark .flip-btn button{color:var(--aggie-gold);border-color:var(--aggie-gold);}
+  .flip-btn button.primary{background:var(--aggie-blue);color:#fff;}
   .count{text-align:center;color:var(--gray);font-size:13px;margin:8px 0;}
   .filter{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;}
-  .filter button{border:1.5px solid #d5dde5;background:#fff;border-radius:20px;padding:7px 13px;font-size:13px;cursor:pointer;color:var(--gray);}
-  .filter button.active{border-color:var(--navy);color:var(--navy);background:var(--light);font-weight:600;}
+  .filter button{border:1.5px solid var(--input-border);background:var(--card);border-radius:20px;padding:7px 13px;font-size:13px;cursor:pointer;color:var(--gray);}
+  .filter button.active{border-color:var(--aggie-blue);color:var(--aggie-blue);background:var(--light);font-weight:600;}
+  body.dark .filter button.active{color:var(--aggie-gold);border-color:var(--aggie-gold);}
   .btn-row{display:flex;gap:10px;flex-wrap:wrap;}
   .muted{color:var(--gray);font-size:13px;}
-  .bar{background:#e3e8ee;border-radius:6px;height:8px;overflow:hidden;}
+  .bar{background:var(--border);border-radius:6px;height:8px;overflow:hidden;}
   .bar>div{background:var(--gold);height:100%;}
-  input,select,textarea{width:100%;padding:12px;border:1.5px solid #d5dde5;border-radius:10px;font-size:15px;margin:6px 0;font-family:inherit;}
+  input,select,textarea{width:100%;padding:12px;border:1.5px solid var(--input-border);border-radius:10px;font-size:15px;margin:6px 0;font-family:inherit;background:var(--card);color:var(--ink);}
   label{font-size:13px;font-weight:600;color:var(--gray);}
   .login-box{max-width:400px;margin:40px auto;text-align:center;}
   .login-box h2{margin-bottom:6px;}
   .table-wrap{overflow-x:auto;}
   table{width:100%;border-collapse:collapse;font-size:13px;}
-  th,td{padding:9px 8px;text-align:left;border-bottom:1px solid #e3e8ee;}
-  th{background:var(--light);color:var(--navy);font-weight:600;}
+  th,td{padding:9px 8px;text-align:left;border-bottom:1px solid var(--border);}
+  th{background:var(--light);color:var(--aggie-blue);font-weight:600;}
+  body.dark th{color:var(--aggie-gold);}
   .admin-note{background:#fff8e1;border:1px solid #ffe082;border-radius:8px;padding:10px;font-size:12px;margin-bottom:12px;}
+  body.dark .admin-note{background:#2c2a1a;border-color:#665f33;color:#e6d9a8;}
 </style>
 </head>
 <body>
 <div class="topbar">
-  <h1>Certified Nephrology Nurse Exam Prep Course</h1>
-  <p>Certified Nephrology Nurse - Quiz, Flashcards, Trackers</p>
+  <div class="tb-text">
+    <h1>Certified Nephrology Nurse Exam Prep Course</h1>
+    <p>Certified Nephrology Nurse - Quiz, Flashcards, Trackers</p>
+  </div>
+  <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()">&#127769; Dark</button>
 </div>
 
 <!-- LOGIN / PROFILE -->
@@ -307,6 +325,21 @@ let quizState = {active:false,list:[],idx:0,correct:0,selected:false};
 let cardState = {list:[],idx:0,flipped:false,filter:"all"};
 let quizFilter = "all";
 let cardFilter = "all";
+
+/* ============ THEME ============ */
+function toggleTheme(){
+  const isDark = document.body.classList.toggle('dark');
+  document.getElementById('themeToggle').textContent = isDark ? '\u2600\ufe0f Light' : '\u{1F319} Dark';
+  try { localStorage.setItem('cnn_theme', isDark ? 'dark' : 'light'); } catch(e){}
+}
+function initTheme(){
+  let saved = 'light';
+  try { saved = localStorage.getItem('cnn_theme') || 'light'; } catch(e){}
+  if(saved === 'dark'){
+    document.body.classList.add('dark');
+    document.getElementById('themeToggle').textContent = '\u2600\ufe0f Light';
+  }
+}
 
 /* ============ LOGIN ============ */
 async function login(){
@@ -1039,6 +1072,7 @@ function viewUser(name){
 }
 
 /* ============ INIT ============ */
+initTheme();
 </script>
 </body>
 </html>
