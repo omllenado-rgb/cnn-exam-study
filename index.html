@@ -81,6 +81,7 @@
   <nav>
     <button id="navQuiz" class="active" onclick="showScreen('quiz')">Quiz</button>
     <button id="navLessons" onclick="showScreen('lessons')">Lessons</button>
+    <button id="navStrategies" onclick="showScreen('strategies')">Strategies</button>
     <button id="navCards" onclick="showScreen('cards')">Flashcards</button>
     <button id="navTrack" onclick="showScreen('track')">Trackers</button>
     <button id="navAdd" onclick="showScreen('add')">Add Content</button>
@@ -145,6 +146,27 @@
           <button class="btn secondary" id="lessonPrev" onclick="lessonNav(-1)">&#9664; Prev</button>
           <span class="count" id="lessonPos" style="align-self:center"></span>
           <button class="btn" id="lessonNext" onclick="lessonNav(1)">Next &#9654;</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- STRATEGIES -->
+    <div id="screen-strategies" class="screen">
+      <div class="filter" id="strategyFilter"></div>
+      <div id="strategyList"></div>
+      <div id="strategyView" style="display:none">
+        <div class="btn-row" style="margin-bottom:12px">
+          <button class="btn secondary" onclick="backToStrategies()">&#9664; All Strategies</button>
+        </div>
+        <div class="card" style="margin-top:0">
+          <div class="tag" id="strategyCategory"></div>
+          <h2 id="strategyTitle" style="font-size:20px;line-height:1.3;margin:4px 0 12px"></h2>
+          <div id="strategyBody" style="font-size:16px;line-height:1.7;color:var(--ink)"></div>
+        </div>
+        <div class="btn-row" style="justify-content:space-between;margin-top:4px">
+          <button class="btn secondary" id="strategyPrev" onclick="strategyNav(-1)">&#9664; Prev</button>
+          <span class="count" id="strategyPos" style="align-self:center"></span>
+          <button class="btn" id="strategyNext" onclick="strategyNav(1)">Next &#9654;</button>
         </div>
       </div>
     </div>
@@ -587,6 +609,68 @@ function backToLessons(){
   document.getElementById('lessonList').style.display='block';
 }
 
+/* ============ STRATEGIES ============ */
+let strategyFilter = "all";
+let strategyIndex = 0;
+function renderStrategyFilter(){
+  const cats = [...new Set(STRATEGIES.map(s=>s.category))];
+  const el = document.getElementById('strategyFilter');
+  let html='<button class="active" data-f="all" onclick="setStrategyFilter(this,\'all\')">All</button>';
+  cats.forEach(c=>html+=`<button data-f="${c}" onclick="setStrategyFilter(this,'${c}')">${c}</button>`);
+  el.innerHTML = html;
+}
+function setStrategyFilter(el,c){
+  strategyFilter = c;
+  document.querySelectorAll('#strategyFilter button').forEach(b=>b.classList.remove('active'));
+  el.classList.add('active');
+  renderStrategies();
+}
+function renderStrategies(){
+  renderStrategyFilter();
+  const list = strategyFilter==="all" ? STRATEGIES.slice() : STRATEGIES.filter(s=>s.category===strategyFilter);
+  const listEl = document.getElementById('strategyList');
+  const viewEl = document.getElementById('strategyView');
+  listEl.style.display='block';
+  viewEl.style.display='none';
+  if(list.length===0){ listEl.innerHTML='<div class="card"><p class="muted">No strategies in this category.</p></div>'; return; }
+  let html='';
+  list.forEach((s,i)=>{
+    const preview = (s.body||'').replace(/\n/g,' ').slice(0,90) + '...';
+    html+=`<div class="card" style="cursor:pointer;border-left:4px solid var(--cyan)" onclick="openStrategy(${i})">
+      <div class="tag">${s.category}</div>
+      <h2 style="font-size:16px;margin:0 0 4px">${s.title}</h2>
+      <p class="muted" style="margin:0 0 6px">${preview}</p>
+      <span style="color:var(--navy);font-weight:600;font-size:13px">Read strategy &#9654;</span>
+    </div>`;
+  });
+  listEl.innerHTML = html;
+}
+function openStrategy(i){
+  const list = strategyFilter==="all" ? STRATEGIES : STRATEGIES.filter(s=>s.category===strategyFilter);
+  strategyIndex = i;
+  const s = list[i];
+  document.getElementById('strategyList').style.display='none';
+  document.getElementById('strategyView').style.display='block';
+  document.getElementById('strategyCategory').textContent = s.category;
+  document.getElementById('strategyTitle').textContent = s.title;
+  const paras = s.body.split('\n').map(p=>p.trim()).filter(p=>p.length>0);
+  document.getElementById('strategyBody').innerHTML = paras.map(p=>`<p style="margin:0 0 14px">${p}</p>`).join('');
+  document.getElementById('strategyPos').textContent = `Strategy ${i+1} of ${list.length}`;
+  document.getElementById('strategyPrev').style.visibility = i>0 ? 'visible' : 'hidden';
+  document.getElementById('strategyNext').style.visibility = i<list.length-1 ? 'visible' : 'hidden';
+}
+function strategyNav(dir){
+  const list = strategyFilter==="all" ? STRATEGIES : STRATEGIES.filter(s=>s.category===strategyFilter);
+  const ni = strategyIndex + dir;
+  if(ni<0 || ni>=list.length) return;
+  openStrategy(ni);
+  window.scrollTo(0,0);
+}
+function backToStrategies(){
+  document.getElementById('strategyView').style.display='none';
+  document.getElementById('strategyList').style.display='block';
+}
+
 /* ============ ADMIN (password-protected) ============ */
 let adminUnlocked = false;
 
@@ -639,10 +723,11 @@ function addLogout(){
 function showScreen(s){
   document.querySelectorAll('#appScreen .screen').forEach(el=>el.classList.remove('active'));
   document.getElementById('screen-'+s).classList.add('active');
-  ['quiz','lessons','cards','track','add','admin'].forEach(x=>{
+  ['quiz','lessons','strategies','cards','track','add','admin'].forEach(x=>{
     document.getElementById('nav'+x.charAt(0).toUpperCase()+x.slice(1)).classList.toggle('active',x===s);
   });
   if(s==='lessons') renderLessons();
+  if(s==='strategies') renderStrategies();
   if(s==='cards') renderCard();
   if(s==='track') renderTrackers();
   if(s==='add'){
