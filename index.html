@@ -207,6 +207,12 @@
         <h2>Accuracy by Topic</h2>
         <div id="tTopicBars"></div>
       </div>
+      <div class="card" style="border-left:4px solid var(--aggie-gold)">
+        <h2>Focus Suggestions</h2>
+        <p class="muted" id="focusIntro"></p>
+        <div id="focusList"></div>
+        <button class="btn" onclick="startFocusQuiz()" id="focusBtn" style="display:none">Practice Weakest Topic</button>
+      </div>
       <div class="card">
         <h2>Wrong-Answer Review</h2>
         <p class="muted" id="wrongCount"></p>
@@ -540,6 +546,58 @@ function renderTrackers(){
     html+=`<div style="margin:8px 0"><div style="display:flex;justify-content:space-between;font-size:13px"><span>${t}</span><span>${ts.correct}/${ts.answered} (${pct}%)</span></div><div class="bar"><div style="width:${ts.answered?pct:0}%"></div></div></div>`;
   });
   document.getElementById('tTopicBars').innerHTML=html;
+  renderFocusSuggestions();
+}
+function renderFocusSuggestions(){
+  const p=window.userProgress||{};
+  const intro=document.getElementById('focusIntro');
+  const list=document.getElementById('focusList');
+  const btn=document.getElementById('focusBtn');
+  // Build per-topic stats
+  const stats=[];
+  topics.forEach(t=>{
+    const ts=(p.topic_stats||{})[t]||{answered:0,correct:0};
+    if(ts.answered>0){
+      const pct=ts.correct/ts.answered;
+      stats.push({topic:t, answered:ts.answered, correct:ts.correct, pct});
+    }
+  });
+  if(stats.length===0){
+    intro.textContent='Answer some questions to get personalized focus suggestions.';
+    list.innerHTML='';
+    btn.style.display='none';
+    return;
+  }
+  // Sort by accuracy ascending (weakest first)
+  stats.sort((a,b)=>a.pct-b.pct);
+  const weakest=stats[0];
+  intro.textContent='Based on your answers, here is what to focus on.';
+  let html='';
+  stats.forEach((s,i)=>{
+    const pct=Math.round(s.pct*100);
+    const isWeakest=(i===0);
+    const label = isWeakest ? ' <span style="color:var(--aggie-red);font-weight:700">(weakest)</span>' : '';
+    html+=`<div style="margin:8px 0;padding:8px;background:${isWeakest?'#fff3f3':'#f5f7fa'};border-radius:8px">
+      <div style="display:flex;justify-content:space-between;font-size:13px">
+        <span style="font-weight:${isWeakest?'700':'600'}">${s.topic}${label}</span>
+        <span>${s.correct}/${s.answered} (${pct}%)</span>
+      </div>
+      <div class="bar"><div style="width:${pct}%;background:${pct<60?'var(--aggie-red)':pct<75?'var(--aggie-gold)':'var(--green)'}"></div></div>
+    </div>`;
+  });
+  list.innerHTML=html;
+  btn.style.display='block';
+  btn.textContent='Practice Weakest Topic: '+weakest.topic;
+  window._weakestTopic = weakest.topic;
+}
+function startFocusQuiz(){
+  const topic = window._weakestTopic;
+  if(!topic) return;
+  // Start a quiz filtered to the weakest topic
+  quizFilter = topic;
+  renderQuizFilter();
+  startQuiz();
+  showScreen('quiz');
 }
 function fmtMin(sec){ return Math.round(sec/60)+'m'; }
 function fmtHours(sec){ const h=Math.floor(sec/3600); const m=Math.round((sec%3600)/60); return h>0 ? h+'h '+m+'m' : m+'m'; }
