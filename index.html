@@ -164,31 +164,44 @@
 
     <!-- ADD CONTENT -->
     <div id="screen-add" class="screen">
-      <div class="card">
-        <h2>Add a Question</h2>
-        <label>Topic</label>
-        <select id="addTopic"></select>
-        <label>Question</label>
-        <textarea id="addQ" rows="2" placeholder="Enter the question"></textarea>
-        <label>Option A</label><input id="addA" placeholder="Correct or incorrect option">
-        <label>Option B</label><input id="addB" placeholder="Option B">
-        <label>Option C</label><input id="addC" placeholder="Option C">
-        <label>Option D</label><input id="addD" placeholder="Option D">
-        <label>Correct answer (A, B, C, or D)</label>
-        <select id="addAns"><option value="0">A</option><option value="1">B</option><option value="2">C</option><option value="3">D</option></select>
-        <label>Explanation</label>
-        <textarea id="addExpl" rows="2" placeholder="Why is this correct?"></textarea>
-        <button class="btn" onclick="addQuestion()">Add Question</button>
+      <!-- Password gate -->
+      <div id="addLogin" class="card" style="max-width:400px;margin:20px auto;text-align:center">
+        <h2>Add Content</h2>
+        <p class="muted">Enter the admin password to add questions and flashcards.</p>
+        <input type="password" id="addPass" placeholder="Admin password" style="text-align:center">
+        <button class="btn" style="width:100%" onclick="addLogin()">Unlock</button>
       </div>
-      <div class="card">
-        <h2>Add a Flashcard</h2>
-        <label>Topic</label>
-        <select id="addCardTopic"></select>
-        <label>Front (prompt)</label>
-        <input id="addFront" placeholder="e.g. Three categories of AKI">
-        <label>Back (answer)</label>
-        <textarea id="addBack" rows="2" placeholder="e.g. Prerenal, intrarenal, postrenal"></textarea>
-        <button class="btn" onclick="addFlashcard()">Add Flashcard</button>
+      <!-- Add content panel (hidden until unlocked) -->
+      <div id="addPanel" style="display:none">
+        <div class="btn-row" style="margin-bottom:12px">
+          <button class="btn secondary" onclick="addLogout()">Lock</button>
+        </div>
+        <div class="card">
+          <h2>Add a Question</h2>
+          <label>Topic</label>
+          <select id="addTopic"></select>
+          <label>Question</label>
+          <textarea id="addQ" rows="2" placeholder="Enter the question"></textarea>
+          <label>Option A</label><input id="addA" placeholder="Correct or incorrect option">
+          <label>Option B</label><input id="addB" placeholder="Option B">
+          <label>Option C</label><input id="addC" placeholder="Option C">
+          <label>Option D</label><input id="addD" placeholder="Option D">
+          <label>Correct answer (A, B, C, or D)</label>
+          <select id="addAns"><option value="0">A</option><option value="1">B</option><option value="2">C</option><option value="3">D</option></select>
+          <label>Explanation</label>
+          <textarea id="addExpl" rows="2" placeholder="Why is this correct?"></textarea>
+          <button class="btn" onclick="addQuestion()">Add Question</button>
+        </div>
+        <div class="card">
+          <h2>Add a Flashcard</h2>
+          <label>Topic</label>
+          <select id="addCardTopic"></select>
+          <label>Front (prompt)</label>
+          <input id="addFront" placeholder="e.g. Three categories of AKI">
+          <label>Back (answer)</label>
+          <textarea id="addBack" rows="2" placeholder="e.g. Prerenal, intrarenal, postrenal"></textarea>
+          <button class="btn" onclick="addFlashcard()">Add Flashcard</button>
+        </div>
       </div>
     </div>
 
@@ -503,6 +516,30 @@ function adminLogout(){
   document.getElementById('adminPanel').style.display='none';
   document.getElementById('adminLogin').style.display='block';
 }
+/* ============ ADD CONTENT (password-protected) ============ */
+let addUnlocked = false;
+async function addLogin(){
+  const pass = document.getElementById('addPass').value.trim();
+  if(!pass){ alert('Enter the admin password.'); return; }
+  try {
+    const {data,error} = await sbClient.from('app_settings').select('value').eq('key','admin_password').single();
+    if(error || !data){ alert('Admin password not set up. Run the app_settings SQL in Supabase.'); return; }
+    if(pass === data.value){
+      addUnlocked = true;
+      document.getElementById('addLogin').style.display='none';
+      document.getElementById('addPanel').style.display='block';
+      document.getElementById('addPass').value='';
+      renderAddTopics();
+    } else {
+      alert('Incorrect password.');
+    }
+  } catch(e){ alert('Could not verify password. Check backend connection.'); }
+}
+function addLogout(){
+  addUnlocked = false;
+  document.getElementById('addPanel').style.display='none';
+  document.getElementById('addLogin').style.display='block';
+}
 function showScreen(s){
   document.querySelectorAll('#appScreen .screen').forEach(el=>el.classList.remove('active'));
   document.getElementById('screen-'+s).classList.add('active');
@@ -511,7 +548,13 @@ function showScreen(s){
   });
   if(s==='cards') renderCard();
   if(s==='track') renderTrackers();
-  if(s==='add') renderAddTopics();
+  if(s==='add'){
+    // Reset add-content gate each time it's opened
+    addUnlocked = false;
+    document.getElementById('addPanel').style.display='none';
+    document.getElementById('addLogin').style.display='block';
+    document.getElementById('addPass').value='';
+  }
   if(s==='admin'){
     // Reset admin gate each time it's opened
     adminUnlocked = false;
