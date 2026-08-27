@@ -437,9 +437,19 @@ function renderQuizFilter(){
   document.getElementById('quizFilter').innerHTML=html;
 }
 function setQuizFilter(btn,t){ quizFilter=t; document.querySelectorAll('#quizFilter button').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); }
+// Fisher-Yates shuffle (in place)
+function shuffle(arr){
+  for(let i=arr.length-1;i>0;i--){
+    const j=Math.floor(Math.random()*(i+1));
+    [arr[i],arr[j]]=[arr[j],arr[i]];
+  }
+  return arr;
+}
 function startQuiz(){
   let pool = quizFilter==="all" ? QUESTIONS.slice() : QUESTIONS.filter(q=>q.topic===quizFilter);
   if(pool.length===0) return;
+  // Scramble the question order each time
+  shuffle(pool);
   quizState={active:true,list:pool,idx:0,correct:0,selected:false};
   document.getElementById('quizSetup').style.display='none';
   document.getElementById('quizResult').style.display='none';
@@ -450,10 +460,14 @@ function startQuiz(){
 function renderQuestion(){
   const q=quizState.list[quizState.idx];
   quizState.selected=false;
+  // Scramble the answer options and remap the correct index
+  const opts=q.opts.map((o,i)=>({text:o,idx:i}));
+  shuffle(opts);
+  quizState.shuffledOpts=opts; // store shuffled order for answer matching
   document.getElementById('qTopic').textContent=q.topic;
   document.getElementById('qCounter').textContent=`Question ${quizState.idx+1} of ${quizState.list.length}`;
   document.getElementById('qQuestion').textContent=q.q;
-  document.getElementById('qOptions').innerHTML=q.opts.map((o,i)=>`<button class="option" data-i="${i}" onclick="selectAnswer(${i})">${String.fromCharCode(65+i)}. ${o}</button>`).join('');
+  document.getElementById('qOptions').innerHTML=opts.map((o,i)=>`<button class="option" data-i="${i}" data-orig="${o.idx}" onclick="selectAnswer(${i})">${String.fromCharCode(65+i)}. ${o.text}</button>`).join('');
   document.getElementById('qExplain').style.display='none';
   document.getElementById('qNext').style.display='none';
 }
@@ -462,14 +476,14 @@ function selectAnswer(i){
   const q=quizState.list[quizState.idx];
   quizState.selected=true;
   document.querySelectorAll('#qOptions .option').forEach(b=>{
-    b.disabled=true; const bi=parseInt(b.dataset.i);
-    if(bi===q.ans) b.classList.add('correct');
-    else if(bi===i) b.classList.add('wrong');
+    b.disabled=true; const origIdx=parseInt(b.dataset.orig);
+    if(origIdx===q.ans) b.classList.add('correct');
+    else if(parseInt(b.dataset.i)===i) b.classList.add('wrong');
   });
-  recordAnswer(q, i===q.ans);
+  recordAnswer(q, quizState.shuffledOpts[i].idx===q.ans);
   const exp=document.getElementById('qExplain');
   exp.style.display='block';
-  exp.innerHTML=(i===q.ans?'Correct! ':'Incorrect. ')+q.expl;
+  exp.innerHTML=(quizState.shuffledOpts[i].idx===q.ans?'Correct! ':'Incorrect. ')+q.expl;
   document.getElementById('qNext').style.display='block';
 }
 function nextQuestion(){ quizState.idx++; if(quizState.idx<quizState.list.length) renderQuestion(); else finishQuiz(); }
