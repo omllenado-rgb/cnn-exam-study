@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CNN Exam Study</title>
+<style>
+  :root{--navy:#022851;--gold:#ffbf00;--cyan:#00b2e3;--blue:#0a4f50;--light:#eef4f8;--ink:#1c2b39;--gray:#5b6b7a;--green:#2e7d32;--red:#c62828;}
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:#f5f7fa;color:var(--ink);}
+  .topbar{background:var(--navy);color:#fff;padding:16px 20px;}
+  .topbar h1{font-size:22px;}
+  .topbar p{font-size:12px;opacity:.85;margin-top:2px;}
+  nav{display:flex;background:#fff;border-bottom:1px solid #e3e8ee;overflow-x:auto;}
+  nav button{flex:1;min-width:90px;padding:14px 4px;border:none;background:none;font-size:14px;font-weight:600;color:var(--gray);cursor:pointer;border-bottom:3px solid transparent;white-space:nowrap;}
+  nav button.active{color:var(--navy);border-bottom-color:var(--gold);}
+  main{max-width:760px;margin:0 auto;padding:16px;}
+  .screen{display:none;}
+  .screen.active{display:block;}
+  .card{background:#fff;border-radius:12px;padding:18px;margin-bottom:14px;box-shadow:0 1px 4px rgba(0,0,0,.08);}
+  h2{font-size:18px;margin-bottom:10px;}
+  .stat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px;}
+  .stat{background:#fff;border-radius:10px;padding:14px;text-align:center;box-shadow:0 1px 4px rgba(0,0,0,.08);}
+  .stat .num{font-size:24px;font-weight:700;color:var(--navy);}
+  .stat .lbl{font-size:11px;color:var(--gray);margin-top:2px;}
+  .option{display:block;width:100%;text-align:left;background:#fff;border:1.5px solid #d5dde5;border-radius:10px;padding:13px 14px;margin:8px 0;font-size:15px;cursor:pointer;transition:all .15s;}
+  .option:hover{border-color:var(--blue);}
+  .option.correct{border-color:var(--green);background:#e8f5e9;}
+  .option.wrong{border-color:var(--red);background:#ffebee;}
+  .btn{background:var(--navy);color:#fff;border:none;border-radius:10px;padding:13px 18px;font-size:15px;font-weight:600;cursor:pointer;margin-top:10px;}
+  .btn.secondary{background:#fff;color:var(--navy);border:1.5px solid var(--navy);}
+  .btn:disabled{opacity:.5;cursor:not-allowed;}
+  .explain{background:var(--light);border-left:4px solid var(--blue);padding:12px;border-radius:8px;margin-top:12px;font-size:14px;}
+  .tag{display:inline-block;background:var(--light);color:var(--navy);font-size:11px;font-weight:600;padding:3px 9px;border-radius:20px;margin-bottom:8px;}
+  .fcard{background:#fff;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.1);margin:12px 0;cursor:pointer;user-select:none;min-height:200px;display:flex;align-items:center;justify-content:center;text-align:center;border:2px solid var(--navy);}
+  .fcard .inner{padding:24px;font-size:19px;line-height:1.4;}
+  .fcard .front{font-weight:600;}
+  .fcard .back{color:var(--navy);}
+  .fcard .hint{font-size:11px;color:var(--gray);margin-top:12px;}
+  .flip-btn{display:flex;gap:10px;justify-content:center;margin:10px 0;flex-wrap:wrap;}
+  .flip-btn button{background:#fff;border:1.5px solid var(--navy);color:var(--navy);border-radius:8px;padding:8px 14px;font-size:13px;font-weight:600;cursor:pointer;}
+  .flip-btn button.primary{background:var(--navy);color:#fff;}
+  .count{text-align:center;color:var(--gray);font-size:13px;margin:8px 0;}
+  .filter{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;}
+  .filter button{border:1.5px solid #d5dde5;background:#fff;border-radius:20px;padding:7px 13px;font-size:13px;cursor:pointer;color:var(--gray);}
+  .filter button.active{border-color:var(--navy);color:var(--navy);background:var(--light);font-weight:600;}
+  .btn-row{display:flex;gap:10px;flex-wrap:wrap;}
+  .muted{color:var(--gray);font-size:13px;}
+  .bar{background:#e3e8ee;border-radius:6px;height:8px;overflow:hidden;}
+  .bar>div{background:var(--gold);height:100%;}
+  input,select,textarea{width:100%;padding:12px;border:1.5px solid #d5dde5;border-radius:10px;font-size:15px;margin:6px 0;font-family:inherit;}
+  label{font-size:13px;font-weight:600;color:var(--gray);}
+  .login-box{max-width:400px;margin:40px auto;text-align:center;}
+  .login-box h2{margin-bottom:6px;}
+  .table-wrap{overflow-x:auto;}
+  table{width:100%;border-collapse:collapse;font-size:13px;}
+  th,td{padding:9px 8px;text-align:left;border-bottom:1px solid #e3e8ee;}
+  th{background:var(--light);color:var(--navy);font-weight:600;}
+  .admin-note{background:#fff8e1;border:1px solid #ffe082;border-radius:8px;padding:10px;font-size:12px;margin-bottom:12px;}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <h1>CNN Exam Study</h1>
+  <p>Certified Nephrology Nurse - Quiz, Flashcards, Trackers</p>
+</div>
+
+<!-- LOGIN / PROFILE -->
+<div id="loginScreen" class="screen active">
+  <div class="login-box card">
+    <h2>Welcome</h2>
+    <p class="muted">Enter your name to start studying. Your progress saves to the shared study group.</p>
+    <input id="loginName" placeholder="Your name" autocomplete="off">
+    <button class="btn" style="width:100%" onclick="login()">Start Studying</button>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div id="appScreen" class="screen">
+  <nav>
+    <button id="navQuiz" class="active" onclick="showScreen('quiz')">Quiz</button>
+    <button id="navCards" onclick="showScreen('cards')">Flashcards</button>
+    <button id="navTrack" onclick="showScreen('track')">Trackers</button>
+    <button id="navAdd" onclick="showScreen('add')">Add Content</button>
+    <button id="navAdmin" onclick="showScreen('admin')">Admin</button>
+  </nav>
+  <main>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+      <span class="tag" id="whoami"></span>
+      <button class="btn secondary" style="padding:6px 12px;font-size:12px;margin:0" onclick="logout()">Switch user</button>
+    </div>
+
+    <!-- QUIZ -->
+    <div id="screen-quiz" class="screen active">
+      <div id="quizSetup">
+        <div class="card">
+          <h2>Practice Quiz</h2>
+          <p class="muted">Choose a topic (or All), then start.</p>
+          <div class="filter" id="quizFilter"></div>
+          <button class="btn" onclick="startQuiz()">Start Quiz</button>
+        </div>
+      </div>
+      <div id="quizRun" style="display:none">
+        <div class="card">
+          <div class="tag" id="qTopic"></div>
+          <div class="count" id="qCounter"></div>
+          <h2 id="qQuestion" style="font-size:17px;line-height:1.4;"></h2>
+          <div id="qOptions"></div>
+          <div class="explain" id="qExplain" style="display:none"></div>
+          <div class="btn-row">
+            <button class="btn" id="qNext" onclick="nextQuestion()" style="display:none">Next</button>
+            <button class="btn secondary" onclick="quitQuiz()">End Quiz</button>
+          </div>
+        </div>
+      </div>
+      <div id="quizResult" style="display:none">
+        <div class="card" style="text-align:center">
+          <h2>Quiz Complete!</h2>
+          <div class="stat" style="margin:10px auto;max-width:220px;"><div class="num" id="resScore"></div><div class="lbl">correct / total</div></div>
+          <div class="bar" style="max-width:220px;margin:0 auto 16px;"><div id="resBar"></div></div>
+          <div class="btn-row" style="justify-content:center">
+            <button class="btn" onclick="startQuiz()">Take Again</button>
+            <button class="btn secondary" onclick="showScreen('cards')">Study Cards</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- FLASHCARDS -->
+    <div id="screen-cards" class="screen">
+      <div class="filter" id="cardFilter"></div>
+      <div class="count" id="cardCount"></div>
+      <div class="fcard" onclick="flipCard()"><div class="inner" id="cardText"></div></div>
+      <div class="flip-btn">
+        <button class="primary" onclick="cardAction('prev')">&#9664; Prev</button>
+        <button onclick="flipCard()">Flip</button>
+        <button class="primary" onclick="cardAction('known')">Know it</button>
+        <button class="primary" onclick="cardAction('next')">Next &#9654;</button>
+      </div>
+    </div>
+
+    <!-- TRACKERS -->
+    <div id="screen-track" class="screen">
+      <div class="stat-grid">
+        <div class="stat"><div class="num" id="tStreak">0</div><div class="lbl">Day Streak</div></div>
+        <div class="stat"><div class="num" id="tSessions">0</div><div class="lbl">Sessions</div></div>
+        <div class="stat"><div class="num" id="tKnown">0</div><div class="lbl">Cards Known</div></div>
+      </div>
+      <div class="stat-grid">
+        <div class="stat"><div class="num" id="tAnswered">0</div><div class="lbl">Answered</div></div>
+        <div class="stat"><div class="num" id="tCorrect">0</div><div class="lbl">Correct</div></div>
+        <div class="stat"><div class="num" id="tAcc">0%</div><div class="lbl">Accuracy</div></div>
+      </div>
+      <div class="card">
+        <h2>Accuracy by Topic</h2>
+        <div id="tTopicBars"></div>
+      </div>
+      <div class="card">
+        <h2>Wrong-Answer Review</h2>
+        <p class="muted" id="wrongCount"></p>
+        <button class="btn" onclick="startWrongReview()">Review Missed Questions</button>
+      </div>
+    </div>
+
+    <!-- ADD CONTENT -->
+    <div id="screen-add" class="screen">
+      <div class="card">
+        <h2>Add a Question</h2>
+        <label>Topic</label>
+        <select id="addTopic"></select>
+        <label>Question</label>
+        <textarea id="addQ" rows="2" placeholder="Enter the question"></textarea>
+        <label>Option A</label><input id="addA" placeholder="Correct or incorrect option">
+        <label>Option B</label><input id="addB" placeholder="Option B">
+        <label>Option C</label><input id="addC" placeholder="Option C">
+        <label>Option D</label><input id="addD" placeholder="Option D">
+        <label>Correct answer (A, B, C, or D)</label>
+        <select id="addAns"><option value="0">A</option><option value="1">B</option><option value="2">C</option><option value="3">D</option></select>
+        <label>Explanation</label>
+        <textarea id="addExpl" rows="2" placeholder="Why is this correct?"></textarea>
+        <button class="btn" onclick="addQuestion()">Add Question</button>
+      </div>
+      <div class="card">
+        <h2>Add a Flashcard</h2>
+        <label>Topic</label>
+        <select id="addCardTopic"></select>
+        <label>Front (prompt)</label>
+        <input id="addFront" placeholder="e.g. Three categories of AKI">
+        <label>Back (answer)</label>
+        <textarea id="addBack" rows="2" placeholder="e.g. Prerenal, intrarenal, postrenal"></textarea>
+        <button class="btn" onclick="addFlashcard()">Add Flashcard</button>
+      </div>
+    </div>
+
+    <!-- ADMIN -->
+    <div id="screen-admin" class="screen">
+      <div class="admin-note">Admin view: see all users' progress and export to a spreadsheet.</div>
+      <div class="btn-row" style="margin-bottom:12px">
+        <button class="btn" onclick="loadAdmin()">Refresh</button>
+        <button class="btn secondary" onclick="exportCSV()">Export to Spreadsheet (CSV)</button>
+      </div>
+      <div class="card">
+        <h2>All Users</h2>
+        <div class="table-wrap"><table id="adminTable"></table></div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="content.js"></script>
+<script>
+/* ============ SUPABASE (fill in your keys) ============ */
+const SUPABASE_URL = "https://ymvaslldugwzgjeaxabz.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_EpbSQ2PEnEzOxAPkzkCe1g__Y0ozzi9";
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+/* ============ STATE ============ */
+const topics = [...new Set(QUESTIONS.map(q=>q.topic))];
+let currentUser = null;
+let quizState = {active:false,list:[],idx:0,correct:0,selected:false};
+let cardState = {list:[],idx:0,flipped:false,filter:"all"};
+let quizFilter = "all";
+let cardFilter = "all";
+
+/* ============ LOGIN ============ */
+function login(){
+  const name = document.getElementById('loginName').value.trim();
+  if(!name){ alert('Enter your name'); return; }
+  currentUser = name;
+  document.getElementById('whoami').textContent = 'Studying as: ' + name;
+  document.getElementById('loginScreen').classList.remove('active');
+  document.getElementById('appScreen').classList.add('active');
+  renderQuizFilter(); renderCardFilter(); showScreen('quiz');
+  loadUserProgress();
+}
+function logout(){
+  currentUser = null;
+  document.getElementById('appScreen').classList.remove('active');
+  document.getElementById('loginScreen').classList.add('active');
+  document.getElementById('loginName').value='';
+}
+
+/* ============ NAV ============ */
+function showScreen(s){
+  document.querySelectorAll('#appScreen .screen').forEach(el=>el.classList.remove('active'));
+  document.getElementById('screen-'+s).classList.add('active');
+  ['quiz','cards','track','add','admin'].forEach(x=>{
+    document.getElementById('nav'+x.charAt(0).toUpperCase()+x.slice(1)).classList.toggle('active',x===s);
+  });
+  if(s==='cards') renderCard();
+  if(s==='track') renderTrackers();
+  if(s==='add') renderAddTopics();
+  if(s==='admin') loadAdmin();
+}
+
+/* ============ SUPABASE HELPERS ============ */
+async function loadUserProgress(){
+  if(!currentUser) return;
+  const {data,error} = await supabase.from('progress').select('*').eq('user_name',currentUser).single();
+  if(error && error.code!=='PGRST116'){ console.log('load err',error); }
+  if(data){ window.userProgress = data; }
+  else { window.userProgress = {user_name:currentUser, answered:0, correct:0, known:0, sessions:0, streak:0, last_study:null, answers:{}, wrong:{}, known_cards:{}, topic_stats:{}}; }
+}
+async function saveProgress(){
+  if(!currentUser) return;
+  const p = window.userProgress || {};
+  const {error} = await supabase.from('progress').upsert({
+    user_name: currentUser,
+    answered: p.answered||0, correct: p.correct||0, known: p.known||0,
+    sessions: p.sessions||0, streak: p.streak||0, last_study: p.last_study||null,
+    answers: p.answers||{}, wrong: p.wrong||{}, known_cards: p.known_cards||{}, topic_stats: p.topic_stats||{}
+  });
+  if(error) console.log('save err',error);
+}
+function recordAnswer(q, isCorrect){
+  const p = window.userProgress;
+  p.answered = (p.answered||0)+1;
+  if(isCorrect) p.correct = (p.correct||0)+1;
+  else { p.wrong = p.wrong||{}; p.wrong[q.q]=true; }
+  p.answers = p.answers||{}; p.answers[q.q]=isCorrect;
+  p.topic_stats = p.topic_stats||{};
+  p.topic_stats[q.topic] = p.topic_stats[q.topic]||{answered:0,correct:0};
+  p.topic_stats[q.topic].answered++;
+  if(isCorrect) p.topic_stats[q.topic].correct++;
+  // streak
+  const today = new Date().toISOString().slice(0,10);
+  if(p.last_study !== today){
+    const yest = new Date(Date.now()-86400000).toISOString().slice(0,10);
+    p.streak = (p.last_study===yest) ? (p.streak||0)+1 : 1;
+    p.last_study = today;
+  }
+  saveProgress();
+}
+function recordSession(){
+  const p = window.userProgress;
+  p.sessions = (p.sessions||0)+1;
+  saveProgress();
+}
+function recordKnown(card){
+  const p = window.userProgress;
+  p.known_cards = p.known_cards||{};
+  if(!p.known_cards[card.front]){ p.known_cards[card.front]=true; p.known=(p.known||0)+1; }
+  saveProgress();
+}
+
+/* ============ QUIZ ============ */
+function renderQuizFilter(){
+  let html='<button class="active" data-t="all" onclick="setQuizFilter(this,\'all\')">All</button>';
+  topics.forEach(t=>html+=`<button data-t="${t}" onclick="setQuizFilter(this,'${t}')">${t}</button>`);
+  document.getElementById('quizFilter').innerHTML=html;
+}
+function setQuizFilter(btn,t){ quizFilter=t; document.querySelectorAll('#quizFilter button').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); }
+function startQuiz(){
+  let pool = quizFilter==="all" ? QUESTIONS.slice() : QUESTIONS.filter(q=>q.topic===quizFilter);
+  if(pool.length===0) return;
+  quizState={active:true,list:pool,idx:0,correct:0,selected:false};
+  document.getElementById('quizSetup').style.display='none';
+  document.getElementById('quizResult').style.display='none';
+  document.getElementById('quizRun').style.display='block';
+  recordSession();
+  renderQuestion();
+}
+function renderQuestion(){
+  const q=quizState.list[quizState.idx];
+  quizState.selected=false;
+  document.getElementById('qTopic').textContent=q.topic;
+  document.getElementById('qCounter').textContent=`Question ${quizState.idx+1} of ${quizState.list.length}`;
+  document.getElementById('qQuestion').textContent=q.q;
+  document.getElementById('qOptions').innerHTML=q.opts.map((o,i)=>`<button class="option" data-i="${i}" onclick="selectAnswer(${i})">${String.fromCharCode(65+i)}. ${o}</button>`).join('');
+  document.getElementById('qExplain').style.display='none';
+  document.getElementById('qNext').style.display='none';
+}
+function selectAnswer(i){
+  if(quizState.selected) return;
+  const q=quizState.list[quizState.idx];
+  quizState.selected=true;
+  document.querySelectorAll('#qOptions .option').forEach(b=>{
+    b.disabled=true; const bi=parseInt(b.dataset.i);
+    if(bi===q.ans) b.classList.add('correct');
+    else if(bi===i) b.classList.add('wrong');
+  });
+  recordAnswer(q, i===q.ans);
+  const exp=document.getElementById('qExplain');
+  exp.style.display='block';
+  exp.innerHTML=(i===q.ans?'Correct! ':'Incorrect. ')+q.expl;
+  document.getElementById('qNext').style.display='block';
+}
+function nextQuestion(){ quizState.idx++; if(quizState.idx<quizState.list.length) renderQuestion(); else finishQuiz(); }
+function finishQuiz(){
+  const total=quizState.list.length;
+  const correct=quizState.list.filter(q=>window.userProgress.answers[q.q]).length;
+  quizState.active=false;
+  document.getElementById('quizRun').style.display='none';
+  document.getElementById('quizResult').style.display='block';
+  document.getElementById('resScore').textContent=`${correct} / ${total}`;
+  const pct=total?Math.round(correct/total*100):0;
+  document.getElementById('resBar').style.width=pct+'%';
+}
+function quitQuiz(){ finishQuiz(); }
+function startWrongReview(){
+  const wrong = window.userProgress.wrong||{};
+  const pool = QUESTIONS.filter(q=>wrong[q.q]);
+  if(pool.length===0){ alert('No missed questions yet. Great job!'); return; }
+  quizState={active:true,list:pool,idx:0,correct:0,selected:false};
+  document.getElementById('quizSetup').style.display='none';
+  document.getElementById('quizResult').style.display='none';
+  document.getElementById('quizRun').style.display='block';
+  renderQuestion();
+}
+
+/* ============ FLASHCARDS ============ */
+function renderCardFilter(){
+  let html='<button class="active" data-f="all" onclick="setCardFilter(this,\'all\')">All</button>';
+  topics.forEach(t=>html+=`<button data-f="${t}" onclick="setCardFilter(this,'${t}')">${t}</button>`);
+  document.getElementById('cardFilter').innerHTML=html;
+}
+function setCardFilter(el,t){
+  cardFilter=t;
+  document.querySelectorAll('#cardFilter button').forEach(b=>b.classList.remove('active'));
+  el.classList.add('active');
+  cardState.list = t==="all"?FLASHCARDS.slice():FLASHCARDS.filter(f=>f.topic===t);
+  cardState.idx=0; cardState.flipped=false; renderCard();
+}
+function renderCard(){
+  if(cardState.list.length===0){ document.getElementById('cardText').innerHTML='No cards in this topic.'; document.getElementById('cardCount').textContent=''; return; }
+  const c=cardState.list[cardState.idx];
+  document.getElementById('cardCount').textContent=`Card ${cardState.idx+1} of ${cardState.list.length}`;
+  document.getElementById('cardText').innerHTML = cardState.flipped
+    ? `<div class="back">${c.back}</div><div class="hint">tap to flip</div>`
+    : `<div class="front">${c.front}</div><div class="hint">tap to flip</div>`;
+}
+function flipCard(){ cardState.flipped=!cardState.flipped; renderCard(); }
+function cardAction(a){
+  if(cardState.list.length===0) return;
+  if(a==='known'){ recordKnown(cardState.list[cardState.idx]); if(cardState.idx<cardState.list.length-1) cardState.idx++; }
+  else if(a==='prev'){ if(cardState.idx>0) cardState.idx--; }
+  else if(a==='next'){ if(cardState.idx<cardState.list.length-1) cardState.idx++; }
+  cardState.flipped=false; renderCard();
+}
+
+/* ============ TRACKERS ============ */
+function renderTrackers(){
+  const p=window.userProgress||{};
+  document.getElementById('tStreak').textContent=p.streak||0;
+  document.getElementById('tSessions').textContent=p.sessions||0;
+  document.getElementById('tKnown').textContent=p.known||0;
+  document.getElementById('tAnswered').textContent=p.answered||0;
+  document.getElementById('tCorrect').textContent=p.correct||0;
+  document.getElementById('tAcc').textContent=p.answered?Math.round((p.correct||0)/p.answered*100)+'%':'0%';
+  const wrongCount=Object.keys(p.wrong||{}).length;
+  document.getElementById('wrongCount').textContent=wrongCount?`${wrongCount} question(s) to review.`:'No missed questions yet.';
+  let html='';
+  topics.forEach(t=>{
+    const ts=(p.topic_stats||{})[t]||{answered:0,correct:0};
+    const pct=ts.answered?Math.round(ts.correct/ts.answered*100):0;
+    html+=`<div style="margin:8px 0"><div style="display:flex;justify-content:space-between;font-size:13px"><span>${t}</span><span>${ts.correct}/${ts.answered} (${pct}%)</span></div><div class="bar"><div style="width:${ts.answered?pct:0}%"></div></div></div>`;
+  });
+  document.getElementById('tTopicBars').innerHTML=html;
+}
+
+/* ============ ADD CONTENT ============ */
+function renderAddTopics(){
+  const sel=document.getElementById('addTopic');
+  const sel2=document.getElementById('addCardTopic');
+  const opts=topics.map(t=>`<option>${t}</option>`).join('');
+  sel.innerHTML=opts; sel2.innerHTML=opts;
+}
+function addQuestion(){
+  const topic=document.getElementById('addTopic').value;
+  const q=document.getElementById('addQ').value.trim();
+  const opts=[document.getElementById('addA').value.trim(),document.getElementById('addB').value.trim(),document.getElementById('addC').value.trim(),document.getElementById('addD').value.trim()];
+  const ans=parseInt(document.getElementById('addAns').value);
+  const expl=document.getElementById('addExpl').value.trim();
+  if(!q||opts.some(o=>!o)){ alert('Fill in the question and all 4 options.'); return; }
+  QUESTIONS.push({topic,q,opts,ans,expl});
+  // update topics
+  if(!topics.includes(topic)){ topics.push(topic); renderQuizFilter(); renderCardFilter(); renderAddTopics(); }
+  alert('Question added! It will appear in quizzes now.');
+  ['addQ','addA','addB','addC','addD','addExpl'].forEach(id=>document.getElementById(id).value='');
+}
+function addFlashcard(){
+  const topic=document.getElementById('addCardTopic').value;
+  const front=document.getElementById('addFront').value.trim();
+  const back=document.getElementById('addBack').value.trim();
+  if(!front||!back){ alert('Fill in both sides.'); return; }
+  FLASHCARDS.push({topic,front,back});
+  if(!topics.includes(topic)){ topics.push(topic); renderQuizFilter(); renderCardFilter(); renderAddTopics(); }
+  alert('Flashcard added!');
+  document.getElementById('addFront').value=''; document.getElementById('addBack').value='';
+}
+
+/* ============ ADMIN ============ */
+async function loadAdmin(){
+  const {data,error}=await supabase.from('progress').select('*').order('user_name');
+  if(error){ document.getElementById('adminTable').innerHTML=`<tr><td>Error: ${error.message}</td></tr>`; return; }
+  let html='<tr><th>User</th><th>Answered</th><th>Correct</th><th>Accuracy</th><th>Cards Known</th><th>Sessions</th><th>Streak</th></tr>';
+  (data||[]).forEach(u=>{
+    const acc=u.answered?Math.round(u.correct/u.answered*100)+'%':'0%';
+    html+=`<tr><td>${u.user_name}</td><td>${u.answered||0}</td><td>${u.correct||0}</td><td>${acc}</td><td>${u.known||0}</td><td>${u.sessions||0}</td><td>${u.streak||0}</td></tr>`;
+  });
+  if(!data||data.length===0) html+='<tr><td colspan="7">No users yet.</td></tr>';
+  document.getElementById('adminTable').innerHTML=html;
+}
+function exportCSV(){
+  let csv='User,Answered,Correct,Accuracy,Cards Known,Sessions,Streak\n';
+  // We need all users - fetch then build
+  supabase.from('progress').select('*').order('user_name').then(({data,error})=>{
+    if(error){ alert('Error: '+error.message); return; }
+    (data||[]).forEach(u=>{
+      const acc=u.answered?Math.round(u.correct/u.answered*100)+'%':'0%';
+      csv+=`${u.user_name},${u.answered||0},${u.correct||0},${acc},${u.known||0},${u.sessions||0},${u.streak||0}\n`;
+    });
+    const blob=new Blob([csv],{type:'text/csv'});
+    const a=document.createElement('a');
+    a.href=URL.createObjectURL(blob); a.download='cnn_study_progress.csv'; a.click();
+  });
+}
+
+/* ============ INIT ============ */
+</script>
+</body>
+</html>
