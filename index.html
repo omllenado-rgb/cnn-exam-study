@@ -1056,6 +1056,7 @@ function showScreen(s){
   ['quiz','lessons','strategies','cards','track','add','admin'].forEach(x=>{
     document.getElementById('nav'+x.charAt(0).toUpperCase()+x.slice(1)).classList.toggle('active',x===s);
   });
+  trackSection(s);
   if(s==='lessons') renderLessons();
   if(s==='strategies') renderStrategies();
   if(s==='cards') renderCard();
