@@ -228,6 +228,22 @@
         <div class="stat"><div class="num" id="tTotal">0h</div><div class="lbl">Total Time</div></div>
         <div class="stat"><div class="num" id="tDays">0</div><div class="lbl">Study Days</div></div>
       </div>
+      <div class="card" style="border-left:4px solid var(--cyan)">
+        <h2>Log Study Hours</h2>
+        <p class="muted" style="margin-bottom:8px">Add study time you did outside the app (self-study, renal core, review course, etc.).</p>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+          <input type="number" id="logHours" min="0" step="0.5" placeholder="Hours" style="width:90px;flex:0 0 auto">
+          <select id="logType" style="flex:1;min-width:150px">
+            <option value="Self-study">Self-study</option>
+            <option value="Renal core">Renal core</option>
+            <option value="Review course">Review course</option>
+            <option value="Flashcards">Flashcards</option>
+            <option value="Other">Other</option>
+          </select>
+          <button class="btn" style="margin:0" onclick="logStudyHours()">Add</button>
+        </div>
+        <div id="logBreakdown" class="muted" style="margin-top:10px"></div>
+      </div>
       <div class="card">
         <h2>Accuracy by Topic</h2>
         <div id="tTopicBars"></div>
@@ -447,7 +463,8 @@ async function saveProgress(){
       sessions: p.sessions||0, streak: p.streak||0, last_study: p.last_study||null,
       answers: p.answers||{}, wrong: p.wrong||{}, known_cards: p.known_cards||{}, topic_stats: p.topic_stats||{},
       study_seconds: p.study_seconds||0, study_days: p.study_days||0, today_seconds: p.today_seconds||0, today_date: p.today_date||null,
-      first_started: p.first_started||null, last_active: p.last_active||null
+      first_started: p.first_started||null, last_active: p.last_active||null,
+      manual_hours: p.manual_hours||{}
     }, { onConflict: 'user_name' });
   } catch(e){ /* backend unavailable - local save is enough for now */ }
 }
@@ -616,6 +633,38 @@ function renderTrackers(){
   });
   document.getElementById('tTopicBars').innerHTML=html;
   renderFocusSuggestions();
+  renderLogBreakdown();
+}
+// Manual study-hours logger (time outside the app)
+function logStudyHours(){
+  const p=window.userProgress||{};
+  const hrs=parseFloat(document.getElementById('logHours').value);
+  if(!hrs || hrs<=0){ alert('Enter a number of hours.'); return; }
+  const type=document.getElementById('logType').value;
+  p.manual_hours = p.manual_hours||{};
+  p.manual_hours[type] = (p.manual_hours[type]||0) + hrs;
+  // Also add to total study seconds and today
+  const secs = Math.round(hrs*3600);
+  p.study_seconds = (p.study_seconds||0) + secs;
+  const today = new Date().toISOString().slice(0,10);
+  if(p.today_date===today) p.today_seconds = (p.today_seconds||0) + secs;
+  else { p.today_date=today; p.today_seconds=secs; }
+  // Count a study day
+  if(p.last_study!==today){ p.study_days=(p.study_days||0)+1; p.last_study=today; }
+  document.getElementById('logHours').value='';
+  saveProgress();
+  renderTrackers();
+  alert('Logged '+hrs+' hr(s) of '+type+'.');
+}
+function renderLogBreakdown(){
+  const p=window.userProgress||{};
+  const mh=p.manual_hours||{};
+  const el=document.getElementById('logBreakdown');
+  const keys=Object.keys(mh);
+  if(keys.length===0){ el.textContent='No manual study hours logged yet.'; return; }
+  const total=keys.reduce((s,k)=>s+mh[k],0);
+  el.innerHTML='<strong>Manual study hours:</strong> '+total.toFixed(1)+' hr total — '+
+    keys.map(k=>k+': '+mh[k].toFixed(1)+'h').join(', ');
 }
 function renderFocusSuggestions(){
   const p=window.userProgress||{};
