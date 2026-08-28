@@ -248,6 +248,11 @@
         <h2>Accuracy by Topic</h2>
         <div id="tTopicBars"></div>
       </div>
+      <div class="card">
+        <h2>Time by Section</h2>
+        <p class="muted" style="margin-bottom:8px">Minutes spent in each part of the app.</p>
+        <div id="tSectionBars"></div>
+      </div>
       <div class="card" style="border-left:4px solid var(--aggie-gold)">
         <h2>Focus Suggestions</h2>
         <p class="muted" id="focusIntro"></p>
@@ -418,12 +423,32 @@ function logout(){
 }
 
 /* ============ NAV ============ */
+let sectionTimer = null;
+let sectionStart = null;
+let currentSection = null;
+function trackSection(s){
+  // Save time spent in the previous section
+  if(currentSection && sectionStart){
+    const secs = Math.floor((Date.now()-sectionStart)/1000);
+    if(secs>0){
+      const p = window.userProgress||{};
+      p.section_seconds = p.section_seconds||{};
+      p.section_seconds[currentSection] = (p.section_seconds[currentSection]||0) + secs;
+      saveProgress();
+    }
+  }
+  currentSection = s;
+  sectionStart = Date.now();
+}
 function showScreen(s){
   document.querySelectorAll('#appScreen .screen').forEach(el=>el.classList.remove('active'));
   document.getElementById('screen-'+s).classList.add('active');
-  ['quiz','cards','track','add','admin'].forEach(x=>{
+  ['quiz','lessons','strategies','cards','track','add','admin'].forEach(x=>{
     document.getElementById('nav'+x.charAt(0).toUpperCase()+x.slice(1)).classList.toggle('active',x===s);
   });
+  trackSection(s);
+  if(s==='lessons') renderLessons();
+  if(s==='strategies') renderStrategies();
   if(s==='cards') renderCard();
   if(s==='track') renderTrackers();
   if(s==='add') renderAddTopics();
@@ -464,7 +489,8 @@ async function saveProgress(){
       answers: p.answers||{}, wrong: p.wrong||{}, known_cards: p.known_cards||{}, topic_stats: p.topic_stats||{},
       study_seconds: p.study_seconds||0, study_days: p.study_days||0, today_seconds: p.today_seconds||0, today_date: p.today_date||null,
       first_started: p.first_started||null, last_active: p.last_active||null,
-      manual_hours: p.manual_hours||{}
+      manual_hours: p.manual_hours||{},
+      section_seconds: p.section_seconds||{}
     }, { onConflict: 'user_name' });
   } catch(e){ /* backend unavailable - local save is enough for now */ }
 }
@@ -634,6 +660,21 @@ function renderTrackers(){
   document.getElementById('tTopicBars').innerHTML=html;
   renderFocusSuggestions();
   renderLogBreakdown();
+  renderSectionBars();
+}
+function renderSectionBars(){
+  const p=window.userProgress||{};
+  const ss=p.section_seconds||{};
+  const el=document.getElementById('tSectionBars');
+  const labels={quiz:'Quiz',lessons:'Lessons',strategies:'Strategies',cards:'Flashcards',track:'Trackers'};
+  const keys=Object.keys(ss).filter(k=>labels[k]);
+  if(keys.length===0){ el.innerHTML='<p class="muted">No section time yet. Spend time in each section to see it here.</p>'; return; }
+  let html='';
+  keys.forEach(k=>{
+    const min=Math.round((ss[k]||0)/60);
+    html+=`<div style="margin:8px 0"><div style="display:flex;justify-content:space-between;font-size:13px"><span>${labels[k]}</span><span>${min} min</span></div><div class="bar"><div style="width:${Math.min(100,min)}%"></div></div></div>`;
+  });
+  el.innerHTML=html;
 }
 // Manual study-hours logger (time outside the app)
 function logStudyHours(){
