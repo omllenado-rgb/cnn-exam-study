@@ -375,7 +375,7 @@ async function login(){
       window.userProgress = data;
     } else {
       // New user - create account with password
-      const newUser = {user_name:name, password:pass, answered:0, correct:0, known:0, sessions:0, streak:0, last_study:null, answers:{}, wrong:{}, known_cards:{}, topic_stats:{}};
+      const newUser = {user_name:name, password:pass, answered:0, correct:0, known:0, sessions:0, streak:0, last_study:null, answers:{}, wrong:{}, known_cards:{}, topic_stats:{}, study_seconds:0, study_days:0, today_seconds:0, today_date:null, first_started:new Date().toISOString(), last_active:new Date().toISOString()};
       const {error:insErr} = await sbClient.from('progress').insert(newUser);
       if(insErr){ msg.textContent = 'Could not create account. Try again.'; return; }
       window.userProgress = newUser;
@@ -421,7 +421,7 @@ function loadLocal(){ try { return JSON.parse(localStorage.getItem(localKey())) 
 function saveLocal(p){ try { localStorage.setItem(localKey(), JSON.stringify(p)); } catch(e){} }
 
 function defaultProgress(){
-  return {user_name:currentUser, answered:0, correct:0, known:0, sessions:0, streak:0, last_study:null, answers:{}, wrong:{}, known_cards:{}, topic_stats:{}, study_seconds:0, study_days:0, today_seconds:0, today_date:null};
+  return {user_name:currentUser, answered:0, correct:0, known:0, sessions:0, streak:0, last_study:null, answers:{}, wrong:{}, known_cards:{}, topic_stats:{}, study_seconds:0, study_days:0, today_seconds:0, today_date:null, first_started:new Date().toISOString(), last_active:new Date().toISOString()};
 }
 
 async function loadUserProgress(){
@@ -437,6 +437,7 @@ async function loadUserProgress(){
 async function saveProgress(){
   if(!currentUser) return;
   const p = window.userProgress || {};
+  p.last_active = new Date().toISOString(); // keep fresh on each save
   saveLocal(p); // always save locally first
   try {
     await sbClient.from('progress').upsert({
@@ -445,7 +446,8 @@ async function saveProgress(){
       answered: p.answered||0, correct: p.correct||0, known: p.known||0,
       sessions: p.sessions||0, streak: p.streak||0, last_study: p.last_study||null,
       answers: p.answers||{}, wrong: p.wrong||{}, known_cards: p.known_cards||{}, topic_stats: p.topic_stats||{},
-      study_seconds: p.study_seconds||0, study_days: p.study_days||0, today_seconds: p.today_seconds||0, today_date: p.today_date||null
+      study_seconds: p.study_seconds||0, study_days: p.study_days||0, today_seconds: p.today_seconds||0, today_date: p.today_date||null,
+      first_started: p.first_started||null, last_active: p.last_active||null
     }, { onConflict: 'user_name' });
   } catch(e){ /* backend unavailable - local save is enough for now */ }
 }
@@ -989,19 +991,29 @@ async function loadAdmin(){
   try {
     const {data,error}=await sbClient.from('progress').select('*').order('user_name');
     if(error){ document.getElementById('adminTable').innerHTML=`<tr><td>Backend not ready: ${error.message}.</td></tr>`; return; }
-    let html='<tr><th>User</th><th>Answered</th><th>Correct</th><th>Accuracy</th><th>Cards Known</th><th>Sessions</th><th>Streak</th><th>Study Time</th><th>Actions</th></tr>';
+    let html='<tr><th>User</th><th>First Started</th><th>Total Min</th><th>Study Days</th><th>Min/Day</th><th>Last Active</th><th>Weakest Topic</th><th>Answered</th><th>Correct</th><th>Accuracy</th><th>Cards Known</th><th>Sessions</th><th>Streak</th><th>Actions</th></tr>';
     (data||[]).forEach(u=>{
       const acc=u.answered?Math.round(u.correct/u.answered*100)+'%':'0%';
-      const studyTime = fmtHours(u.study_seconds||0);
+      const totalMin = Math.round((u.study_seconds||0)/60);
+      const studyDays = u.study_days||0;
+      const minPerDay = studyDays>0 ? Math.round(totalMin/studyDays) : 0;
+      const firstDate = u.first_started ? new Date(u.first_started).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'2-digit'}) : '—';
+      const lastActive = u.last_active ? daysAgo(u.last_active) : '—';
+      const weakest = computeWeakestTopic(u.topic_stats||{});
       html+=`<tr>
         <td><a href="javascript:void(0)" onclick="viewUser('${u.user_name}')" style="color:var(--link);font-weight:600">${u.user_name}</a></td>
+        <td>${firstDate}</td>
+        <td>${totalMin}</td>
+        <td>${studyDays}</td>
+        <td>${minPerDay}</td>
+        <td>${lastActive}</td>
+        <td>${weakest}</td>
         <td>${u.answered||0}</td>
         <td>${u.correct||0}</td>
         <td>${acc}</td>
         <td>${u.known||0}</td>
         <td>${u.sessions||0}</td>
         <td>${u.streak||0}</td>
-        <td>${studyTime}</td>
         <td>
           <button onclick="resetPassword('${u.user_name}')" style="font-size:11px;padding:4px 8px;margin:2px;background:var(--light);color:var(--ink);border:1px solid var(--border);border-radius:6px">Reset PW</button>
           <button onclick="resetUser('${u.user_name}')" style="font-size:11px;padding:4px 8px;margin:2px;background:var(--light);color:var(--ink);border:1px solid var(--border);border-radius:6px">Reset</button>
@@ -1009,18 +1021,44 @@ async function loadAdmin(){
         </td>
       </tr>`;
     });
-    if(!data||data.length===0) html+='<tr><td colspan="9">No users yet.</td></tr>';
+    if(!data||data.length===0) html+='<tr><td colspan="14">No users yet.</td></tr>';
     document.getElementById('adminTable').innerHTML=html;
   } catch(e){ document.getElementById('adminTable').innerHTML='<tr><td>Backend not ready.</td></tr>'; }
 }
+function daysAgo(iso){
+  const d = new Date(iso);
+  const days = Math.floor((Date.now() - d.getTime())/86400000);
+  if(days<=0) return 'Today';
+  if(days===1) return '1d ago';
+  if(days<7) return days+'d ago';
+  if(days<30) return Math.round(days/7)+'w ago';
+  return Math.round(days/30)+'mo ago';
+}
+function computeWeakestTopic(ts){
+  let weakest=null, lowestPct=101, lowestAnswered=0;
+  Object.keys(ts).forEach(t=>{
+    const s=ts[t]||{answered:0,correct:0};
+    if(s.answered>0){
+      const pct=s.correct/s.answered;
+      if(pct<lowestPct){ lowestPct=pct; weakest=t; }
+    }
+  });
+  return weakest || '—';
+}
 function exportCSV(){
   if(!adminUnlocked) return;
-  let csv='User,Answered,Correct,Accuracy,Cards Known,Sessions,Streak\n';
+  let csv='User,First Started,Total Minutes,Study Days,Min/Day,Last Active,Weakest Topic,Answered,Correct,Accuracy,Cards Known,Sessions,Streak\n';
   sbClient.from('progress').select('*').order('user_name').then(({data,error})=>{
     if(error){ alert('Backend not ready: '+error.message); return; }
     (data||[]).forEach(u=>{
       const acc=u.answered?Math.round(u.correct/u.answered*100)+'%':'0%';
-      csv+=`${u.user_name},${u.answered||0},${u.correct||0},${acc},${u.known||0},${u.sessions||0},${u.streak||0}\n`;
+      const totalMin = u.study_seconds?Math.round(u.study_seconds/60):0;
+      const sd = u.study_days||0;
+      const mpd = sd>0?Math.round(totalMin/sd):0;
+      const fd = u.first_started ? new Date(u.first_started).toLocaleDateString('en-US') : '';
+      const la = u.last_active ? daysAgo(u.last_active) : '';
+      const wt = computeWeakestTopic(u.topic_stats||{}) || '';
+      csv+=`${u.user_name},"${fd}",${totalMin},${sd},${mpd},"${la}","${wt}",${u.answered||0},${u.correct||0},${acc},${u.known||0},${u.sessions||0},${u.streak||0}\n`;
     });
     const blob=new Blob([csv],{type:'text/csv'});
     const a=document.createElement('a');
