@@ -1046,7 +1046,15 @@ async function adminLogin(){
   try {
     const {data,error} = await sbClient.from('app_settings').select('value').eq('key','admin_password').single();
     if(error || !data){ alert('Admin password not set up. Run the app_settings SQL in Supabase.'); return; }
-    if(pass === data.value){
+    // Support hashed admin password (value = "salt::hash") with legacy plaintext fallback
+    let ok = false;
+    if(data.value && data.value.includes('::')){
+      const [salt, hash] = data.value.split('::');
+      ok = (await hashPass(salt, pass)) === hash;
+    } else {
+      ok = (pass === data.value);
+    }
+    if(ok){
       adminUnlocked = true;
       document.getElementById('adminLogin').style.display='none';
       document.getElementById('adminPanel').style.display='block';
@@ -1070,7 +1078,14 @@ async function addLogin(){
   try {
     const {data,error} = await sbClient.from('app_settings').select('value').eq('key','admin_password').single();
     if(error || !data){ alert('Admin password not set up. Run the app_settings SQL in Supabase.'); return; }
-    if(pass === data.value){
+    let ok = false;
+    if(data.value && data.value.includes('::')){
+      const [salt, hash] = data.value.split('::');
+      ok = (await hashPass(salt, pass)) === hash;
+    } else {
+      ok = (pass === data.value);
+    }
+    if(ok){
       addUnlocked = true;
       document.getElementById('addLogin').style.display='none';
       document.getElementById('addPanel').style.display='block';
