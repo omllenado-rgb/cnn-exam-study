@@ -228,6 +228,10 @@
         <div class="stat"><div class="num" id="tTotal">0h</div><div class="lbl">Total Time</div></div>
         <div class="stat"><div class="num" id="tDays">0</div><div class="lbl">Study Days</div></div>
       </div>
+      <div class="stat-grid">
+        <div class="stat"><div class="num" id="tManual">0h</div><div class="lbl">Manual Hours</div></div>
+        <div class="stat"><div class="num" id="tInApp">0h</div><div class="lbl">In-App Time</div></div>
+      </div>
       <div class="card" style="border-left:4px solid var(--cyan)">
         <h2>Log Study Hours</h2>
         <p class="muted" style="margin-bottom:8px">Add study time you did outside the app (self-study, renal core, review course, etc.).</p>
@@ -649,6 +653,13 @@ function renderTrackers(){
   document.getElementById('tToday').textContent = fmtMin(todaySec);
   document.getElementById('tTotal').textContent = fmtHours(totalSec);
   document.getElementById('tDays').textContent = p.study_days||0;
+  // Manual vs in-app time split
+  const mh = p.manual_hours||{};
+  const manualHrs = Object.keys(mh).reduce((s,k)=>s+mh[k],0);
+  const ss = p.section_seconds||{};
+  const inAppSec = Object.keys(ss).reduce((s,k)=>s+(ss[k]||0),0);
+  document.getElementById('tManual').textContent = fmtHours(manualHrs*3600);
+  document.getElementById('tInApp').textContent = fmtHours(inAppSec);
   const wrongCount=Object.keys(p.wrong||{}).length;
   document.getElementById('wrongCount').textContent=wrongCount?`${wrongCount} question(s) to review.`:'No missed questions yet.';
   let html='';
@@ -1082,10 +1093,15 @@ async function loadAdmin(){
   try {
     const {data,error}=await sbClient.from('progress').select('*').order('user_name');
     if(error){ document.getElementById('adminTable').innerHTML=`<tr><td>Backend not ready: ${error.message}.</td></tr>`; return; }
-    let html='<tr><th>User</th><th>First Started</th><th>Total Min</th><th>Study Days</th><th>Min/Day</th><th>Last Active</th><th>Weakest Topic</th><th>Answered</th><th>Correct</th><th>Accuracy</th><th>Cards Known</th><th>Sessions</th><th>Streak</th><th>Actions</th></tr>';
+    let html='<tr><th>User</th><th>First Started</th><th>In-App Min</th><th>Manual Hrs</th><th>Study Days</th><th>Min/Day</th><th>Last Active</th><th>Weakest Topic</th><th>Answered</th><th>Correct</th><th>Accuracy</th><th>Cards Known</th><th>Sessions</th><th>Streak</th><th>Actions</th></tr>';
     (data||[]).forEach(u=>{
       const acc=u.answered?Math.round(u.correct/u.answered*100)+'%':'0%';
-      const totalMin = Math.round((u.study_seconds||0)/60);
+      // in-app time = sum of section_seconds; manual = sum of manual_hours
+      const ss=u.section_seconds||{};
+      const inAppMin = Math.round(Object.keys(ss).reduce((s,k)=>s+(ss[k]||0),0)/60);
+      const mh=u.manual_hours||{};
+      const manualHrs = Object.keys(mh).reduce((s,k)=>s+mh[k],0).toFixed(1);
+      const totalMin = inAppMin + Math.round(manualHrs*60);
       const studyDays = u.study_days||0;
       const minPerDay = studyDays>0 ? Math.round(totalMin/studyDays) : 0;
       const firstDate = u.first_started ? new Date(u.first_started).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'2-digit'}) : '—';
@@ -1094,7 +1110,8 @@ async function loadAdmin(){
       html+=`<tr>
         <td><a href="javascript:void(0)" onclick="viewUser('${u.user_name}')" style="color:var(--link);font-weight:600">${u.user_name}</a></td>
         <td>${firstDate}</td>
-        <td>${totalMin}</td>
+        <td>${inAppMin}</td>
+        <td>${manualHrs}</td>
         <td>${studyDays}</td>
         <td>${minPerDay}</td>
         <td>${lastActive}</td>
@@ -1112,7 +1129,7 @@ async function loadAdmin(){
         </td>
       </tr>`;
     });
-    if(!data||data.length===0) html+='<tr><td colspan="14">No users yet.</td></tr>';
+    if(!data||data.length===0) html+='<tr><td colspan="15">No users yet.</td></tr>';
     document.getElementById('adminTable').innerHTML=html;
   } catch(e){ document.getElementById('adminTable').innerHTML='<tr><td>Backend not ready.</td></tr>'; }
 }
@@ -1138,18 +1155,22 @@ function computeWeakestTopic(ts){
 }
 function exportCSV(){
   if(!adminUnlocked) return;
-  let csv='User,First Started,Total Minutes,Study Days,Min/Day,Last Active,Weakest Topic,Answered,Correct,Accuracy,Cards Known,Sessions,Streak\n';
+  let csv='User,First Started,In-App Minutes,Manual Hours,Study Days,Min/Day,Last Active,Weakest Topic,Answered,Correct,Accuracy,Cards Known,Sessions,Streak\n';
   sbClient.from('progress').select('*').order('user_name').then(({data,error})=>{
     if(error){ alert('Backend not ready: '+error.message); return; }
     (data||[]).forEach(u=>{
       const acc=u.answered?Math.round(u.correct/u.answered*100)+'%':'0%';
-      const totalMin = u.study_seconds?Math.round(u.study_seconds/60):0;
+      const ss=u.section_seconds||{};
+      const inAppMin = Math.round(Object.keys(ss).reduce((s,k)=>s+(ss[k]||0),0)/60);
+      const mh=u.manual_hours||{};
+      const manualHrs = Object.keys(mh).reduce((s,k)=>s+mh[k],0).toFixed(1);
+      const totalMin = inAppMin + Math.round(manualHrs*60);
       const sd = u.study_days||0;
       const mpd = sd>0?Math.round(totalMin/sd):0;
       const fd = u.first_started ? new Date(u.first_started).toLocaleDateString('en-US') : '';
       const la = u.last_active ? daysAgo(u.last_active) : '';
       const wt = computeWeakestTopic(u.topic_stats||{}) || '';
-      csv+=`${u.user_name},"${fd}",${totalMin},${sd},${mpd},"${la}","${wt}",${u.answered||0},${u.correct||0},${acc},${u.known||0},${u.sessions||0},${u.streak||0}\n`;
+      csv+=`${u.user_name},"${fd}",${inAppMin},${manualHrs},${sd},${mpd},"${la}","${wt}",${u.answered||0},${u.correct||0},${acc},${u.known||0},${u.sessions||0},${u.streak||0}\n`;
     });
     const blob=new Blob([csv],{type:'text/csv'});
     const a=document.createElement('a');
