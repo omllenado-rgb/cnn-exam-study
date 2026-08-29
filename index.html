@@ -75,6 +75,11 @@
   th,td{padding:9px 8px;text-align:left;border-bottom:1px solid var(--border);}
   th{background:var(--light);color:var(--aggie-blue);font-weight:600;}
   body.dark th{color:var(--aggie-gold);}
+  /* Compact admin table so all columns fit without horizontal scroll */
+  #adminTable{font-size:11px;table-layout:auto;}
+  #adminTable th,#adminTable td{padding:6px 5px;white-space:nowrap;}
+  #adminTable th{font-size:10px;letter-spacing:.2px;}
+  #adminTable td:first-child{white-space:normal;min-width:90px;}
   .admin-note{background:#fff8e1;border:1px solid #ffe082;border-radius:8px;padding:10px;font-size:12px;margin-bottom:12px;}
   body.dark .admin-note{background:#2c2a1a;border-color:#665f33;color:#e6d9a8;}
 </style>
