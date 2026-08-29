@@ -384,6 +384,16 @@ function initTheme(){
 }
 
 /* ============ LOGIN ============ */
+// Client-side SHA-256 (Web Crypto) so we never store/compare plaintext passwords.
+async function sha256(str){
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+  return [...new Uint8Array(buf)].map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+function makeSalt(){ // random per-user salt (hex)
+  const a = new Uint8Array(16); crypto.getRandomValues(a);
+  return [...a].map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+async function hashPass(salt, pass){ return await sha256(salt + '::' + pass); }
 async function login(){
   const name = document.getElementById('loginName').value.trim();
   const pass = document.getElementById('loginPass').value;
@@ -392,15 +402,29 @@ async function login(){
   msg.textContent = 'Signing in...';
   try {
     // Check if user exists
-    const {data,error} = await sbClient.from('progress').select('*').eq('user_name',name).maybeSingle();
+    const {data,error} = await sbClient.from('progress').select('user_name').eq('user_name',name).maybeSingle();
     if(error){ msg.textContent = 'Could not reach the server. Try again.'; return; }
     if(data){
-      // Existing user - verify password
-      if(data.password !== pass){ msg.textContent = 'Incorrect password.'; return; }
-      window.userProgress = data;
+      // Existing user - fetch record and verify password against stored hash
+      const {data:rec,error:recErr} = await sbClient.from('progress').select('*').eq('user_name',name).maybeSingle();
+      if(recErr){ msg.textContent = 'Could not reach the server.'; return; }
+      const hash = await hashPass(rec.pass_salt || '', pass);
+      let ok = (rec.pass_hash && rec.pass_hash === hash);
+      if(!ok && rec.password){ ok = (rec.password === pass); } // legacy plaintext fallback
+      if(!ok){ msg.textContent = 'Incorrect password.'; return; }
+      // Migrate legacy plaintext -> hash if needed
+      if(rec.password && !rec.pass_hash){
+        const salt = makeSalt();
+        const nh = await hashPass(salt, pass);
+        await sbClient.from('progress').update({pass_salt:salt, pass_hash:nh, password:null}).eq('user_name',name);
+        rec.pass_salt=salt; rec.pass_hash=nh; rec.password=null;
+      }
+      window.userProgress = rec;
     } else {
-      // New user - create account with password
-      const newUser = {user_name:name, password:pass, answered:0, correct:0, known:0, sessions:0, streak:0, last_study:null, answers:{}, wrong:{}, known_cards:{}, topic_stats:{}, study_seconds:0, study_days:0, today_seconds:0, today_date:null, first_started:new Date().toISOString(), last_active:new Date().toISOString()};
+      // New user - create account with hashed password (never store plaintext)
+      const salt = makeSalt();
+      const pass_hash = await hashPass(salt, pass);
+      const newUser = {user_name:name, pass_salt:salt, pass_hash:pass_hash, answered:0, correct:0, known:0, sessions:0, streak:0, last_study:null, answers:{}, wrong:{}, known_cards:{}, topic_stats:{}, study_seconds:0, study_days:0, today_seconds:0, today_date:null, first_started:new Date().toISOString(), last_active:new Date().toISOString()};
       const {error:insErr} = await sbClient.from('progress').insert(newUser);
       if(insErr){ msg.textContent = 'Could not create account. Try again.'; return; }
       window.userProgress = newUser;
@@ -487,7 +511,8 @@ async function saveProgress(){
   try {
     await sbClient.from('progress').upsert({
       user_name: currentUser,
-      password: p.password || null,
+      pass_salt: p.pass_salt || null,
+      pass_hash: p.pass_hash || null,
       answered: p.answered||0, correct: p.correct||0, known: p.known||0,
       sessions: p.sessions||0, streak: p.streak||0, last_study: p.last_study||null,
       answers: p.answers||{}, wrong: p.wrong||{}, known_cards: p.known_cards||{}, topic_stats: p.topic_stats||{},
@@ -1203,7 +1228,9 @@ async function resetPassword(name){
   const newPass = prompt('Enter a new password for "'+name+'":');
   if(!newPass) return;
   try {
-    await sbClient.from('progress').update({password:newPass}).eq('user_name',name);
+    const salt = makeSalt();
+    const pass_hash = await hashPass(salt, newPass);
+    await sbClient.from('progress').update({pass_salt:salt, pass_hash:pass_hash, password:null}).eq('user_name',name);
     alert('Password for "'+name+'" reset.');
   } catch(e){ alert('Could not reset password.'); }
 }
