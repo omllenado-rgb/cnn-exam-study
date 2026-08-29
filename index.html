@@ -354,11 +354,19 @@
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="content.js"></script>
+<script src="original-content.js"></script>
 <script>
 /* ============ SUPABASE (fill in your keys) ============ */
 const SUPABASE_URL = "https://ymvaslldugwzgjeaxabz.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_EpbSQ2PEnEzOxAPkzkCe1g__Y0ozzi9";
 const sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+/* ============ MERGE ORIGINAL CONTENT (expands beyond Mometrix) ============ */
+// Original content is kept in its own file (original-content.js) so it can be
+// swapped in as the sole content source for the paid product later.
+if (typeof ORIG_QUESTIONS !== 'undefined') QUESTIONS.push(...ORIG_QUESTIONS);
+if (typeof ORIG_FLASHCARDS !== 'undefined') FLASHCARDS.push(...ORIG_FLASHCARDS);
+if (typeof ORIG_LESSONS !== 'undefined') LESSONS.push(...ORIG_LESSONS);
 
 /* ============ STATE ============ */
 const topics = [...new Set(QUESTIONS.map(q=>q.topic))];
