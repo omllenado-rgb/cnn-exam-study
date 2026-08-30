@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CNN Study — Admin Dashboard</title>
+<meta name="robots" content="noindex,nofollow">
+<style>
+  :root{--navy:#022851;--navy-2:#0a3d6b;--gold:#ffbf00;--cyan:#00b2e3;--ink:#1c2b39;--muted:#5b6b7a;--bg:#f0f3f7;--card:#fff;--border:#e3e8ee;--green:#2e7d32;--red:#c62828;}
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--ink);}
+  .login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;background:linear-gradient(135deg,#022851,#0a3d6b);}
+  .login-card{background:#fff;border-radius:16px;padding:36px;width:100%;max-width:420px;box-shadow:0 20px 50px rgba(0,0,0,.3);}
+  .login-card h1{color:var(--navy);font-size:24px;margin-bottom:6px;text-align:center;}
+  .login-card .sub{color:var(--muted);font-size:14px;text-align:center;margin-bottom:24px;}
+  .login-card input{width:100%;padding:13px;border:1.5px solid var(--border);border-radius:10px;font-size:15px;margin-bottom:12px;}
+  .login-card input:focus{outline:none;border-color:var(--navy);}
+  .login-card button{width:100%;padding:13px;background:var(--navy);color:#fff;border:none;border-radius:10px;font-size:16px;font-weight:600;cursor:pointer;}
+  .login-card button:hover{background:var(--navy-2);}
+  .login-card .err{color:var(--red);font-size:13px;text-align:center;margin-top:10px;min-height:18px;}
+  .login-card .two-col{display:flex;gap:10px;}
+  .login-card .two-col input{flex:1;}
+
+  /* Dashboard */
+  .dash{max-width:1200px;margin:0 auto;padding:20px;}
+  .topbar{background:var(--navy);color:#fff;border-radius:12px;padding:18px 24px;display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;}
+  .topbar h1{font-size:20px;font-weight:700;}
+  .topbar h1 span{color:var(--gold);}
+  .topbar .actions{display:flex;gap:10px;}
+  .topbar button{background:rgba(255,255,255,.15);color:#fff;border:none;padding:9px 16px;border-radius:8px;font-weight:600;cursor:pointer;font-size:14px;}
+  .topbar button:hover{background:rgba(255,255,255,.25);}
+  .topbar .export-btn{background:var(--gold);color:var(--navy);}
+  .topbar .export-btn:hover{background:#ffd24d;}
+
+  .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-bottom:20px;}
+  .stat{background:var(--card);border-radius:12px;padding:18px;text-align:center;border:1px solid var(--border);}
+  .stat .num{font-size:30px;font-weight:800;color:var(--navy);}
+  .stat .lbl{font-size:13px;color:var(--muted);}
+
+  .card{background:var(--card);border-radius:12px;border:1px solid var(--border);padding:20px;margin-bottom:20px;overflow:hidden;}
+  .card h2{color:var(--navy);font-size:17px;margin-bottom:14px;}
+  .table-wrap{overflow-x:auto;}
+  table{width:100%;border-collapse:collapse;font-size:12.5px;}
+  th,td{padding:8px 8px;text-align:left;border-bottom:1px solid var(--border);white-space:nowrap;}
+  th{background:var(--bg);color:var(--navy);font-weight:600;font-size:11.5px;letter-spacing:.3px;}
+  td:first-child{font-weight:600;color:var(--navy);}
+  .btn-sm{font-size:11px;padding:5px 10px;margin:2px;border-radius:6px;border:1px solid var(--border);background:var(--bg);cursor:pointer;}
+  .btn-sm:hover{background:#e3e8ee;}
+  .btn-danger{background:var(--red);color:#fff;border-color:var(--red);}
+  .btn-danger:hover{background:#b71c1c;}
+  .empty{color:var(--muted);font-style:italic;}
+
+  /* summary bar */
+  .summary{background:#eef4f8;border-left:4px solid var(--gold);border-radius:8px;padding:14px 18px;margin-bottom:20px;font-size:14px;color:var(--navy);}
+  .summary strong{color:var(--navy);}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div class="login-wrap" id="loginWrap">
+  <div class="login-card">
+    <h1>🔐 CNN Admin</h1>
+    <p class="sub">Certified Nephrology Nurse Study Dashboard</p>
+    <div class="two-col">
+      <input type="password" id="adminCode" placeholder="Access code" autocomplete="off">
+    </div>
+    <input type="password" id="adminPass" placeholder="Admin password" autocomplete="off">
+    <button onclick="doLogin()">Unlock Dashboard</button>
+    <div class="err" id="err"></div>
+  </div>
+</div>
+
+<!-- DASHBOARD -->
+<div class="dash" id="dash" style="display:none">
+  <div class="topbar">
+    <h1>CNN <span>Admin Dashboard</span></h1>
+    <div class="actions">
+      <button class="export-btn" onclick="exportCSV()">⬇ Download CSV</button>
+      <button onclick="logout()">Log Out</button>
+    </div>
+  </div>
+
+  <div class="summary" id="summary"></div>
+
+  <div class="stats" id="stats"></div>
+
+  <div class="card">
+    <h2>All Users</h2>
+    <div class="table-wrap">
+      <table id="adminTable"></table>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+/* ==== CONFIG ==== */
+const SUPABASE_URL = "https://ymvaslldugwzgjeaxabz.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_EpbSQ2PEnEzOxAPkzkCe1g__Y0ozzi9";
+const ACCESS_CODE = "renal-admin-2027"; // extra gate beyond the admin password
+const sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+let unlocked = false;
+
+/* ==== HASHING (matches app) ==== */
+async function sha256(str){
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+  return [...new Uint8Array(buf)].map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+async function hashPass(salt, pass){ return await sha256(salt + '::' + pass); }
+function makeSalt(){ const a=new Uint8Array(16); crypto.getRandomValues(a); return [...a].map(b=>b.toString(16).padStart(2,'0')).join(''); }
+
+/* ==== LOGIN ==== */
+async function doLogin(){
+  const code = document.getElementById('adminCode').value.trim();
+  const pass = document.getElementById('adminPass').value.trim();
+  const err = document.getElementById('err');
+  err.textContent = '';
+  if(code !== ACCESS_CODE){ err.textContent = 'Invalid access code.'; return; }
+  if(!pass){ err.textContent = 'Enter the admin password.'; return; }
+  try {
+    const {data,error} = await sbClient.from('app_settings').select('value').eq('key','admin_password').single();
+    if(error || !data){ err.textContent = 'Admin password not configured.'; return; }
+    let ok = false;
+    if(data.value && data.value.includes('::')){
+      const [salt, hash] = data.value.split('::');
+      ok = (await hashPass(salt, pass)) === hash;
+    } else {
+      ok = (pass === data.value);
+    }
+    if(ok){
+      unlocked = true;
+      document.getElementById('loginWrap').style.display='none';
+      document.getElementById('dash').style.display='block';
+      loadAdmin();
+    } else {
+      err.textContent = 'Incorrect password.';
+    }
+  } catch(e){ err.textContent = 'Could not verify. Check connection.'; }
+}
+function logout(){
+  unlocked = false;
+  document.getElementById('dash').style.display='none';
+  document.getElementById('loginWrap').style.display='flex';
+  document.getElementById('adminPass').value='';
+  document.getElementById('adminCode').value='';
+}
+
+/* ==== HELPERS ==== */
+function daysAgo(iso){
+  const d=new Date(iso); const days=Math.floor((Date.now()-d.getTime())/86400000);
+  if(days<=0) return 'Today'; if(days===1) return '1d ago';
+  if(days<7) return days+'d ago'; if(days<30) return Math.round(days/7)+'w ago'; return Math.round(days/30)+'mo ago';
+}
+function computeWeakestTopic(ts){
+  let weakest=null,lowest=101;
+  Object.keys(ts||{}).forEach(t=>{ const s=ts[t]||{answered:0,correct:0}; if(s.answered>0){ const pct=s.correct/s.answered; if(pct<lowest){lowest=pct;weakest=t;} } });
+  return weakest || '—';
+}
+
+/* ==== LOAD ADMIN ==== */
+async function loadAdmin(){
+  if(!unlocked) return;
+  try {
+    const {data,error}=await sbClient.from('progress').select('*').order('user_name');
+    if(error){ document.getElementById('adminTable').innerHTML='<tr><td class="empty">Backend error: '+error.message+'</td></tr>'; return; }
+    const users = data||[];
+    // Summary + stats
+    const totalUsers=users.length;
+    const active = users.filter(u=>u.last_active && daysAgo(u.last_active)!=='Today' && new Date(u.last_active)>Date.now()-7*86400000).length;
+    let totalMin=0, totalAnswered=0;
+    users.forEach(u=>{ const ss=u.section_seconds||{}; const ia=Math.round(Object.keys(ss).reduce((s,k)=>s+(ss[k]||0),0)/60); const mh=u.manual_hours||{}; const mn=Object.keys(mh).reduce((s,k)=>s+mh[k],0); totalMin += ia + Math.round(mn*60); totalAnswered += u.answered||0; });
+    document.getElementById('summary').innerHTML = '<strong>'+totalUsers+'</strong> user(s) · <strong>'+Math.round(totalMin/60)+'h</strong> total study · <strong>'+totalAnswered+'</strong> questions answered. Use Download CSV for a full spreadsheet.';
+    document.getElementById('stats').innerHTML =
+      '<div class="stat"><div class="num">'+totalUsers+'</div><div class="lbl">Total Users</div></div>'+
+      '<div class="stat"><div class="num">'+active+'</div><div class="lbl">Active (7d)</div></div>'+
+      '<div class="stat"><div class="num">'+Math.round(totalMin/60)+'h</div><div class="lbl">Total Study</div></div>'+
+      '<div class="stat"><div class="num">'+totalAnswered+'</div><div class="lbl">Answered</div></div>';
+    let html='<tr><th>User</th><th>First</th><th>In-App(Min)</th><th>Manual(Hrs)</th><th>Study Days</th><th>Min/Day</th><th>Last Active</th><th>Weak Topic</th><th>Answered</th><th>Acc</th><th>Cards</th><th>Streak</th><th>Actions</th></tr>';
+    (users).forEach(u=>{
+      const acc=u.answered?Math.round(u.correct/u.answered*100)+'%':'0%';
+      const ss=u.section_seconds||{};
+      const inAppMin=Math.round(Object.keys(ss).reduce((s,k)=>s+(ss[k]||0),0)/60);
+      const mh=u.manual_hours||{}; const manualHrs=Object.keys(mh).reduce((s,k)=>s+mh[k],0).toFixed(1);
+      const totalMin=inAppMin+Math.round(manualHrs*60);
+      const studyDays=u.study_days||0; const minPerDay=studyDays>0?Math.round(totalMin/studyDays):0;
+      const firstDate=u.first_started?new Date(u.first_started).toLocaleDateString('en-US',{month:'short',day:'numeric'}):'—';
+      const lastActive=u.last_active?daysAgo(u.last_active):'—';
+      const weakest=computeWeakestTopic(u.topic_stats);
+      html+=`<tr>
+        <td>${u.user_name}</td><td>${firstDate}</td><td>${inAppMin}</td><td>${manualHrs}</td><td>${studyDays}</td><td>${minPerDay}</td><td>${lastActive}</td><td>${weakest}</td><td>${u.answered||0}</td><td>${acc}</td><td>${u.known||0}</td><td>${u.streak||0}</td>
+        <td>
+          <button class="btn-sm" onclick="resetPassword('${u.user_name}')">Reset PW</button>
+          <button class="btn-sm" onclick="resetUser('${u.user_name}')">Reset</button>
+          <button class="btn-sm btn-danger" onclick="deleteUser('${u.user_name}')">Delete</button>
+        </td></tr>`;
+    });
+    if(users.length===0) html+='<tr><td colspan="13" class="empty">No users yet.</td></tr>';
+    document.getElementById('adminTable').innerHTML=html;
+  } catch(e){ document.getElementById('adminTable').innerHTML='<tr><td class="empty">Backend error.</td></tr>'; }
+}
+
+/* ==== ACTIONS ==== */
+function exportCSV(){
+  if(!unlocked) return;
+  let csv='User,First Started,In-App Minutes,Manual Hours,Study Days,Min/Day,Last Active,Weakest Topic,Answered,Correct,Accuracy,Cards Known,Sessions,Streak\n';
+  sbClient.from('progress').select('*').order('user_name').then(({data,error})=>{
+    if(error){ alert('Backend error'); return; }
+    (data||[]).forEach(u=>{
+      const acc=u.answered?Math.round(u.correct/u.answered*100)+'%':'0%';
+      const ss=u.section_seconds||{}; const inAppMin=Math.round(Object.keys(ss).reduce((s,k)=>s+(ss[k]||0),0)/60);
+      const mh=u.manual_hours||{}; const manualHrs=Object.keys(mh).reduce((s,k)=>s+mh[k],0).toFixed(1);
+      const totalMin=inAppMin+Math.round(manualHrs*60); const sd=u.study_days||0; const mpd=sd>0?Math.round(totalMin/sd):0;
+      const fd=u.first_started?new Date(u.first_started).toLocaleDateString('en-US'):'';
+      const la=u.last_active?daysAgo(u.last_active):''; const wt=computeWeakestTopic(u.topic_stats)||'';
+      csv+=`${u.user_name},"${fd}",${inAppMin},${manualHrs},${sd},${mpd},"${la}","${wt}",${u.answered||0},${u.correct||0},${acc},${u.known||0},${u.sessions||0},${u.streak||0}\n`;
+    });
+    const blob=new Blob([csv],{type:'text/csv'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='cnn_study_progress.csv'; a.click();
+  });
+}
+async function resetUser(name){
+  if(!unlocked) return; if(!confirm('Reset all progress for "'+name+'"?')) return;
+  try { await sbClient.from('progress').update({answered:0,correct:0,known:0,sessions:0,streak:0,last_study:null,answers:{},wrong:{},known_cards:{},topic_stats:{},section_seconds:{},manual_hours:{},study_seconds:0,study_days:0,today_seconds:0}).eq('user_name',name); alert('User "'+name+'" reset.'); loadAdmin(); } catch(e){ alert('Could not reset user.'); }
+}
+async function deleteUser(name){
+  if(!unlocked) return; if(!confirm('Delete user "'+name+'" and ALL their progress? This cannot be undone.')) return;
+  try { await sbClient.from('progress').delete().eq('user_name',name); alert('User "'+name+'" deleted.'); loadAdmin(); } catch(e){ alert('Could not delete user.'); }
+}
+async function resetPassword(name){
+  if(!unlocked) return; const newPass=prompt('Enter a new password for "'+name+'":'); if(!newPass) return;
+  try { const salt=makeSalt(); const pass_hash=await hashPass(salt,newPass); await sbClient.from('progress').update({pass_salt:salt,pass_hash:pass_hash,password:null}).eq('user_name',name); alert('Password for "'+name+'" reset.'); } catch(e){ alert('Could not reset password.'); }
+}
+</script>
+</body>
+</html>
