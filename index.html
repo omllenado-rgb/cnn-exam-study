@@ -16,7 +16,8 @@
   .topbar h1{font-size:19px;line-height:1.25;font-weight:700;}
   .topbar p{font-size:12px;opacity:.9;margin-top:2px;color:#ffd966;}
   .theme-toggle{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.4);color:#fff;border-radius:20px;padding:7px 12px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;}
-  nav{display:flex;background:var(--card);border-bottom:1px solid var(--border);overflow-x:auto;}
+  nav{display:flex;background:var(--card);border-bottom:1px solid var(--border);overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
+  nav::-webkit-scrollbar{display:none;}
   nav button{flex:1;min-width:90px;padding:14px 4px;border:none;background:none;font-size:14px;font-weight:600;color:var(--gray);cursor:pointer;border-bottom:3px solid transparent;white-space:nowrap;}
   nav button.active{color:var(--aggie-blue);border-bottom-color:var(--aggie-gold);}
   body.dark nav button.active{color:var(--aggie-gold);}
@@ -82,6 +83,26 @@
   #adminTable td:first-child{white-space:normal;min-width:90px;}
   .admin-note{background:#fff8e1;border:1px solid #ffe082;border-radius:8px;padding:10px;font-size:12px;margin-bottom:12px;}
   body.dark .admin-note{background:#2c2a1a;border-color:#665f33;color:#e6d9a8;}
+  /* ===== MOBILE OPTIMIZATIONS ===== */
+  @media(max-width:480px){
+    .topbar{padding:14px 14px;}
+    .topbar h1{font-size:16px;}
+    .topbar p{font-size:11px;}
+    .theme-toggle{padding:6px 10px;font-size:12px;}
+    nav button{min-width:72px;padding:12px 2px;font-size:13px;}
+    main{padding:12px;}
+    .card{padding:15px;border-radius:10px;}
+    .option{padding:14px 12px;font-size:15px;}
+    .btn{padding:14px 16px;font-size:15px;}
+    .stat .num{font-size:22px;}
+    .stat .lbl{font-size:10px;}
+    .fcard{min-height:180px;}
+    .fcard .inner{font-size:17px;padding:18px;}
+    .filter button{padding:8px 12px;font-size:12px;}
+    .flip-btn button{padding:10px 12px;font-size:13px;}
+    .login-box{margin:20px auto;}
+    input,select,textarea{padding:14px;font-size:16px;}
+  }
 </style>
 </head>
 <body>
