@@ -711,26 +711,37 @@ function startWrongReview(){
 }
 
 /* ============ PRACTICE TEST (150 Q, 3 hr, blueprint-weighted) ============ */
-let testState = {active:false, list:[], idx:0, correct:0, selected:false, timer:null, secondsLeft:0};
+let testState = {active:false, list:[], idx:0, correct:0, selected:false, timer:null, secondsLeft:0, objCorrect:{}, objTotal:{}};
 // CNN exam blueprint: 150 questions weighted by objective percentages
 const TEST_WEIGHTS = [
-  {label:'Pathologic processes & complications', pct:20, count:30},
-  {label:'Interventions', pct:21, count:31},
-  {label:'KRT principles', pct:11, count:17},
-  {label:'Teaching/learning', pct:15, count:22},
-  {label:'Medications', pct:12, count:18},
-  {label:'Infection control', pct:8, count:12},
-  {label:'Collaboration & QI', pct:13, count:20}
+  {label:'Pathologic processes & complications', pct:20, count:30, obj:1},
+  {label:'Interventions', pct:21, count:31, obj:2},
+  {label:'KRT principles', pct:11, count:17, obj:3},
+  {label:'Teaching/learning', pct:15, count:22, obj:4},
+  {label:'Medications', pct:12, count:18, obj:5},
+  {label:'Infection control', pct:8, count:12, obj:6},
+  {label:'Collaboration & QI', pct:13, count:20, obj:7}
 ];
 function startPracticeTest(){
-  // Build a 150-question pool weighted by blueprint, drawn from all topics
-  const all = QUESTIONS.slice();
-  shuffle(all);
-  // We don't have per-objective tags, so sample proportionally across topics
-  // to approximate the blueprint weighting. Take 150 from the shuffled pool.
-  const pool = all.slice(0, 150);
+  // Build a 150-question pool weighted by blueprint objective
+  const pool = [];
+  TEST_WEIGHTS.forEach(w=>{
+    // Questions tagged with this objective
+    const tagged = QUESTIONS.filter(q=>q.obj===w.obj);
+    shuffle(tagged);
+    // Take up to the blueprint count
+    pool.push(...tagged.slice(0, w.count));
+  });
+  // If we couldn't fill all objectives (not enough tagged), top up from remaining
+  if(pool.length < 150){
+    const used = new Set(pool.map(q=>q.q));
+    const rest = QUESTIONS.filter(q=>!used.has(q.q));
+    shuffle(rest);
+    pool.push(...rest.slice(0, 150-pool.length));
+  }
   if(pool.length < 150){ alert('Not enough questions yet ('+pool.length+' available).'); return; }
-  testState = {active:true, list:pool, idx:0, correct:0, selected:false, timer:null, secondsLeft:3*3600};
+  shuffle(pool);
+  testState = {active:true, list:pool, idx:0, correct:0, selected:false, timer:null, secondsLeft:3*3600, objCorrect:{}, objTotal:{}};
   document.getElementById('testSetup').style.display='none';
   document.getElementById('testResult').style.display='none';
   document.getElementById('testRun').style.display='block';
@@ -757,7 +768,12 @@ function selectTestAnswer(i){
     if(origIdx===q.ans) b.classList.add('correct');
     else if(parseInt(b.dataset.i)===i) b.classList.add('wrong');
   });
-  if(testState.shuffledOpts[i].idx===q.ans) testState.correct++;
+  const isCorrect = testState.shuffledOpts[i].idx===q.ans;
+  if(isCorrect) testState.correct++;
+  // Track per-objective
+  const obj = q.obj || 0;
+  testState.objTotal[obj] = (testState.objTotal[obj]||0)+1;
+  if(isCorrect) testState.objCorrect[obj] = (testState.objCorrect[obj]||0)+1;
   document.getElementById('testNext').style.display='block';
 }
 function testNext(){
@@ -790,6 +806,49 @@ function finishTest(){
   const pass = pct>=70;
   document.getElementById('testVerdict').textContent = pass ? '✅ PASS — exam-ready!' : '❌ Below passing (70%). Keep studying.';
   document.getElementById('testVerdict').style.color = pass ? 'var(--green)' : 'var(--red)';
+  // Per-objective breakdown + improvement areas
+  renderTestBreakdown();
+  // Save result to Supabase
+  saveTestResult(correct, total);
+}
+function renderTestBreakdown(){
+  const objNames = {1:'Pathologic processes',2:'Interventions',3:'KRT principles',4:'Teaching/learning',5:'Medications',6:'Infection control',7:'Collaboration/QI'};
+  let html = '<div class="card" style="text-align:left;margin-top:16px"><h2>Performance by Area</h2>';
+  // Sort objectives by accuracy ascending (weakest first)
+  const rows = Object.keys(testState.objTotal).map(obj=>{
+    const t=testState.objTotal[obj], c=testState.objCorrect[obj]||0;
+    return {obj:parseInt(obj), pct:Math.round(c/t*100), c, t};
+  }).sort((a,b)=>a.pct-b.pct);
+  rows.forEach(r=>{
+    const name = objNames[r.obj] || ('Objective '+r.obj);
+    const color = r.pct<60?'var(--red)':r.pct<70?'var(--gold)':'var(--green)';
+    html += `<div style="margin:10px 0"><div style="display:flex;justify-content:space-between;font-size:13px"><span><strong>${name}</strong></span><span>${r.c}/${r.t} (${r.pct}%)</span></div><div class="bar"><div style="width:${r.pct}%;background:${color}"></div></div></div>`;
+  });
+  // Improvement areas (weakest objectives)
+  const weak = rows.filter(r=>r.pct<70);
+  if(weak.length>0){
+    html += '<div style="margin-top:14px;padding:12px;background:var(--light);border-radius:8px;font-size:13px"><strong>📈 Focus on improving:</strong><br>' + weak.map(r=>objNames[r.obj]||('Objective '+r.obj)).join(', ') + '</div>';
+  } else {
+    html += '<div style="margin-top:14px;padding:12px;background:var(--light);border-radius:8px;font-size:13px"><strong>🎉 Strong across all areas!</strong></div>';
+  }
+  html += '</div>';
+  document.getElementById('testResult').insertAdjacentHTML('beforeend', html);
+}
+function saveTestResult(correct, total){
+  if(!currentUser) return;
+  const objective_scores = {};
+  Object.keys(testState.objTotal).forEach(obj=>{
+    const t=testState.objTotal[obj], c=testState.objCorrect[obj]||0;
+    objective_scores[obj] = Math.round(c/t*100);
+  });
+  try {
+    sbClient.from('test_results').insert({
+      user_name: currentUser,
+      total_questions: total,
+      correct: correct,
+      objective_scores: objective_scores
+    }).then(()=>{});
+  } catch(e){ /* non-blocking */ }
 }
 function quitTest(){ finishTest(); }
 
