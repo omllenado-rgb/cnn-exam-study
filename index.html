@@ -1039,8 +1039,10 @@ function startStudyTimer(){
     if(elapsed >= 30){
       p.today_seconds = (p.today_seconds||0) + elapsed;
       p.study_seconds = (p.study_seconds||0) + elapsed;
-      // Count study days (unique days studied)
+      // Count study days (unique days studied) + update streak
       if(p.last_study !== today){
+        const yest = new Date(Date.now()-86400000).toISOString().slice(0,10);
+        p.streak = (p.last_study===yest) ? (p.streak||0)+1 : 1;
         p.study_days = (p.study_days||0) + 1;
         p.last_study = today;
       }
