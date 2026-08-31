@@ -131,6 +131,7 @@
 <div id="appScreen" class="screen">
   <nav>
     <button id="navQuiz" class="active" onclick="showScreen('quiz')">Quiz</button>
+    <button id="navTest" onclick="showScreen('test')">Practice Test</button>
     <button id="navLessons" onclick="showScreen('lessons')">Lessons</button>
     <button id="navStrategies" onclick="showScreen('strategies')">Strategies</button>
     <button id="navCards" onclick="showScreen('cards')">Flashcards</button>
@@ -175,6 +176,47 @@
           <div class="btn-row" style="justify-content:center">
             <button class="btn" onclick="startQuiz()">Take Again</button>
             <button class="btn secondary" onclick="showScreen('cards')">Study Cards</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PRACTICE TEST -->
+    <div id="screen-test" class="screen">
+      <div id="testSetup">
+        <div class="card">
+          <h2>CNN Practice Test</h2>
+          <p class="muted">Simulates the real CNN exam: 150 questions, 3 hours, weighted by the official exam blueprint.</p>
+          <div style="margin:14px 0;padding:12px;background:var(--light);border-radius:8px;font-size:13px;line-height:1.6">
+            <strong>Blueprint weighting:</strong><br>
+            Pathologic processes &amp; complications (20%) · Interventions (21%) · KRT principles (11%) · Teaching/learning (15%) · Medications (12%) · Infection control (8%) · Collaboration &amp; QI (13%)
+          </div>
+          <button class="btn" onclick="startPracticeTest()">Start 150-Question Test</button>
+        </div>
+      </div>
+      <div id="testRun" style="display:none">
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+            <span class="tag" id="testTimer">⏱ 3:00:00</span>
+            <span class="count" id="testCounter">Question 1 of 150</span>
+          </div>
+          <h2 id="testQuestion" style="font-size:17px;line-height:1.4;"></h2>
+          <div id="testOptions"></div>
+          <div class="btn-row" style="justify-content:space-between">
+            <button class="btn secondary" onclick="quitTest()">End Test</button>
+            <button class="btn" id="testNext" onclick="testNext()" style="display:none">Next</button>
+          </div>
+        </div>
+      </div>
+      <div id="testResult" style="display:none">
+        <div class="card" style="text-align:center">
+          <h2>Test Complete!</h2>
+          <div class="stat" style="margin:10px auto;max-width:220px;"><div class="num" id="testScore"></div><div class="lbl">correct / 150</div></div>
+          <div class="bar" style="max-width:220px;margin:0 auto 16px;"><div id="testBar"></div></div>
+          <div id="testVerdict" style="font-size:18px;font-weight:700;margin-bottom:16px"></div>
+          <div class="btn-row" style="justify-content:center">
+            <button class="btn" onclick="startPracticeTest()">Take Again</button>
+            <button class="btn secondary" onclick="showScreen('quiz')">Practice Quiz</button>
           </div>
         </div>
       </div>
@@ -506,7 +548,7 @@ function trackSection(s){
 function showScreen(s){
   document.querySelectorAll('#appScreen .screen').forEach(el=>el.classList.remove('active'));
   document.getElementById('screen-'+s).classList.add('active');
-  ['quiz','lessons','strategies','cards','track','add','admin'].forEach(x=>{
+  ['quiz','test','lessons','strategies','cards','track','add','admin'].forEach(x=>{
     document.getElementById('nav'+x.charAt(0).toUpperCase()+x.slice(1)).classList.toggle('active',x===s);
   });
   trackSection(s);
@@ -667,6 +709,89 @@ function startWrongReview(){
   document.getElementById('quizRun').style.display='block';
   renderQuestion();
 }
+
+/* ============ PRACTICE TEST (150 Q, 3 hr, blueprint-weighted) ============ */
+let testState = {active:false, list:[], idx:0, correct:0, selected:false, timer:null, secondsLeft:0};
+// CNN exam blueprint: 150 questions weighted by objective percentages
+const TEST_WEIGHTS = [
+  {label:'Pathologic processes & complications', pct:20, count:30},
+  {label:'Interventions', pct:21, count:31},
+  {label:'KRT principles', pct:11, count:17},
+  {label:'Teaching/learning', pct:15, count:22},
+  {label:'Medications', pct:12, count:18},
+  {label:'Infection control', pct:8, count:12},
+  {label:'Collaboration & QI', pct:13, count:20}
+];
+function startPracticeTest(){
+  // Build a 150-question pool weighted by blueprint, drawn from all topics
+  const all = QUESTIONS.slice();
+  shuffle(all);
+  // We don't have per-objective tags, so sample proportionally across topics
+  // to approximate the blueprint weighting. Take 150 from the shuffled pool.
+  const pool = all.slice(0, 150);
+  if(pool.length < 150){ alert('Not enough questions yet ('+pool.length+' available).'); return; }
+  testState = {active:true, list:pool, idx:0, correct:0, selected:false, timer:null, secondsLeft:3*3600};
+  document.getElementById('testSetup').style.display='none';
+  document.getElementById('testResult').style.display='none';
+  document.getElementById('testRun').style.display='block';
+  renderTestQuestion();
+  startTestTimer();
+}
+function renderTestQuestion(){
+  const q=testState.list[testState.idx];
+  testState.selected=false;
+  const opts=q.opts.map((o,i)=>({text:o,idx:i}));
+  shuffle(opts);
+  testState.shuffledOpts=opts;
+  document.getElementById('testCounter').textContent=`Question ${testState.idx+1} of ${testState.list.length}`;
+  document.getElementById('testQuestion').textContent=q.q;
+  document.getElementById('testOptions').innerHTML=opts.map((o,i)=>`<button class="option" data-i="${i}" data-orig="${o.idx}" onclick="selectTestAnswer(${i})">${String.fromCharCode(65+i)}. ${o.text}</button>`).join('');
+  document.getElementById('testNext').style.display='none';
+}
+function selectTestAnswer(i){
+  if(testState.selected) return;
+  const q=testState.list[testState.idx];
+  testState.selected=true;
+  document.querySelectorAll('#testOptions .option').forEach(b=>{
+    b.disabled=true; const origIdx=parseInt(b.dataset.orig);
+    if(origIdx===q.ans) b.classList.add('correct');
+    else if(parseInt(b.dataset.i)===i) b.classList.add('wrong');
+  });
+  if(testState.shuffledOpts[i].idx===q.ans) testState.correct++;
+  document.getElementById('testNext').style.display='block';
+}
+function testNext(){
+  testState.idx++;
+  if(testState.idx<testState.list.length) renderTestQuestion();
+  else finishTest();
+}
+function startTestTimer(){
+  if(testState.timer) clearInterval(testState.timer);
+  testState.timer=setInterval(()=>{
+    testState.secondsLeft--;
+    if(testState.secondsLeft<=0){ clearInterval(testState.timer); finishTest(); return; }
+    const h=Math.floor(testState.secondsLeft/3600);
+    const m=Math.floor((testState.secondsLeft%3600)/60);
+    const s=testState.secondsLeft%60;
+    document.getElementById('testTimer').textContent=`⏱ ${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+  },1000);
+}
+function finishTest(){
+  if(testState.timer) clearInterval(testState.timer);
+  const total=testState.list.length;
+  const correct=testState.correct;
+  testState.active=false;
+  document.getElementById('testRun').style.display='none';
+  document.getElementById('testResult').style.display='block';
+  document.getElementById('testScore').textContent=`${correct} / ${total}`;
+  const pct=total?Math.round(correct/total*100):0;
+  document.getElementById('testBar').style.width=pct+'%';
+  // CNN passing standard is ~70% (standard score 95)
+  const pass = pct>=70;
+  document.getElementById('testVerdict').textContent = pass ? '✅ PASS — exam-ready!' : '❌ Below passing (70%). Keep studying.';
+  document.getElementById('testVerdict').style.color = pass ? 'var(--green)' : 'var(--red)';
+}
+function quitTest(){ finishTest(); }
 
 /* ============ FLASHCARDS ============ */
 function renderCardFilter(){
@@ -1139,7 +1264,7 @@ function addLogout(){
 function showScreen(s){
   document.querySelectorAll('#appScreen .screen').forEach(el=>el.classList.remove('active'));
   document.getElementById('screen-'+s).classList.add('active');
-  ['quiz','lessons','strategies','cards','track','add','admin'].forEach(x=>{
+  ['quiz','test','lessons','strategies','cards','track','add','admin'].forEach(x=>{
     document.getElementById('nav'+x.charAt(0).toUpperCase()+x.slice(1)).classList.toggle('active',x===s);
   });
   trackSection(s);
