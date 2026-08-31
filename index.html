@@ -774,6 +774,8 @@ function selectTestAnswer(i){
   const obj = q.obj || 0;
   testState.objTotal[obj] = (testState.objTotal[obj]||0)+1;
   if(isCorrect) testState.objCorrect[obj] = (testState.objCorrect[obj]||0)+1;
+  // Record to user progress so missed questions appear in Review Missed Questions
+  recordAnswer(q, isCorrect);
   document.getElementById('testNext').style.display='block';
 }
 function testNext(){
