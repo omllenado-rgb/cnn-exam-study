@@ -409,12 +409,18 @@
         <div class="admin-note">Admin view: manage users and export the spreadsheet.</div>
         <div class="btn-row" style="margin-bottom:12px">
           <button class="btn" onclick="loadAdmin()">Refresh</button>
-          <button class="btn secondary" onclick="exportCSV()">Export to Spreadsheet (CSV)</button>
+          <button class="btn secondary" onclick="exportCSV()">Export CSV</button>
+          <button class="btn secondary" onclick="exportXLSX()">Export Excel</button>
+          <button class="btn secondary" onclick="toggleDeleted()">Restore Deleted</button>
           <button class="btn secondary" onclick="adminLogout()">Lock Admin</button>
         </div>
         <div class="card">
           <h2>All Users</h2>
           <div class="table-wrap"><table id="adminTable"></table></div>
+        </div>
+        <div class="card" id="deletedPanel" style="display:none">
+          <h2>♻ Restore Deleted Users</h2>
+          <div class="table-wrap"><table id="deletedList"></table></div>
         </div>
       </div>
     </div>
@@ -1442,6 +1448,61 @@ function exportCSV(){
     const a=document.createElement('a');
     a.href=URL.createObjectURL(blob); a.download='cnn_study_progress.csv'; a.click();
   }).catch(e=>alert('Backend not ready.'));
+}
+function exportXLSX(){
+  if(!adminUnlocked) return;
+  sbClient.from('progress').select('*').order('user_name').then(({data,error})=>{
+    if(error){ alert('Backend error'); return; }
+    let rows = [['User','First Started','In-App Minutes','Manual Hours','Study Days','Min/Day','Last Active','Weakest Topic','Answered','Correct','Accuracy','Cards Known','Sessions','Streak']];
+    (data||[]).forEach(u=>{
+      const acc=u.answered?Math.round(u.correct/u.answered*100)+'%':'0%';
+      const ss=u.section_seconds||{}; const inAppMin=Math.round(Object.keys(ss).reduce((s,k)=>s+(ss[k]||0),0)/60);
+      const mh=u.manual_hours||{}; const manualHrs=Object.keys(mh).reduce((s,k)=>s+mh[k],0).toFixed(1);
+      const totalMin=inAppMin+Math.round(manualHrs*60); const sd=u.study_days||0; const mpd=sd>0?Math.round(totalMin/sd):0;
+      const fd=u.first_started?new Date(u.first_started).toLocaleDateString('en-US'):'';
+      const la=u.last_active?daysAgo(u.last_active):''; const wt=computeWeakestTopic(u.topic_stats||{})||'';
+      rows.push([u.user_name,fd,inAppMin,manualHrs,sd,mpd,la,wt,u.answered||0,u.correct||0,acc,u.known||0,u.sessions||0,u.streak||0]);
+    });
+    let table = '<table border="1"><thead><tr>';
+    rows[0].forEach(h=>table += '<th style="background:#022851;color:#fff">'+h+'</th>');
+    table += '</tr></thead><tbody>';
+    for(let i=1;i<rows.length;i++){ table += '<tr>' + rows[i].map(c=>'<td>'+c+'</td>').join('') + '</tr>'; }
+    table += '</tbody></table>';
+    const blob = new Blob(['<html><head><meta charset="utf-8"></head><body>'+table+'</body></html>'],{type:'application/vnd.ms-excel'});
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'cnn_study_progress.xls'; a.click();
+  });
+}
+function toggleDeleted(){
+  const panel = document.getElementById('deletedPanel');
+  const show = panel.style.display === 'none';
+  panel.style.display = show ? 'block' : 'none';
+  if(show) loadDeletedUsers();
+}
+async function loadDeletedUsers(){
+  if(!adminUnlocked) return;
+  try {
+    const {data,error} = await sbClient.from('deleted_users').select('user_name,deleted_at,id').order('deleted_at',{ascending:false});
+    if(error){ document.getElementById('deletedList').innerHTML='<tr><td colspan="3" class="empty">Could not load deleted users.</td></tr>'; return; }
+    let html='<tr><th>User</th><th>Deleted</th><th>Action</th></tr>';
+    (data||[]).forEach(u=>{
+      const d = u.deleted_at ? new Date(u.deleted_at).toLocaleString() : '';
+      html+=`<tr><td>${u.user_name}</td><td>${d}</td><td><button class="btn secondary" style="padding:4px 8px;font-size:12px" onclick="restoreUser(${u.id},'${u.user_name}')">Restore</button></td></tr>`;
+    });
+    if((data||[]).length===0) html+='<tr><td colspan="3" class="empty">No deleted users.</td></tr>';
+    document.getElementById('deletedList').innerHTML=html;
+  } catch(e){ document.getElementById('deletedList').innerHTML='<tr><td colspan="3" class="empty">Backend error.</td></tr>'; }
+}
+async function restoreUser(id, name){
+  if(!adminUnlocked) return; if(!confirm('Restore user "'+name+'" and all their progress?')) return;
+  try {
+    const {data,error} = await sbClient.from('deleted_users').select('*').eq('id',id).single();
+    if(error || !data){ alert('Could not find deleted user.'); return; }
+    const userData = data.data;
+    const {user_name, ...rest} = userData;
+    await sbClient.from('progress').upsert({user_name:user_name, ...rest});
+    await sbClient.from('deleted_users').delete().eq('id',id);
+    alert('User "'+name+'" restored.'); loadAdmin(); loadDeletedUsers();
+  } catch(e){ alert('Could not restore user: '+e.message); }
 }
 async function resetUser(name){
   if(!adminUnlocked) return;
