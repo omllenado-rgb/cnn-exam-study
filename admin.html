@@ -77,7 +77,9 @@
     <h1>CNN <span>Admin Dashboard</span></h1>
     <div class="actions">
       <button class="export-btn" onclick="exportCSV()">⬇ Download CSV</button>
+      <button class="export-btn" onclick="exportXLSX()">📊 Export Excel</button>
       <button onclick="exportEmail()">✉ Email CSV</button>
+      <button onclick="toggleDeleted()">♻ Restore Deleted</button>
       <button onclick="logout()">Log Out</button>
     </div>
   </div>
@@ -90,6 +92,13 @@
     <h2>All Users</h2>
     <div class="table-wrap">
       <table id="adminTable"></table>
+    </div>
+  </div>
+
+  <div class="card" id="deletedPanel" style="display:none">
+    <h2>♻ Restore Deleted Users</h2>
+    <div class="table-wrap">
+      <table id="deletedList"></table>
     </div>
   </div>
 </div>
@@ -244,12 +253,84 @@ async function resetUser(name){
   try { await sbClient.from('progress').update({answered:0,correct:0,known:0,sessions:0,streak:0,last_study:null,answers:{},wrong:{},known_cards:{},topic_stats:{},section_seconds:{},manual_hours:{},study_seconds:0,study_days:0,today_seconds:0}).eq('user_name',name); alert('User "'+name+'" reset.'); loadAdmin(); } catch(e){ alert('Could not reset user.'); }
 }
 async function deleteUser(name){
-  if(!unlocked) return; if(!confirm('Delete user "'+name+'" and ALL their progress? This cannot be undone.')) return;
-  try { await sbClient.from('progress').delete().eq('user_name',name); alert('User "'+name+'" deleted.'); loadAdmin(); } catch(e){ alert('Could not delete user.'); }
+  if(!unlocked) return; if(!confirm('Delete user "'+name+'" and ALL their progress? This cannot be undone, but the user CAN be restored afterwards.')) return;
+  try {
+    // Snapshot the full user row into deleted_users BEFORE deleting
+    const {data,error} = await sbClient.from('progress').select('*').eq('user_name',name).single();
+    if(!error && data){
+      await sbClient.from('deleted_users').insert({user_name:data.user_name, data:data});
+    }
+    await sbClient.from('progress').delete().eq('user_name',name);
+    alert('User "'+name+'" deleted. It can be restored via "Restore Deleted Users".'); 
+    loadAdmin(); 
+  } catch(e){ alert('Could not delete user: '+e.message); }
+}
+async function restoreUser(id, name){
+  if(!unlocked) return; if(!confirm('Restore user "'+name+'" and all their progress?')) return;
+  try {
+    const {data,error} = await sbClient.from('deleted_users').select('*').eq('id',id).single();
+    if(error || !data){ alert('Could not find deleted user.'); return; }
+    // Re-insert the snapshot back into progress
+    const userData = data.data;
+    // Remove id so it re-inserts cleanly; upsert by user_name
+    const {user_name, ...rest} = userData;
+    await sbClient.from('progress').upsert({user_name:user_name, ...rest});
+    // Remove from deleted_users now that it's restored
+    await sbClient.from('deleted_users').delete().eq('id',id);
+    alert('User "'+name+'" restored.'); 
+    loadAdmin(); 
+  } catch(e){ alert('Could not restore user: '+e.message); }
+}
+async function loadDeletedUsers(){
+  if(!unlocked) return;
+  try {
+    const {data,error} = await sbClient.from('deleted_users').select('user_name,deleted_at,id').order('deleted_at',{ascending:false});
+    if(error){ document.getElementById('deletedList').innerHTML='<tr><td colspan="3" class="empty">Could not load deleted users.</td></tr>'; return; }
+    let html='<tr><th>User</th><th>Deleted</th><th>Action</th></tr>';
+    (data||[]).forEach(u=>{
+      const d = u.deleted_at ? new Date(u.deleted_at).toLocaleString() : '';
+      html+=`<tr><td>${u.user_name}</td><td>${d}</td><td><button class="btn-sm" onclick="restoreUser(${u.id},'${u.user_name}')">Restore</button></td></tr>`;
+    });
+    if((data||[]).length===0) html+='<tr><td colspan="3" class="empty">No deleted users.</td></tr>';
+    document.getElementById('deletedList').innerHTML=html;
+  } catch(e){ document.getElementById('deletedList').innerHTML='<tr><td colspan="3" class="empty">Backend error.</td></tr>'; }
 }
 async function resetPassword(name){
   if(!unlocked) return; const newPass=prompt('Enter a new password for "'+name+'":'); if(!newPass) return;
   try { const salt=makeSalt(); const pass_hash=await hashPass(salt,newPass); await sbClient.from('progress').update({pass_salt:salt,pass_hash:pass_hash,password:null}).eq('user_name',name); alert('Password for "'+name+'" reset.'); } catch(e){ alert('Could not reset password.'); }
+}
+function toggleDeleted(){
+  const panel = document.getElementById('deletedPanel');
+  const show = panel.style.display === 'none';
+  panel.style.display = show ? 'block' : 'none';
+  if(show) loadDeletedUsers();
+}
+function exportXLSX(){
+  if(!unlocked) return;
+  sbClient.from('progress').select('*').order('user_name').then(({data,error})=>{
+    if(error){ alert('Backend error'); return; }
+    // Build HTML table for Excel export (openpyxl-free approach that works in browser)
+    let rows = [['User','First Started','In-App Minutes','Manual Hours','Study Days','Min/Day','Last Active','Weakest Topic','Answered','Correct','Accuracy','Cards Known','Sessions','Streak']];
+    (data||[]).forEach(u=>{
+      const acc=u.answered?Math.round(u.correct/u.answered*100)+'%':'0%';
+      const ss=u.section_seconds||{}; const inAppMin=Math.round(Object.keys(ss).reduce((s,k)=>s+(ss[k]||0),0)/60);
+      const mh=u.manual_hours||{}; const manualHrs=Object.keys(mh).reduce((s,k)=>s+mh[k],0).toFixed(1);
+      const totalMin=inAppMin+Math.round(manualHrs*60); const sd=u.study_days||0; const mpd=sd>0?Math.round(totalMin/sd):0;
+      const fd=u.first_started?new Date(u.first_started).toLocaleDateString('en-US'):'';
+      const la=u.last_active?daysAgo(u.last_active):''; const wt=computeWeakestTopic(u.topic_stats)||'';
+      rows.push([u.user_name,fd,inAppMin,manualHrs,sd,mpd,la,wt,u.answered||0,u.correct||0,acc,u.known||0,u.sessions||0,u.streak||0]);
+    });
+    // Build an HTML table with inline styles so Excel renders it
+    let table = '<table border="1"><thead><tr>';
+    rows[0].forEach(h=>table += '<th style="background:#022851;color:#fff">'+h+'</th>');
+    table += '</tr></thead><tbody>';
+    for(let i=1;i<rows.length;i++){
+      table += '<tr>' + rows[i].map(c=>'<td>'+c+'</td>').join('') + '</tr>';
+    }
+    table += '</tbody></table>';
+    const blob = new Blob(['<html><head><meta charset="utf-8"></head><body>'+table+'</body></html>'],{type:'application/vnd.ms-excel'});
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'cnn_study_progress.xls'; a.click();
+  });
 }
 </script>
 </body>

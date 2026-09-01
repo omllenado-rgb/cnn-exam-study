@@ -1457,12 +1457,15 @@ async function resetUser(name){
 }
 async function deleteUser(name){
   if(!adminUnlocked) return;
-  if(!confirm('Delete user "'+name+'" and all their progress? This cannot be undone.')) return;
+  if(!confirm('Delete user "'+name+'" and all their progress? This cannot be undone, but the user CAN be restored.')) return;
   try {
+    // Snapshot the user into deleted_users BEFORE deleting (for potential restore)
+    const {data} = await sbClient.from('progress').select('*').eq('user_name',name).single();
+    if(data){ await sbClient.from('deleted_users').insert({user_name:data.user_name, data:data}); }
     await sbClient.from('progress').delete().eq('user_name',name);
-    alert('User "'+name+'" deleted.');
+    alert('User "'+name+'" deleted. It can be restored via the admin dashboard.');
     loadAdmin();
-  } catch(e){ alert('Could not delete user.'); }
+  } catch(e){ alert('Could not delete user: '+e.message); }
 }
 async function resetPassword(name){
   if(!adminUnlocked) return;
