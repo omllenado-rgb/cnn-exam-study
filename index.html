@@ -605,6 +605,8 @@ function recordAnswer(q, isCorrect){
   p.answered = (p.answered||0)+1;
   if(isCorrect) p.correct = (p.correct||0)+1;
   else { p.wrong = p.wrong||{}; p.wrong[q.q]=true; }
+  // If answered correctly, remove from the wrong-answer review list
+  if(isCorrect && p.wrong && p.wrong[q.q]){ delete p.wrong[q.q]; }
   p.answers = p.answers||{}; p.answers[q.q]=isCorrect;
   p.topic_stats = p.topic_stats||{};
   p.topic_stats[q.topic] = p.topic_stats[q.topic]||{answered:0,correct:0};
