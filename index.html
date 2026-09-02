@@ -424,6 +424,12 @@
           <button class="btn secondary" onclick="toggleDeleted()">Restore Deleted</button>
           <button class="btn secondary" onclick="adminLogout()">Lock Admin</button>
         </div>
+        <div class="stat-grid" id="adminStats">
+          <div class="stat"><div class="num" id="statTotalUsers">0</div><div class="lbl">Total Users</div></div>
+          <div class="stat"><div class="num" id="statActiveUsers">0</div><div class="lbl">Active (7d)</div></div>
+          <div class="stat"><div class="num" id="statStudyHours">0</div><div class="lbl">Total Study Hours</div></div>
+          <div class="stat"><div class="num" id="statAnswered">0</div><div class="lbl">Answered Questions</div></div>
+        </div>
         <div class="card">
           <h2>All Users</h2>
           <div class="table-wrap"><table id="adminTable"></table></div>
@@ -1432,6 +1438,22 @@ async function loadAdmin(){
     const {data,error}=await sbClient.from('progress').select('*').order('user_name');
     if(error){ document.getElementById('adminTable').innerHTML=`<tr><td>Backend not ready: ${error.message}.</td></tr>`; return; }
     let html='<tr><th>User</th><th>First Started</th><th>In-App Min</th><th>Manual Hrs</th><th>Study Days</th><th>Min/Day</th><th>Last Active</th><th>Weakest Topic</th><th>Answered</th><th>Correct</th><th>Accuracy</th><th>Cards Known</th><th>Sessions</th><th>Streak</th><th>Actions</th></tr>';
+    // Compute summary stats
+    const now = Date.now();
+    const sevenDays = 7*86400000;
+    let totalUsers = (data||[]).length;
+    let activeUsers = 0;
+    let totalStudySec = 0;
+    let totalAnswered = 0;
+    (data||[]).forEach(u=>{
+      if(u.last_active && (now - new Date(u.last_active).getTime()) <= sevenDays) activeUsers++;
+      totalStudySec += (u.study_seconds||0);
+      totalAnswered += (u.answered||0);
+    });
+    document.getElementById('statTotalUsers').textContent = totalUsers;
+    document.getElementById('statActiveUsers').textContent = activeUsers;
+    document.getElementById('statStudyHours').textContent = (totalStudySec/3600).toFixed(1);
+    document.getElementById('statAnswered').textContent = totalAnswered;
     (data||[]).forEach(u=>{
       const acc=u.answered?Math.round(u.correct/u.answered*100)+'%':'0%';
       // in-app time = sum of section_seconds; manual = sum of manual_hours
