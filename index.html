@@ -152,6 +152,8 @@
           <h2>Practice Quiz</h2>
           <p class="muted">Choose a topic (or All), then start.</p>
           <div class="filter" id="quizFilter"></div>
+          <p class="muted" style="margin-top:12px">Or drill by exam objective:</p>
+          <div class="filter" id="objFilter"></div>
           <button class="btn" onclick="startQuiz()">Start Quiz</button>
         </div>
       </div>
@@ -202,6 +204,7 @@
           </div>
           <h2 id="testQuestion" style="font-size:17px;line-height:1.4;"></h2>
           <div id="testOptions"></div>
+          <div class="explain" id="testExplain" style="display:none"></div>
           <div class="btn-row" style="justify-content:space-between">
             <button class="btn secondary" onclick="quitTest()">End Test</button>
             <button class="btn" id="testNext" onclick="testNext()" style="display:none">Next</button>
@@ -214,6 +217,12 @@
           <div class="stat" style="margin:10px auto;max-width:220px;"><div class="num" id="testScore"></div><div class="lbl">correct / 150</div></div>
           <div class="bar" style="max-width:220px;margin:0 auto 16px;"><div id="testBar"></div></div>
           <div id="testVerdict" style="font-size:18px;font-weight:700;margin-bottom:16px"></div>
+          <div id="readinessGauge" style="max-width:260px;margin:0 auto 16px;text-align:center">
+            <div style="font-size:13px;color:var(--muted);margin-bottom:6px">Exam Readiness</div>
+            <div style="font-size:34px;font-weight:800" id="readinessPct">0%</div>
+            <div class="bar" style="height:14px;margin:6px auto 4px"><div id="readinessBar" style="height:100%"></div></div>
+            <div style="font-size:12px;color:var(--muted)" id="readinessLabel"></div>
+          </div>
           <div class="btn-row" style="justify-content:center">
             <button class="btn" onclick="startPracticeTest()">Take Again</button>
             <button class="btn secondary" onclick="showScreen('quiz')">Practice Quiz</button>
@@ -275,6 +284,7 @@
       <div class="flip-btn">
         <button class="primary" onclick="cardAction('prev')">&#9664; Prev</button>
         <button onclick="flipCard()">Flip</button>
+        <button class="primary" onclick="cardAction('again')">Again</button>
         <button class="primary" onclick="cardAction('known')">Know it</button>
         <button class="primary" onclick="cardAction('next')">Next &#9654;</button>
       </div>
@@ -449,6 +459,7 @@ let currentUser = null;
 let quizState = {active:false,list:[],idx:0,correct:0,selected:false};
 let cardState = {list:[],idx:0,flipped:false,filter:"all"};
 let quizFilter = "all";
+let objFilter = 0; // 0 = all objectives
 let cardFilter = "all";
 
 /* ============ THEME ============ */
@@ -519,7 +530,7 @@ async function login(){
     document.getElementById('appScreen').classList.add('active');
     cardState.list = FLASHCARDS.slice();
     cardState.idx = 0; cardState.flipped = false;
-    renderQuizFilter(); renderCardFilter(); showScreen('quiz');
+    renderQuizFilter(); renderObjFilter(); renderCardFilter(); showScreen('quiz');
     startStudyTimer();
     msg.textContent = '';
   } catch(e){ msg.textContent = 'Could not sign in. Check your connection.'; }
@@ -602,7 +613,8 @@ async function saveProgress(){
       study_seconds: p.study_seconds||0, study_days: p.study_days||0, today_seconds: p.today_seconds||0, today_date: p.today_date||null,
       first_started: p.first_started||null, last_active: p.last_active||null,
       manual_hours: p.manual_hours||{},
-      section_seconds: p.section_seconds||{}
+      section_seconds: p.section_seconds||{},
+      card_reps: p.card_reps||{}
     }, { onConflict: 'user_name' });
   } catch(e){ /* backend unavailable - local save is enough for now */ }
 }
@@ -636,6 +648,12 @@ function recordKnown(card){
   const p = window.userProgress;
   p.known_cards = p.known_cards||{};
   if(!p.known_cards[card.front]){ p.known_cards[card.front]=true; p.known=(p.known||0)+1; }
+  // Spaced repetition: double the interval each time you know it
+  p.card_reps = p.card_reps||{};
+  const rep = p.card_reps[card.front]||{interval:1, due:Date.now()};
+  rep.interval = Math.min((rep.interval||1)*2, 30); // cap at 30 days
+  rep.due = Date.now() + rep.interval*86400000;
+  p.card_reps[card.front]=rep;
   saveProgress();
 }
 
@@ -646,6 +664,13 @@ function renderQuizFilter(){
   document.getElementById('quizFilter').innerHTML=html;
 }
 function setQuizFilter(btn,t){ quizFilter=t; document.querySelectorAll('#quizFilter button').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); }
+function renderObjFilter(){
+  const objNames = {1:'Pathologic processes',2:'Interventions',3:'KRT principles',4:'Teaching/learning',5:'Medications',6:'Infection control',7:'Collaboration/QI'};
+  let html='<button class="active" data-o="0" onclick="setObjFilter(this,0)">All</button>';
+  for(let o=1;o<=7;o++) html+=`<button data-o="${o}" onclick="setObjFilter(this,${o})">${o}. ${objNames[o]}</button>`;
+  document.getElementById('objFilter').innerHTML=html;
+}
+function setObjFilter(btn,o){ objFilter=o; document.querySelectorAll('#objFilter button').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); }
 // Fisher-Yates shuffle (in place)
 function shuffle(arr){
   for(let i=arr.length-1;i>0;i--){
@@ -656,6 +681,8 @@ function shuffle(arr){
 }
 function startQuiz(){
   let pool = quizFilter==="all" ? QUESTIONS.slice() : QUESTIONS.filter(q=>q.topic===quizFilter);
+  // Apply objective filter if set
+  if(objFilter>0) pool = pool.filter(q=>q.obj===objFilter);
   if(pool.length===0) return;
   // Scramble the question order each time
   shuffle(pool);
@@ -767,6 +794,7 @@ function renderTestQuestion(){
   document.getElementById('testQuestion').textContent=q.q;
   document.getElementById('testOptions').innerHTML=opts.map((o,i)=>`<button class="option" data-i="${i}" data-orig="${o.idx}" onclick="selectTestAnswer(${i})">${String.fromCharCode(65+i)}. ${o.text}</button>`).join('');
   document.getElementById('testNext').style.display='none';
+  document.getElementById('testExplain').style.display='none';
 }
 function selectTestAnswer(i){
   if(testState.selected) return;
@@ -785,6 +813,10 @@ function selectTestAnswer(i){
   if(isCorrect) testState.objCorrect[obj] = (testState.objCorrect[obj]||0)+1;
   // Record to user progress so missed questions appear in Review Missed Questions
   recordAnswer(q, isCorrect);
+  // Show explanation
+  const exp=document.getElementById('testExplain');
+  exp.style.display='block';
+  exp.innerHTML=(isCorrect?'Correct! ':'Incorrect. ')+q.expl;
   document.getElementById('testNext').style.display='block';
 }
 function testNext(){
@@ -817,10 +849,26 @@ function finishTest(){
   const pass = pct>=70;
   document.getElementById('testVerdict').textContent = pass ? '✅ PASS — exam-ready!' : '❌ Below passing (70%). Keep studying.';
   document.getElementById('testVerdict').style.color = pass ? 'var(--green)' : 'var(--red)';
+  // Readiness gauge
+  renderReadiness(pct);
   // Per-objective breakdown + improvement areas
   renderTestBreakdown();
   // Save result to Supabase
   saveTestResult(correct, total);
+}
+function renderReadiness(pct){
+  const el=document.getElementById('readinessPct');
+  const bar=document.getElementById('readinessBar');
+  const lbl=document.getElementById('readinessLabel');
+  el.textContent=pct+'%';
+  bar.style.width=pct+'%';
+  let color, label;
+  if(pct>=85){ color='var(--green)'; label='🏆 Strong — you are ready for the exam.'; }
+  else if(pct>=70){ color='var(--green)'; label='✅ On track — keep reinforcing weak areas.'; }
+  else if(pct>=50){ color='var(--gold)'; label='📈 Building — focus on your weak objectives below.'; }
+  else { color='var(--red)'; label='📚 Early stage — keep studying and retake soon.'; }
+  bar.style.background=color;
+  lbl.textContent=label;
 }
 function renderTestBreakdown(){
   const objNames = {1:'Pathologic processes',2:'Interventions',3:'KRT principles',4:'Teaching/learning',5:'Medications',6:'Infection control',7:'Collaboration/QI'};
@@ -873,7 +921,17 @@ function setCardFilter(el,t){
   cardFilter=t;
   document.querySelectorAll('#cardFilter button').forEach(b=>b.classList.remove('active'));
   el.classList.add('active');
-  cardState.list = t==="all"?FLASHCARDS.slice():FLASHCARDS.filter(f=>f.topic===t);
+  let list = t==="all"?FLASHCARDS.slice():FLASHCARDS.filter(f=>f.topic===t);
+  // Spaced repetition: sort so due cards come first, known-but-not-due cards last
+  const reps = (window.userProgress&&window.userProgress.card_reps)||{};
+  const now = Date.now();
+  list.sort((a,b)=>{
+    const ra=reps[a.front], rb=reps[b.front];
+    const da = ra&&ra.due>now ? ra.due : 0; // 0 = due now or never seen
+    const db = rb&&rb.due>now ? rb.due : 0;
+    return da-db;
+  });
+  cardState.list = list;
   cardState.idx=0; cardState.flipped=false; renderCard();
 }
 function renderCard(){
@@ -888,6 +946,14 @@ function flipCard(){ cardState.flipped=!cardState.flipped; renderCard(); }
 function cardAction(a){
   if(cardState.list.length===0) return;
   if(a==='known'){ recordKnown(cardState.list[cardState.idx]); if(cardState.idx<cardState.list.length-1) cardState.idx++; }
+  else if(a==='again'){
+    // Reset the card's interval so it comes back sooner (spaced repetition)
+    const p=window.userProgress; const card=cardState.list[cardState.idx];
+    p.card_reps = p.card_reps||{};
+    p.card_reps[card.front] = {interval:1, due:Date.now()};
+    saveProgress();
+    if(cardState.idx<cardState.list.length-1) cardState.idx++;
+  }
   else if(a==='prev'){ if(cardState.idx>0) cardState.idx--; }
   else if(a==='next'){ if(cardState.idx<cardState.list.length-1) cardState.idx++; }
   cardState.flipped=false; renderCard();
