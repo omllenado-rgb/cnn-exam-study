@@ -229,7 +229,7 @@ function exportCSV(){
 }
 async function resetUser(name){
   if(!unlocked) return; if(!confirm('Reset all progress for "'+name+'"?')) return;
-  try { await sbClient.from('progress').update({answered:0,correct:0,known:0,sessions:0,streak:0,last_study:null,answers:{},wrong:{},known_cards:{},topic_stats:{},section_seconds:{},manual_hours:{},study_seconds:0,study_days:0,today_seconds:0}).eq('user_name',name); alert('User "'+name+'" reset.'); loadAdmin(); } catch(e){ alert('Could not reset user.'); }
+  try { await sbClient.from('progress').update({answered:0,correct:0,known:0,sessions:0,streak:0,last_study:null,answers:{},wrong:{},known_cards:{},topic_stats:{},section_seconds:{},manual_hours:{},card_reps:{},study_seconds:0,study_days:0,today_seconds:0,today_date:null}).eq('user_name',name); alert('User "'+name+'" reset.'); loadAdmin(); } catch(e){ alert('Could not reset user.'); }
 }
 async function deleteUser(name){
   if(!unlocked) return; if(!confirm('Delete user "'+name+'" and ALL their progress? This cannot be undone, but the user CAN be restored afterwards.')) return;
@@ -251,8 +251,8 @@ async function restoreUser(id, name){
     if(error || !data){ alert('Could not find deleted user.'); return; }
     // Re-insert the snapshot back into progress
     const userData = data.data;
-    // Remove id so it re-inserts cleanly; upsert by user_name
-    const {user_name, ...rest} = userData;
+    // Remove id and created_at so it re-inserts cleanly; upsert by user_name
+    const {user_name, id, created_at, ...rest} = userData;
     await sbClient.from('progress').upsert({user_name:user_name, ...rest});
     // Remove from deleted_users now that it's restored
     await sbClient.from('deleted_users').delete().eq('id',id);

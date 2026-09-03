@@ -916,7 +916,13 @@ function renderTestBreakdown(){
     html += '<div style="margin-top:14px;padding:12px;background:var(--light);border-radius:8px;font-size:13px"><strong>🎉 Strong across all areas!</strong></div>';
   }
   html += '</div>';
-  document.getElementById('testResult').insertAdjacentHTML('beforeend', html);
+  // Replace any existing breakdown instead of appending (prevents duplicates on retake)
+  const existing = document.getElementById('testBreakdown');
+  if(existing) existing.remove();
+  const wrap = document.createElement('div');
+  wrap.id = 'testBreakdown';
+  wrap.innerHTML = html;
+  document.getElementById('testResult').appendChild(wrap);
 }
 function saveTestResult(correct, total){
   if(!currentUser) return;
@@ -1639,7 +1645,7 @@ async function restoreUser(id, name){
     const {data,error} = await sbClient.from('deleted_users').select('*').eq('id',id).single();
     if(error || !data){ alert('Could not find deleted user.'); return; }
     const userData = data.data;
-    const {user_name, ...rest} = userData;
+    const {user_name, id, created_at, ...rest} = userData;
     await sbClient.from('progress').upsert({user_name:user_name, ...rest});
     await sbClient.from('deleted_users').delete().eq('id',id);
     alert('User "'+name+'" restored.'); loadAdmin(); loadDeletedUsers();
@@ -1651,7 +1657,8 @@ async function resetUser(name){
   try {
     await sbClient.from('progress').update({
       answered:0, correct:0, known:0, sessions:0, streak:0, last_study:null,
-      answers:{}, wrong:{}, known_cards:{}, topic_stats:{}
+      answers:{}, wrong:{}, known_cards:{}, topic_stats:{}, section_seconds:{}, manual_hours:{}, card_reps:{},
+      study_seconds:0, study_days:0, today_seconds:0, today_date:null
     }).eq('user_name',name);
     alert('User "'+name+'" reset.');
     loadAdmin();
