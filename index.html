@@ -977,9 +977,14 @@ function speak(text){
   const u = new SpeechSynthesisUtterance(text);
   u.rate = speechRate;
   u.pitch = 1;
-  // Prefer a natural English voice if available
+  // Prefer the best-sounding natural English voice available on this device.
+  // Priority: enhanced/natural voices > Samantha/Google US > any US English > any English.
   const voices = speechSynthesis.getVoices();
-  const en = voices.find(v=>/en[-_]US/i.test(v.lang) && /female|samantha|zira|google us/i.test(v.name)) || voices.find(v=>/en[-_]US/i.test(v.lang)) || voices.find(v=>/^en/i.test(v.lang));
+  const name = v=>v.name.toLowerCase();
+  const pick = (re) => voices.find(v=>re.test(name(v)));
+  const en = pick(/enhanced|natural|premium|neural|google us english|samantha|zira|aria|jenny|siri/i)
+    || pick(/en[-_]us/i)
+    || pick(/^en/i);
   if(en) u.voice = en;
   speechSynthesis.speak(u);
 }
