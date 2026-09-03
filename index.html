@@ -588,6 +588,12 @@ function trackSection(s){
   sectionStart = Date.now();
 }
 function showScreen(s){
+  // If leaving the practice test screen, stop the test timer so it doesn't
+  // keep running (and auto-finish) in the background.
+  if(s !== 'test' && testState && testState.timer){
+    clearInterval(testState.timer);
+    testState.timer = null;
+  }
   document.querySelectorAll('#appScreen .screen').forEach(el=>el.classList.remove('active'));
   document.getElementById('screen-'+s).classList.add('active');
   ['quiz','test','lessons','strategies','cards','track','add','admin'].forEach(x=>{
