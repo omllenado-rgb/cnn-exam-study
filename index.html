@@ -246,6 +246,21 @@
             <img id="lessonImg" alt="" style="max-width:100%;max-height:260px;border-radius:10px;border:1px solid #e3e8ee">
           </div>
           <div id="lessonBody" style="font-size:16px;line-height:1.7;color:var(--ink)"></div>
+          <div class="audio-bar" id="lessonAudio" style="display:none;margin-top:14px;padding:12px;background:var(--light);border-radius:8px">
+            <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+              <button class="btn secondary" style="padding:8px 14px;font-size:13px;margin:0" onclick="speakLesson()">🔊 Listen</button>
+              <button class="btn secondary" style="padding:8px 14px;font-size:13px;margin:0" onclick="stopSpeech()">⏹ Stop</button>
+              <label style="font-size:12px;color:var(--gray)">Speed
+                <select id="speechRate" style="width:auto;padding:6px;font-size:12px;margin:0" onchange="setSpeechRate()">
+                  <option value="0.75">0.75x</option>
+                  <option value="1" selected>1x</option>
+                  <option value="1.25">1.25x</option>
+                  <option value="1.5">1.5x</option>
+                  <option value="2">2x</option>
+                </select>
+              </label>
+            </div>
+          </div>
         </div>
         <div class="btn-row" style="justify-content:space-between;margin-top:4px">
           <button class="btn secondary" id="lessonPrev" onclick="lessonNav(-1)">&#9664; Prev</button>
@@ -287,6 +302,10 @@
         <button class="primary" onclick="cardAction('again')">Again</button>
         <button class="primary" onclick="cardAction('known')">Know it</button>
         <button class="primary" onclick="cardAction('next')">Next &#9654;</button>
+      </div>
+      <div class="flip-btn" style="margin-top:4px">
+        <button onclick="speakCard()">🔊 Listen</button>
+        <button onclick="stopSpeech()">⏹ Stop</button>
       </div>
     </div>
 
@@ -949,6 +968,33 @@ function renderCard(){
     : `<div class="front">${c.front}</div><div class="hint">tap to flip</div>`;
 }
 function flipCard(){ cardState.flipped=!cardState.flipped; renderCard(); }
+/* ============ READ-ALOUD (Web Speech API) ============ */
+let speechRate = 1;
+function setSpeechRate(){ speechRate = parseFloat(document.getElementById('speechRate').value)||1; }
+function speak(text){
+  if(!('speechSynthesis' in window)){ alert('Audio not supported on this device.'); return; }
+  stopSpeech();
+  const u = new SpeechSynthesisUtterance(text);
+  u.rate = speechRate;
+  u.pitch = 1;
+  // Prefer a natural English voice if available
+  const voices = speechSynthesis.getVoices();
+  const en = voices.find(v=>/en[-_]US/i.test(v.lang) && /female|samantha|zira|google us/i.test(v.name)) || voices.find(v=>/en[-_]US/i.test(v.lang)) || voices.find(v=>/^en/i.test(v.lang));
+  if(en) u.voice = en;
+  speechSynthesis.speak(u);
+}
+function stopSpeech(){ if('speechSynthesis' in window) speechSynthesis.cancel(); }
+function speakLesson(){
+  const l = lessonFilter==="all" ? LESSONS[lessonIndex] : LESSONS.filter(x=>x.topic===lessonFilter)[lessonIndex];
+  if(!l) return;
+  speak(l.title + '. ' + l.body.replace(/\n+/g,' '));
+}
+function speakCard(){
+  const c = cardState.list[cardState.idx];
+  if(!c) return;
+  // Read front, then back after a short pause
+  speak(c.front + '. ' + c.back);
+}
 function cardAction(a){
   if(cardState.list.length===0) return;
   if(a==='known'){ recordKnown(cardState.list[cardState.idx]); if(cardState.idx<cardState.list.length-1) cardState.idx++; }
@@ -1224,6 +1270,8 @@ function openLesson(i){
   // Render body as readable paragraphs, highlighting key terms
   const paras = l.body.split('\n').map(p=>p.trim()).filter(p=>p.length>0);
   document.getElementById('lessonBody').innerHTML = paras.map(p=>`<p style="margin:0 0 14px">${highlightKey(p)}</p>`).join('');
+  // Show read-aloud bar
+  document.getElementById('lessonAudio').style.display='block';
   // Prev/Next nav
   document.getElementById('lessonPos').textContent = `Lesson ${i+1} of ${list.length}`;
   document.getElementById('lessonPrev').style.visibility = i>0 ? 'visible' : 'hidden';
