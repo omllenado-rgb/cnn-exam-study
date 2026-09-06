@@ -193,6 +193,16 @@
             <strong>Blueprint weighting:</strong><br>
             Pathologic processes &amp; complications (20%) · Interventions (21%) · KRT principles (11%) · Teaching/learning (15%) · Medications (12%) · Infection control (8%) · Collaboration &amp; QI (13%)
           </div>
+          <div style="margin:14px 0">
+            <label style="font-size:13px;font-weight:600;color:var(--gray)">Choose an exam version (each has different questions):</label>
+            <div class="filter" id="examSelect" style="margin-top:6px"></div>
+          </div>
+          <div style="margin:14px 0;padding:12px;background:var(--light);border-radius:8px">
+            <label style="display:flex;align-items:center;gap:8px;font-size:14px;color:var(--ink);cursor:pointer">
+              <input type="checkbox" id="simMode" style="width:auto;margin:0">
+              <span><strong>Exam-day simulation mode</strong> — no explanations or correct/incorrect feedback until the end, just like the real test.</span>
+            </label>
+          </div>
           <button class="btn" onclick="startPracticeTest()">Start 150-Question Test</button>
         </div>
       </div>
@@ -226,6 +236,7 @@
           <div class="btn-row" style="justify-content:center">
             <button class="btn" onclick="startPracticeTest()">Take Again</button>
             <button class="btn secondary" onclick="showScreen('quiz')">Practice Quiz</button>
+            <button class="btn secondary" id="drillBtn" onclick="drillWeakAreas()" style="display:none">🎯 Drill Weak Areas</button>
           </div>
         </div>
       </div>
@@ -329,6 +340,15 @@
       <div class="stat-grid">
         <div class="stat"><div class="num" id="tManual">0h</div><div class="lbl">Manual Hours</div></div>
         <div class="stat"><div class="num" id="tInApp">0h</div><div class="lbl">In-App Time</div></div>
+      </div>
+      <div class="card" style="border-left:4px solid var(--gold)">
+        <h2>80-Hour Study Goal</h2>
+        <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px">
+          <span id="goalHoursLabel">0.0 / 80 hours</span>
+          <span id="goalPctLabel">0%</span>
+        </div>
+        <div class="bar" style="height:14px"><div id="goalBar" style="height:100%;width:0%;background:var(--gold)"></div></div>
+        <p class="muted" style="margin-top:8px" id="goalMsg">Keep going — every hour counts toward exam readiness.</p>
       </div>
       <div class="card" style="border-left:4px solid var(--cyan)">
         <h2>Log Study Hours</h2>
@@ -555,7 +575,7 @@ async function login(){
     document.getElementById('appScreen').classList.add('active');
     cardState.list = FLASHCARDS.slice();
     cardState.idx = 0; cardState.flipped = false;
-    renderQuizFilter(); renderObjFilter(); renderCardFilter(); showScreen('quiz');
+    renderQuizFilter(); renderObjFilter(); renderCardFilter(); renderExamSelect(); showScreen('quiz');
     startStudyTimer();
     msg.textContent = '';
   } catch(e){ msg.textContent = 'Could not sign in. Check your connection.'; }
@@ -778,7 +798,7 @@ function startWrongReview(){
 }
 
 /* ============ PRACTICE TEST (150 Q, 3 hr, blueprint-weighted) ============ */
-let testState = {active:false, list:[], idx:0, correct:0, selected:false, timer:null, secondsLeft:0, objCorrect:{}, objTotal:{}};
+let testState = {active:false, list:[], idx:0, correct:0, selected:false, timer:null, secondsLeft:0, objCorrect:{}, objTotal:{}, simMode:false, examVersion:0};
 // CNN exam blueprint: 150 questions weighted by objective percentages
 const TEST_WEIGHTS = [
   {label:'Pathologic processes & complications', pct:20, count:30, obj:1},
@@ -789,6 +809,20 @@ const TEST_WEIGHTS = [
   {label:'Infection control', pct:8, count:12, obj:6},
   {label:'Collaboration & QI', pct:13, count:20, obj:7}
 ];
+// Number of distinct exam versions (each draws a different question set)
+const EXAM_VERSIONS = 3;
+function renderExamSelect(){
+  let html='';
+  for(let v=0; v<EXAM_VERSIONS; v++){
+    html += `<button data-v="${v}" class="${v===0?'active':''}" onclick="setExamVersion(this,${v})">Exam ${v+1}</button>`;
+  }
+  document.getElementById('examSelect').innerHTML=html;
+}
+function setExamVersion(btn,v){
+  testState.examVersion=v;
+  document.querySelectorAll('#examSelect button').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+}
 function startPracticeTest(){
   // Build a 150-question pool weighted by blueprint objective
   const pool = [];
@@ -807,8 +841,13 @@ function startPracticeTest(){
     pool.push(...rest.slice(0, 150-pool.length));
   }
   if(pool.length < 150){ alert('Not enough questions yet ('+pool.length+' available).'); return; }
-  shuffle(pool);
-  testState = {active:true, list:pool, idx:0, correct:0, selected:false, timer:null, secondsLeft:3*3600, objCorrect:{}, objTotal:{}};
+  // Rotate the pool by exam version so each version starts at a different offset
+  const version = testState.examVersion || 0;
+  const offset = Math.floor(version * (pool.length / EXAM_VERSIONS));
+  const rotated = pool.slice(offset).concat(pool.slice(0, offset));
+  shuffle(rotated);
+  const simMode = document.getElementById('simMode').checked;
+  testState = {active:true, list:rotated, idx:0, correct:0, selected:false, timer:null, secondsLeft:3*3600, objCorrect:{}, objTotal:{}, simMode:simMode, examVersion:version};
   document.getElementById('testSetup').style.display='none';
   document.getElementById('testResult').style.display='none';
   document.getElementById('testRun').style.display='block';
@@ -831,11 +870,6 @@ function selectTestAnswer(i){
   if(testState.selected) return;
   const q=testState.list[testState.idx];
   testState.selected=true;
-  document.querySelectorAll('#testOptions .option').forEach(b=>{
-    b.disabled=true; const origIdx=parseInt(b.dataset.orig);
-    if(origIdx===q.ans) b.classList.add('correct');
-    else if(parseInt(b.dataset.i)===i) b.classList.add('wrong');
-  });
   const isCorrect = testState.shuffledOpts[i].idx===q.ans;
   if(isCorrect) testState.correct++;
   // Track per-objective
@@ -844,10 +878,24 @@ function selectTestAnswer(i){
   if(isCorrect) testState.objCorrect[obj] = (testState.objCorrect[obj]||0)+1;
   // Record to user progress so missed questions appear in Review Missed Questions
   recordAnswer(q, isCorrect);
-  // Show explanation
-  const exp=document.getElementById('testExplain');
-  exp.style.display='block';
-  exp.innerHTML=(isCorrect?'Correct! ':'Incorrect. ')+q.expl;
+  if(testState.simMode){
+    // Simulation mode: no correct/incorrect feedback, no explanation. Just advance.
+    document.querySelectorAll('#testOptions .option').forEach(b=>{
+      b.disabled=true;
+      if(parseInt(b.dataset.i)===i) b.classList.add('selected');
+    });
+    document.getElementById('testExplain').style.display='none';
+  } else {
+    // Normal mode: show correct/incorrect + explanation
+    document.querySelectorAll('#testOptions .option').forEach(b=>{
+      b.disabled=true; const origIdx=parseInt(b.dataset.orig);
+      if(origIdx===q.ans) b.classList.add('correct');
+      else if(parseInt(b.dataset.i)===i) b.classList.add('wrong');
+    });
+    const exp=document.getElementById('testExplain');
+    exp.style.display='block';
+    exp.innerHTML=(isCorrect?'Correct! ':'Incorrect. ')+q.expl;
+  }
   document.getElementById('testNext').style.display='block';
 }
 function testNext(){
@@ -884,8 +932,31 @@ function finishTest(){
   renderReadiness(pct);
   // Per-objective breakdown + improvement areas
   renderTestBreakdown();
+  // Show weak-area drill button if there are weak objectives
+  const weakObjs = Object.keys(testState.objTotal).filter(o=>{
+    const t=testState.objTotal[o], c=testState.objCorrect[o]||0;
+    return t>0 && (c/t*100)<70;
+  });
+  document.getElementById('drillBtn').style.display = weakObjs.length>0 ? 'inline-block' : 'none';
   // Save result to Supabase
   saveTestResult(correct, total);
+}
+function drillWeakAreas(){
+  // Build a quiz from the user's weakest objectives (below 70%)
+  const weakObjs = Object.keys(testState.objTotal).filter(o=>{
+    const t=testState.objTotal[o], c=testState.objCorrect[o]||0;
+    return t>0 && (c/t*100)<70;
+  }).map(Number);
+  if(weakObjs.length===0){ alert('No weak areas to drill. Great job!'); return; }
+  const pool = QUESTIONS.filter(q=>weakObjs.includes(q.obj));
+  if(pool.length===0){ alert('No questions available for your weak areas.'); return; }
+  shuffle(pool);
+  quizState={active:true, list:pool, idx:0, correct:0, selected:false};
+  document.getElementById('quizSetup').style.display='none';
+  document.getElementById('quizResult').style.display='none';
+  document.getElementById('quizRun').style.display='block';
+  showScreen('quiz');
+  renderQuestion();
 }
 function renderReadiness(pct){
   const el=document.getElementById('readinessPct');
@@ -1050,6 +1121,17 @@ function renderTrackers(){
   const inAppSec = Object.keys(ss).reduce((s,k)=>s+(ss[k]||0),0);
   document.getElementById('tManual').textContent = fmtHours(manualHrs*3600);
   document.getElementById('tInApp').textContent = fmtHours(inAppSec);
+  // 80-hour study goal
+  const totalHrs = (totalSec/3600) + manualHrs;
+  const goalPct = Math.min(100, Math.round(totalHrs/80*100));
+  document.getElementById('goalHoursLabel').textContent = totalHrs.toFixed(1) + ' / 80 hours';
+  document.getElementById('goalPctLabel').textContent = goalPct + '%';
+  document.getElementById('goalBar').style.width = goalPct + '%';
+  const goalMsg = document.getElementById('goalMsg');
+  if(totalHrs >= 80) goalMsg.textContent = '🎉 80-hour goal reached! You are exam-ready.';
+  else if(totalHrs >= 60) goalMsg.textContent = 'Almost there — ' + (80-totalHrs).toFixed(1) + ' hours to go.';
+  else if(totalHrs >= 40) goalMsg.textContent = 'Halfway! Keep the momentum going.';
+  else goalMsg.textContent = 'Keep going — every hour counts toward exam readiness.';
   const wrongCount=Object.keys(p.wrong||{}).length;
   document.getElementById('wrongCount').textContent=wrongCount?`${wrongCount} question(s) to review.`:'No missed questions yet.';
   let html='';
