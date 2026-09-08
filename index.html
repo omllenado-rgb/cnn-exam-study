@@ -1603,12 +1603,11 @@ async function loadAdmin(){
     document.getElementById('statAnswered').textContent = totalAnswered;
     (data||[]).forEach(u=>{
       const acc=u.answered?Math.round(u.correct/u.answered*100)+'%':'0%';
-      // in-app time = sum of section_seconds; manual = sum of manual_hours
-      const ss=u.section_seconds||{};
-      const inAppMin = Math.round(Object.keys(ss).reduce((s,k)=>s+(ss[k]||0),0)/60);
+      // in-app time = study_seconds minus manual hours (logStudyHours adds manual to study_seconds)
       const mh=u.manual_hours||{};
       const manualHrs = Object.keys(mh).reduce((s,k)=>s+mh[k],0).toFixed(1);
-      const totalMin = inAppMin + Math.round(manualHrs*60);
+      const inAppMin = Math.round(((u.study_seconds||0) - parseFloat(manualHrs)*3600)/60);
+      const totalMin = inAppMin + Math.round(parseFloat(manualHrs)*60);
       const studyDays = u.study_days||0;
       const minPerDay = studyDays>0 ? Math.round(totalMin/studyDays) : 0;
       const firstDate = u.first_started ? new Date(u.first_started).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'2-digit'}) : '—';
@@ -1667,11 +1666,10 @@ function exportCSV(){
     if(error){ alert('Backend not ready: '+error.message); return; }
     (data||[]).forEach(u=>{
       const acc=u.answered?Math.round(u.correct/u.answered*100)+'%':'0%';
-      const ss=u.section_seconds||{};
-      const inAppMin = Math.round(Object.keys(ss).reduce((s,k)=>s+(ss[k]||0),0)/60);
       const mh=u.manual_hours||{};
       const manualHrs = Object.keys(mh).reduce((s,k)=>s+mh[k],0).toFixed(1);
-      const totalMin = inAppMin + Math.round(manualHrs*60);
+      const inAppMin = Math.round(((u.study_seconds||0) - parseFloat(manualHrs)*3600)/60);
+      const totalMin = inAppMin + Math.round(parseFloat(manualHrs)*60);
       const sd = u.study_days||0;
       const mpd = sd>0?Math.round(totalMin/sd):0;
       const fd = u.first_started ? new Date(u.first_started).toLocaleDateString('en-US') : '';
@@ -1691,9 +1689,9 @@ function exportXLSX(){
     let rows = [['User','First Started','In-App Minutes','Manual Hours','Study Days','Min/Day','Last Active','Weakest Topic','Answered','Correct','Accuracy','Cards Known','Sessions','Streak']];
     (data||[]).forEach(u=>{
       const acc=u.answered?Math.round(u.correct/u.answered*100)+'%':'0%';
-      const ss=u.section_seconds||{}; const inAppMin=Math.round(Object.keys(ss).reduce((s,k)=>s+(ss[k]||0),0)/60);
       const mh=u.manual_hours||{}; const manualHrs=Object.keys(mh).reduce((s,k)=>s+mh[k],0).toFixed(1);
-      const totalMin=inAppMin+Math.round(manualHrs*60); const sd=u.study_days||0; const mpd=sd>0?Math.round(totalMin/sd):0;
+      const inAppMin=Math.round(((u.study_seconds||0) - parseFloat(manualHrs)*3600)/60);
+      const totalMin=inAppMin+Math.round(parseFloat(manualHrs)*60); const sd=u.study_days||0; const mpd=sd>0?Math.round(totalMin/sd):0;
       const fd=u.first_started?new Date(u.first_started).toLocaleDateString('en-US'):'';
       const la=u.last_active?daysAgo(u.last_active):''; const wt=computeWeakestTopic(u.topic_stats||{})||'';
       rows.push([u.user_name,fd,inAppMin,manualHrs,sd,mpd,la,wt,u.answered||0,u.correct||0,acc,u.known||0,u.sessions||0,u.streak||0]);
