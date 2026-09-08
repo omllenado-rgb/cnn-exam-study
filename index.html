@@ -1117,12 +1117,12 @@ function renderTrackers(){
   // Manual vs in-app time split
   const mh = p.manual_hours||{};
   const manualHrs = Object.keys(mh).reduce((s,k)=>s+mh[k],0);
-  const ss = p.section_seconds||{};
-  const inAppSec = Object.keys(ss).reduce((s,k)=>s+(ss[k]||0),0);
+  // In-app time = study_seconds minus manual hours (logStudyHours adds manual to study_seconds)
+  const inAppSec = Math.max(0, (p.study_seconds||0) - Math.round(manualHrs*3600));
   document.getElementById('tManual').textContent = fmtHours(manualHrs*3600);
   document.getElementById('tInApp').textContent = fmtHours(inAppSec);
-  // 80-hour study goal
-  const totalHrs = (totalSec/3600) + manualHrs;
+  // 80-hour study goal (study_seconds already includes manual hours, so no double-count)
+  const totalHrs = totalSec/3600;
   const goalPct = Math.min(100, Math.round(totalHrs/80*100));
   document.getElementById('goalHoursLabel').textContent = totalHrs.toFixed(1) + ' / 80 hours';
   document.getElementById('goalPctLabel').textContent = goalPct + '%';
