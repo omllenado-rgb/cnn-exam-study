@@ -582,28 +582,38 @@ async function login(){
 }
 function logout(){
   stopStudyTimer();
+  saveProgress(); // persist the final seconds of this session (also flushes section time)
   currentUser = null;
   document.getElementById('appScreen').classList.remove('active');
   document.getElementById('loginScreen').classList.add('active');
   document.getElementById('loginName').value='';
   document.getElementById('loginPass').value='';
 }
+// Flush any unpersisted study seconds to local storage when the tab is closed
+window.addEventListener('pagehide', ()=>{
+  flushCurrentSection();
+  if(window.userProgress) saveLocal(window.userProgress);
+});
 
 /* ============ NAV ============ */
 let sectionTimer = null;
 let sectionStart = null;
 let currentSection = null;
-function trackSection(s){
-  // Save time spent in the previous section
+function flushCurrentSection(){
   if(currentSection && sectionStart){
     const secs = Math.floor((Date.now()-sectionStart)/1000);
     if(secs>0){
       const p = window.userProgress||{};
       p.section_seconds = p.section_seconds||{};
       p.section_seconds[currentSection] = (p.section_seconds[currentSection]||0) + secs;
-      saveProgress();
+      sectionStart = Date.now();
     }
   }
+}
+function trackSection(s){
+  // Save time spent in the previous section (shared flush keeps section_seconds
+  // in step with study_seconds, so the section bars reconcile with In-App time)
+  flushCurrentSection();
   currentSection = s;
   sectionStart = Date.now();
 }
@@ -638,6 +648,23 @@ function defaultProgress(){
   return {user_name:currentUser, answered:0, correct:0, known:0, sessions:0, streak:0, last_study:null, answers:{}, wrong:{}, known_cards:{}, topic_stats:{}, study_seconds:0, study_days:0, today_seconds:0, today_date:null, first_started:new Date().toISOString(), last_active:new Date().toISOString()};
 }
 
+/* Local calendar-day helpers: day boundaries follow the user's clock, not UTC,
+   so evening study isn't attributed to the wrong day. Also robust to legacy
+   UTC-based last_study values. */
+function localDateStr(d){ const y=d.getFullYear(), m=String(d.getMonth()+1).padStart(2,'0'), day=String(d.getDate()).padStart(2,'0'); return y+'-'+m+'-'+day; }
+function todayStr(){ return localDateStr(new Date()); }
+function yesterdayStr(){ const d=new Date(); d.setDate(d.getDate()-1); return localDateStr(d); }
+function markStudyDay(p, today){
+  if(p.last_study !== today){
+    const yest = yesterdayStr();
+    // Continue the streak if last study was yesterday, or if the stored date is
+    // ahead of the local calendar (legacy UTC residue) — that's still "recent".
+    p.streak = (p.last_study===yest || (p.last_study||'')>yest) ? (p.streak||0)+1 : 1;
+    p.study_days = (p.study_days||0) + 1;
+    p.last_study = today;
+  }
+}
+
 async function loadUserProgress(){
   if(!currentUser) return;
   // Start with local data immediately so the app never waits
@@ -650,6 +677,7 @@ async function loadUserProgress(){
 }
 async function saveProgress(){
   if(!currentUser) return;
+  flushCurrentSection(); // keep per-section time in lockstep with study_seconds
   const p = window.userProgress || {};
   p.last_active = new Date().toISOString(); // keep fresh on each save
   saveLocal(p); // always save locally first
@@ -681,13 +709,8 @@ function recordAnswer(q, isCorrect){
   p.topic_stats[q.topic] = p.topic_stats[q.topic]||{answered:0,correct:0};
   p.topic_stats[q.topic].answered++;
   if(isCorrect) p.topic_stats[q.topic].correct++;
-  // streak
-  const today = new Date().toISOString().slice(0,10);
-  if(p.last_study !== today){
-    const yest = new Date(Date.now()-86400000).toISOString().slice(0,10);
-    p.streak = (p.last_study===yest) ? (p.streak||0)+1 : 1;
-    p.last_study = today;
-  }
+  // streak (local calendar day; the manual logger and study timer share this rule)
+  markStudyDay(p, todayStr());
   saveProgress();
 }
 function recordSession(){
@@ -1149,7 +1172,7 @@ function renderSectionBars(){
   const p=window.userProgress||{};
   const ss=p.section_seconds||{};
   const el=document.getElementById('tSectionBars');
-  const labels={quiz:'Quiz',lessons:'Lessons',strategies:'Strategies',cards:'Flashcards',track:'Trackers'};
+  const labels={quiz:'Quiz',lessons:'Lessons',strategies:'Strategies',cards:'Flashcards',track:'Trackers',test:'Practice Test'};
   const keys=Object.keys(ss).filter(k=>labels[k]);
   if(keys.length===0){ el.innerHTML='<p class="muted">No section time yet. Spend time in each section to see it here.</p>'; return; }
   let html='';
@@ -1170,11 +1193,11 @@ function logStudyHours(){
   // Also add to total study seconds and today
   const secs = Math.round(hrs*3600);
   p.study_seconds = (p.study_seconds||0) + secs;
-  const today = new Date().toISOString().slice(0,10);
+  const today = todayStr();
   if(p.today_date===today) p.today_seconds = (p.today_seconds||0) + secs;
   else { p.today_date=today; p.today_seconds=secs; }
-  // Count a study day
-  if(p.last_study!==today){ p.study_days=(p.study_days||0)+1; p.last_study=today; }
+  // Count a study day + advance the streak (matches the in-app timer rule)
+  markStudyDay(p, today);
   document.getElementById('logHours').value='';
   saveProgress();
   renderTrackers();
@@ -1253,7 +1276,7 @@ function startStudyTimer(){
   studyTimer = setInterval(()=>{
     if(!window.userProgress) return;
     const p = window.userProgress;
-    const today = new Date().toISOString().slice(0,10);
+    const today = todayStr();
     // Reset today's counter if a new day
     if(p.today_date !== today){
       p.today_date = today;
@@ -1266,12 +1289,7 @@ function startStudyTimer(){
       p.today_seconds = (p.today_seconds||0) + elapsed;
       p.study_seconds = (p.study_seconds||0) + elapsed;
       // Count study days (unique days studied) + update streak
-      if(p.last_study !== today){
-        const yest = new Date(Date.now()-86400000).toISOString().slice(0,10);
-        p.streak = (p.last_study===yest) ? (p.streak||0)+1 : 1;
-        p.study_days = (p.study_days||0) + 1;
-        p.last_study = today;
-      }
+      markStudyDay(p, today);
       studyStart = now;
       saveProgress();
     }
