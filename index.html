@@ -582,30 +582,69 @@ async function login(){
 }
 function logout(){
   stopStudyTimer();
+  saveProgress(); // persist the final seconds of this session (also flushes section time)
   currentUser = null;
   document.getElementById('appScreen').classList.remove('active');
   document.getElementById('loginScreen').classList.add('active');
   document.getElementById('loginName').value='';
   document.getElementById('loginPass').value='';
 }
+// Flush any unpersisted study seconds to local storage when the tab is closed
+window.addEventListener('pagehide', ()=>{
+  flushCurrentSection();
+  flushStudyWindow();
+  if(window.userProgress) saveLocal(window.userProgress);
+});
 
 /* ============ NAV ============ */
 let sectionTimer = null;
 let sectionStart = null;
 let currentSection = null;
-function trackSection(s){
-  // Save time spent in the previous section
+/* Idle detection: pause the study timer when the user walks away for a while,
+   so minutes spent away from the keyboard don't count as study time. */
+let lastActivity = Date.now();
+const IDLE_LIMIT = 5*60*1000; // 5 minutes
+function isIdle(){ return (Date.now() - lastActivity) >= IDLE_LIMIT; }
+['mousemove','mousedown','keydown','keyup','touchstart','wheel','scroll'].forEach(ev=>
+  window.addEventListener(ev, ()=>{ lastActivity = Date.now(); }, {passive:true}));
+
+function flushCurrentSection(){
   if(currentSection && sectionStart){
-    const secs = Math.floor((Date.now()-sectionStart)/1000);
-    if(secs>0){
-      const p = window.userProgress||{};
-      p.section_seconds = p.section_seconds||{};
-      p.section_seconds[currentSection] = (p.section_seconds[currentSection]||0) + secs;
-      saveProgress();
+    // Don't tally the span toward a section while the user is away.
+    if(!isIdle()){
+      const secs = Math.floor((Date.now()-sectionStart)/1000);
+      if(secs>0){
+        const p = window.userProgress||{};
+        p.section_seconds = p.section_seconds||{};
+        p.section_seconds[currentSection] = (p.section_seconds[currentSection]||0) + secs;
+      }
     }
+    sectionStart = Date.now();
   }
+}
+function trackSection(s){
+  // Save time spent in the previous section (shared flush keeps section_seconds
+  // in step with study_seconds, so the section bars reconcile with In-App time)
+  flushCurrentSection();
   currentSection = s;
   sectionStart = Date.now();
+}
+// Tally the wall-clock time since the last heartbeat. Also called on logout and
+// tab close so the final partial window is never lost. Idle spans are dropped,
+// and studyStart advances so a gap is never double-counted.
+function flushStudyWindow(){
+  if(!studyStart) return;
+  const now = Date.now();
+  const elapsed = Math.floor((now - studyStart)/1000);
+  if(elapsed>0 && !isIdle()){
+    const p = window.userProgress||{};
+    const today = todayStr();
+    if(p.today_date !== today){ p.today_date = today; p.today_seconds = 0; }
+    p.today_seconds = (p.today_seconds||0) + elapsed;
+    p.study_seconds = (p.study_seconds||0) + elapsed;
+    markStudyDay(p, today);
+  }
+  studyStart = now;
 }
 function showScreen(s){
   // If leaving the practice test screen, stop the test timer so it doesn't
@@ -624,8 +663,22 @@ function showScreen(s){
   if(s==='strategies') renderStrategies();
   if(s==='cards') renderCard();
   if(s==='track') renderTrackers();
-  if(s==='add') renderAddTopics();
-  if(s==='admin') loadAdmin();
+  if(s==='add'){
+    renderAddTopics();
+    // Reset the add-content gate each time the screen is opened.
+    addUnlocked = false;
+    document.getElementById('addPanel').style.display='none';
+    document.getElementById('addLogin').style.display='block';
+    document.getElementById('addPass').value='';
+  }
+  if(s==='admin'){
+    // Reset the admin gate each time the screen is opened.
+    adminUnlocked = false;
+    document.getElementById('adminPanel').style.display='none';
+    document.getElementById('adminLogin').style.display='block';
+    document.getElementById('adminPass').value='';
+    loadAdmin();
+  }
 }
 
 /* ============ SUPABASE HELPERS (resilient - never blocks the app) ============ */
@@ -636,6 +689,23 @@ function saveLocal(p){ try { localStorage.setItem(localKey(), JSON.stringify(p))
 
 function defaultProgress(){
   return {user_name:currentUser, answered:0, correct:0, known:0, sessions:0, streak:0, last_study:null, answers:{}, wrong:{}, known_cards:{}, topic_stats:{}, study_seconds:0, study_days:0, today_seconds:0, today_date:null, first_started:new Date().toISOString(), last_active:new Date().toISOString()};
+}
+
+/* Local calendar-day helpers: day boundaries follow the user's clock, not UTC,
+   so evening study isn't attributed to the wrong day. Also robust to legacy
+   UTC-based last_study values. */
+function localDateStr(d){ const y=d.getFullYear(), m=String(d.getMonth()+1).padStart(2,'0'), day=String(d.getDate()).padStart(2,'0'); return y+'-'+m+'-'+day; }
+function todayStr(){ return localDateStr(new Date()); }
+function yesterdayStr(){ const d=new Date(); d.setDate(d.getDate()-1); return localDateStr(d); }
+function markStudyDay(p, today){
+  if(p.last_study !== today){
+    const yest = yesterdayStr();
+    // Continue the streak if last study was yesterday, or if the stored date is
+    // ahead of the local calendar (legacy UTC residue) — that's still "recent".
+    p.streak = (p.last_study===yest || (p.last_study||'')>yest) ? (p.streak||0)+1 : 1;
+    p.study_days = (p.study_days||0) + 1;
+    p.last_study = today;
+  }
 }
 
 async function loadUserProgress(){
@@ -650,6 +720,7 @@ async function loadUserProgress(){
 }
 async function saveProgress(){
   if(!currentUser) return;
+  flushCurrentSection(); // keep per-section time in lockstep with study_seconds
   const p = window.userProgress || {};
   p.last_active = new Date().toISOString(); // keep fresh on each save
   saveLocal(p); // always save locally first
@@ -681,13 +752,8 @@ function recordAnswer(q, isCorrect){
   p.topic_stats[q.topic] = p.topic_stats[q.topic]||{answered:0,correct:0};
   p.topic_stats[q.topic].answered++;
   if(isCorrect) p.topic_stats[q.topic].correct++;
-  // streak
-  const today = new Date().toISOString().slice(0,10);
-  if(p.last_study !== today){
-    const yest = new Date(Date.now()-86400000).toISOString().slice(0,10);
-    p.streak = (p.last_study===yest) ? (p.streak||0)+1 : 1;
-    p.last_study = today;
-  }
+  // streak (local calendar day; the manual logger and study timer share this rule)
+  markStudyDay(p, todayStr());
   saveProgress();
 }
 function recordSession(){
@@ -711,7 +777,7 @@ function recordKnown(card){
 /* ============ QUIZ ============ */
 function renderQuizFilter(){
   let html='<button class="active" data-t="all" onclick="setQuizFilter(this,\'all\')">All</button>';
-  topics.forEach(t=>html+=`<button data-t="${t}" onclick="setQuizFilter(this,'${t}')">${t}</button>`);
+  topics.forEach(t=>html+=`<button data-t="${esc(t)}" onclick="setQuizFilter(this,${jsStr(t)})">${esc(t)}</button>`);
   document.getElementById('quizFilter').innerHTML=html;
 }
 function setQuizFilter(btn,t){ quizFilter=t; document.querySelectorAll('#quizFilter button').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); }
@@ -1022,7 +1088,7 @@ function quitTest(){ finishTest(); }
 /* ============ FLASHCARDS ============ */
 function renderCardFilter(){
   let html='<button class="active" data-f="all" onclick="setCardFilter(this,\'all\')">All</button>';
-  topics.forEach(t=>html+=`<button data-f="${t}" onclick="setCardFilter(this,'${t}')">${t}</button>`);
+  topics.forEach(t=>html+=`<button data-f="${esc(t)}" onclick="setCardFilter(this,${jsStr(t)})">${esc(t)}</button>`);
   document.getElementById('cardFilter').innerHTML=html;
 }
 function setCardFilter(el,t){
@@ -1118,7 +1184,7 @@ function renderTrackers(){
   const mh = p.manual_hours||{};
   const manualHrs = Object.keys(mh).reduce((s,k)=>s+mh[k],0);
   // In-app time = study_seconds minus manual hours (logStudyHours adds manual to study_seconds)
-  const inAppSec = Math.max(0, (p.study_seconds||0) - Math.round(manualHrs*3600));
+  const inAppSec = Math.max(0, (p.study_seconds||0) - manualHrs*3600);
   document.getElementById('tManual').textContent = fmtHours(manualHrs*3600);
   document.getElementById('tInApp').textContent = fmtHours(inAppSec);
   // 80-hour study goal (study_seconds already includes manual hours, so no double-count)
@@ -1149,7 +1215,7 @@ function renderSectionBars(){
   const p=window.userProgress||{};
   const ss=p.section_seconds||{};
   const el=document.getElementById('tSectionBars');
-  const labels={quiz:'Quiz',lessons:'Lessons',strategies:'Strategies',cards:'Flashcards',track:'Trackers'};
+  const labels={quiz:'Quiz',lessons:'Lessons',strategies:'Strategies',cards:'Flashcards',track:'Trackers',test:'Practice Test'};
   const keys=Object.keys(ss).filter(k=>labels[k]);
   if(keys.length===0){ el.innerHTML='<p class="muted">No section time yet. Spend time in each section to see it here.</p>'; return; }
   let html='';
@@ -1170,11 +1236,11 @@ function logStudyHours(){
   // Also add to total study seconds and today
   const secs = Math.round(hrs*3600);
   p.study_seconds = (p.study_seconds||0) + secs;
-  const today = new Date().toISOString().slice(0,10);
+  const today = todayStr();
   if(p.today_date===today) p.today_seconds = (p.today_seconds||0) + secs;
   else { p.today_date=today; p.today_seconds=secs; }
-  // Count a study day
-  if(p.last_study!==today){ p.study_days=(p.study_days||0)+1; p.last_study=today; }
+  // Count a study day + advance the streak (matches the in-app timer rule)
+  markStudyDay(p, today);
   document.getElementById('logHours').value='';
   saveProgress();
   renderTrackers();
@@ -1242,7 +1308,13 @@ function startFocusQuiz(){
   showScreen('quiz');
 }
 function fmtMin(sec){ return Math.round(sec/60)+'m'; }
-function fmtHours(sec){ const h=Math.floor(sec/3600); const m=Math.round((sec%3600)/60); return h>0 ? h+'h '+m+'m' : m+'m'; }
+function fmtHours(sec){
+  // Round to the nearest minute first, then carry so we never show "1h 60m".
+  const totalMin = Math.round(sec/60);
+  const h = Math.floor(totalMin/60);
+  const m = totalMin%60;
+  return h>0 ? h+'h '+m+'m' : m+'m';
+}
 
 // ===== Study time tracking =====
 let studyTimer = null;
@@ -1253,39 +1325,33 @@ function startStudyTimer(){
   studyTimer = setInterval(()=>{
     if(!window.userProgress) return;
     const p = window.userProgress;
-    const today = new Date().toISOString().slice(0,10);
+    const today = todayStr();
     // Reset today's counter if a new day
     if(p.today_date !== today){
       p.today_date = today;
       p.today_seconds = 0;
     }
-    // Add elapsed time since last tick (every 30s)
-    const now = Date.now();
-    const elapsed = Math.floor((now - studyStart)/1000);
-    if(elapsed >= 30){
-      p.today_seconds = (p.today_seconds||0) + elapsed;
-      p.study_seconds = (p.study_seconds||0) + elapsed;
-      // Count study days (unique days studied) + update streak
-      if(p.last_study !== today){
-        const yest = new Date(Date.now()-86400000).toISOString().slice(0,10);
-        p.streak = (p.last_study===yest) ? (p.streak||0)+1 : 1;
-        p.study_days = (p.study_days||0) + 1;
-        p.last_study = today;
-      }
-      studyStart = now;
-      saveProgress();
+    // If the user has been away for 5+ minutes, drop the idle span from both
+    // the study window and the section timer — it is not study time.
+    if(isIdle()){
+      studyStart = Date.now();
+      if(currentSection) sectionStart = Date.now();
+      return;
     }
+    // Tally the elapsed time since the last tick and persist it.
+    flushStudyWindow();
+    saveProgress();
   }, 30000);
 }
 function stopStudyTimer(){
-  if(studyTimer){ clearInterval(studyTimer); studyTimer=null; }
+  if(studyTimer){ flushStudyWindow(); clearInterval(studyTimer); studyTimer=null; }
 }
 
 /* ============ ADD CONTENT ============ */
 function renderAddTopics(){
   const sel=document.getElementById('addTopic');
   const sel2=document.getElementById('addCardTopic');
-  const opts=topics.map(t=>`<option>${t}</option>`).join('');
+  const opts=topics.map(t=>`<option>${esc(t)}</option>`).join('');
   sel.innerHTML=opts; sel2.innerHTML=opts;
 }
 function addQuestion(){
@@ -1317,7 +1383,7 @@ let lessonFilter = "all";
 function renderLessonFilter(){
   const el = document.getElementById('lessonFilter');
   let html='<button class="active" data-f="all" onclick="setLessonFilter(this,\'all\')">All</button>';
-  topics.forEach(t=>html+=`<button data-f="${t}" onclick="setLessonFilter(this,'${t}')">${t}</button>`);
+  topics.forEach(t=>html+=`<button data-f="${esc(t)}" onclick="setLessonFilter(this,${jsStr(t)})">${esc(t)}</button>`);
   el.innerHTML = html;
 }
 function setLessonFilter(el,t){
@@ -1433,7 +1499,7 @@ function renderStrategyFilter(){
   const cats = [...new Set(STRATEGIES.map(s=>s.category))];
   const el = document.getElementById('strategyFilter');
   let html='<button class="active" data-f="all" onclick="setStrategyFilter(this,\'all\')">All</button>';
-  cats.forEach(c=>html+=`<button data-f="${c}" onclick="setStrategyFilter(this,'${c}')">${c}</button>`);
+  cats.forEach(c=>html+=`<button data-f="${esc(c)}" onclick="setStrategyFilter(this,${jsStr(c)})">${esc(c)}</button>`);
   el.innerHTML = html;
 }
 function setStrategyFilter(el,c){
@@ -1552,47 +1618,22 @@ function addLogout(){
   document.getElementById('addPanel').style.display='none';
   document.getElementById('addLogin').style.display='block';
 }
-function showScreen(s){
-  document.querySelectorAll('#appScreen .screen').forEach(el=>el.classList.remove('active'));
-  document.getElementById('screen-'+s).classList.add('active');
-  ['quiz','test','lessons','strategies','cards','track','add','admin'].forEach(x=>{
-    document.getElementById('nav'+x.charAt(0).toUpperCase()+x.slice(1)).classList.toggle('active',x===s);
-  });
-  trackSection(s);
-  if(s==='lessons') renderLessons();
-  if(s==='strategies') renderStrategies();
-  if(s==='cards') renderCard();
-  if(s==='track') renderTrackers();
-  if(s==='add'){
-    // Reset add-content gate each time it's opened
-    addUnlocked = false;
-    document.getElementById('addPanel').style.display='none';
-    document.getElementById('addLogin').style.display='block';
-    document.getElementById('addPass').value='';
-  }
-  if(s==='admin'){
-    // Reset admin gate each time it's opened
-    adminUnlocked = false;
-    document.getElementById('adminPanel').style.display='none';
-    document.getElementById('adminLogin').style.display='block';
-    document.getElementById('adminPass').value='';
-  }
-}
+// (The single showScreen definition lives in the NAV section above — it stops
+// the practice-test timer on navigation AND handles the add/admin gates.)
 
-/* HTML-escape a value for safe use inside the admin table's attributes and text.
-   Protects against stored-XSS via user_name. */
-function escHtml(s){
-  return String(s==null?'':s)
-    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
-    .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+/* Shared helpers for the admin time split and safe output of user-controlled names */
+function appSplit(u){
+  const mh=u.manual_hours||{};
+  const manualHrs=Object.keys(mh).reduce((s,k)=>s+mh[k],0);
+  const inAppSec=Math.max(0,(u.study_seconds||0)-manualHrs*3600);
+  return { inAppMin:Math.round(inAppSec/60), manualHrs:manualHrs.toFixed(1), totalMin:Math.round((u.study_seconds||0)/60) };
 }
-/* CSV-safe: prefix formula characters to block spreadsheet formula injection,
-   and quote cells containing commas/quotes/newlines. */
-function csvCell(s){
-  s=String(s==null?'':s);
-  if(/^[=+\-@]/.test(s)) s="'"+s;
-  return (/[",\n]/.test(s)) ? '"'+s.replace(/"/g,'""')+'"' : s;
-}
+function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+// Safe string argument for inline onclick handlers: JSON-encode (so quotes and
+// backslashes become JS-safe escapes) then HTML-escape the wrapper quotes so
+// nothing can break out of the attribute.
+function jsStr(s){ return esc(JSON.stringify(s==null?'':s)); }
+function csvCell(s){ s=String(s==null?'':s); if(/^[=+\-@]/.test(s)) s="'"+s; return (/[",\n]/.test(s)) ? '"'+s.replace(/"/g,'""')+'"' : s; }
 async function loadAdmin(){
   if(!adminUnlocked) return;
   try {
@@ -1618,18 +1659,15 @@ async function loadAdmin(){
     (data||[]).forEach(u=>{
       const acc=u.answered?Math.round(u.correct/u.answered*100)+'%':'0%';
       // in-app time = study_seconds minus manual hours (logStudyHours adds manual to study_seconds)
-      const mh=u.manual_hours||{};
-      const manualHrs = Object.keys(mh).reduce((s,k)=>s+mh[k],0).toFixed(1);
-      const inAppMin = Math.round(((u.study_seconds||0) - parseFloat(manualHrs)*3600)/60);
-      const totalMin = inAppMin + Math.round(parseFloat(manualHrs)*60);
+      const sp=appSplit(u);
+      const manualHrs=sp.manualHrs, inAppMin=sp.inAppMin, totalMin=sp.totalMin;
       const studyDays = u.study_days||0;
       const minPerDay = studyDays>0 ? Math.round(totalMin/studyDays) : 0;
       const firstDate = u.first_started ? new Date(u.first_started).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'2-digit'}) : '—';
       const lastActive = u.last_active ? daysAgo(u.last_active) : '—';
       const weakest = computeWeakestTopic(u.topic_stats||{});
-      const ename = escHtml(u.user_name);
       html+=`<tr>
-        <td><a href="javascript:void(0)" data-view="${ename}" style="color:var(--link);font-weight:600">${ename}</a></td>
+        <td><a href="javascript:void(0)" onclick="viewUser(${jsStr(u.user_name)})" style="color:var(--link);font-weight:600">${esc(u.user_name)}</a></td>
         <td>${firstDate}</td>
         <td>${inAppMin}</td>
         <td>${manualHrs}</td>
@@ -1644,25 +1682,14 @@ async function loadAdmin(){
         <td>${u.sessions||0}</td>
         <td>${u.streak||0}</td>
         <td>
-          <button data-pw="${ename}" style="font-size:11px;padding:4px 8px;margin:2px;background:var(--light);color:var(--ink);border:1px solid var(--border);border-radius:6px">Reset PW</button>
-          <button data-reset="${ename}" style="font-size:11px;padding:4px 8px;margin:2px;background:var(--light);color:var(--ink);border:1px solid var(--border);border-radius:6px">Reset</button>
-          <button data-del="${ename}" style="font-size:11px;padding:4px 8px;margin:2px;background:var(--aggie-red);color:#fff;border:none;border-radius:6px">Delete</button>
+          <button onclick="resetPassword(${jsStr(u.user_name)})" style="font-size:11px;padding:4px 8px;margin:2px;background:var(--light);color:var(--ink);border:1px solid var(--border);border-radius:6px">Reset PW</button>
+          <button onclick="resetUser(${jsStr(u.user_name)})" style="font-size:11px;padding:4px 8px;margin:2px;background:var(--light);color:var(--ink);border:1px solid var(--border);border-radius:6px">Reset</button>
+          <button onclick="deleteUser(${jsStr(u.user_name)})" style="font-size:11px;padding:4px 8px;margin:2px;background:var(--aggie-red);color:#fff;border:none;border-radius:6px">Delete</button>
         </td>
       </tr>`;
     });
     if(!data||data.length===0) html+='<tr><td colspan="15">No users yet.</td></tr>';
     document.getElementById('adminTable').innerHTML=html;
-    // Event delegation: no inline onclick, so a crafted user_name can't inject JS.
-    const tbl=document.getElementById('adminTable');
-    tbl.onclick=function(ev){
-      const el=ev.target; if(!el) return;
-      const uname=el.getAttribute('data-view')||el.getAttribute('data-pw')||el.getAttribute('data-reset')||el.getAttribute('data-del');
-      if(!uname) return;
-      if(el.hasAttribute('data-view')) viewUser(uname);
-      else if(el.hasAttribute('data-pw')) resetPassword(uname);
-      else if(el.hasAttribute('data-reset')) resetUser(uname);
-      else if(el.hasAttribute('data-del')) deleteUser(uname);
-    };
   } catch(e){ document.getElementById('adminTable').innerHTML='<tr><td>Backend not ready.</td></tr>'; }
 }
 function daysAgo(iso){
@@ -1692,16 +1719,14 @@ function exportCSV(){
     if(error){ alert('Backend not ready: '+error.message); return; }
     (data||[]).forEach(u=>{
       const acc=u.answered?Math.round(u.correct/u.answered*100)+'%':'0%';
-      const mh=u.manual_hours||{};
-      const manualHrs = Object.keys(mh).reduce((s,k)=>s+mh[k],0).toFixed(1);
-      const inAppMin = Math.round(((u.study_seconds||0) - parseFloat(manualHrs)*3600)/60);
-      const totalMin = inAppMin + Math.round(parseFloat(manualHrs)*60);
+      const sp=appSplit(u);
+      const manualHrs=sp.manualHrs, inAppMin=sp.inAppMin, totalMin=sp.totalMin;
       const sd = u.study_days||0;
       const mpd = sd>0?Math.round(totalMin/sd):0;
       const fd = u.first_started ? new Date(u.first_started).toLocaleDateString('en-US') : '';
       const la = u.last_active ? daysAgo(u.last_active) : '';
       const wt = computeWeakestTopic(u.topic_stats||{}) || '';
-      csv+=`${csvCell(escHtml(u.user_name))},"${fd}",${inAppMin},${manualHrs},${sd},${mpd},"${la}","${wt}",${u.answered||0},${u.correct||0},${acc},${u.known||0},${u.sessions||0},${u.streak||0}\n`;
+      csv+=`${csvCell(u.user_name)},"${fd}",${inAppMin},${manualHrs},${sd},${mpd},"${la}","${wt}",${u.answered||0},${u.correct||0},${acc},${u.known||0},${u.sessions||0},${u.streak||0}\n`;
     });
     const blob=new Blob([csv],{type:'text/csv'});
     const a=document.createElement('a');
@@ -1715,12 +1740,10 @@ function exportXLSX(){
     let rows = [['User','First Started','In-App Minutes','Manual Hours','Study Days','Min/Day','Last Active','Weakest Topic','Answered','Correct','Accuracy','Cards Known','Sessions','Streak']];
     (data||[]).forEach(u=>{
       const acc=u.answered?Math.round(u.correct/u.answered*100)+'%':'0%';
-      const mh=u.manual_hours||{}; const manualHrs=Object.keys(mh).reduce((s,k)=>s+mh[k],0).toFixed(1);
-      const inAppMin=Math.round(((u.study_seconds||0) - parseFloat(manualHrs)*3600)/60);
-      const totalMin=inAppMin+Math.round(parseFloat(manualHrs)*60); const sd=u.study_days||0; const mpd=sd>0?Math.round(totalMin/sd):0;
+      const sp=appSplit(u); const manualHrs=sp.manualHrs, inAppMin=sp.inAppMin, totalMin=sp.totalMin; const sd=u.study_days||0; const mpd=sd>0?Math.round(totalMin/sd):0;
       const fd=u.first_started?new Date(u.first_started).toLocaleDateString('en-US'):'';
       const la=u.last_active?daysAgo(u.last_active):''; const wt=computeWeakestTopic(u.topic_stats||{})||'';
-      rows.push([escHtml(u.user_name),fd,inAppMin,manualHrs,sd,mpd,la,wt,u.answered||0,u.correct||0,acc,u.known||0,u.sessions||0,u.streak||0]);
+      rows.push([esc(u.user_name),fd,inAppMin,manualHrs,sd,mpd,la,wt,u.answered||0,u.correct||0,acc,u.known||0,u.sessions||0,u.streak||0]);
     });
     let table = '<table border="1"><thead><tr>';
     rows[0].forEach(h=>table += '<th style="background:#022851;color:#fff">'+h+'</th>');
@@ -1745,7 +1768,7 @@ async function loadDeletedUsers(){
     let html='<tr><th>User</th><th>Deleted</th><th>Action</th></tr>';
     (data||[]).forEach(u=>{
       const d = u.deleted_at ? new Date(u.deleted_at).toLocaleString() : '';
-      html+=`<tr><td>${u.user_name}</td><td>${d}</td><td><button class="btn secondary" style="padding:4px 8px;font-size:12px" onclick="restoreUser(${u.id},'${u.user_name}')">Restore</button></td></tr>`;
+      html+=`<tr><td>${esc(u.user_name)}</td><td>${d}</td><td><button class="btn secondary" style="padding:4px 8px;font-size:12px" onclick="restoreUser(${jsStr(u.id)},${jsStr(u.user_name)})">Restore</button></td></tr>`;
     });
     if((data||[]).length===0) html+='<tr><td colspan="3" class="empty">No deleted users.</td></tr>';
     document.getElementById('deletedList').innerHTML=html;

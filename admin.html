@@ -167,20 +167,17 @@ function computeWeakestTopic(ts){
   return weakest || '—';
 }
 
-/* HTML-escape a value for safe use inside the admin table's attributes and text.
-   Protects against stored-XSS via user_name. */
-function escHtml(s){
-  return String(s==null?'':s)
-    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
-    .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+/* Shared helpers for the admin time split and safe output of user-controlled names */
+function appSplit(u){
+  const mh=u.manual_hours||{};
+  const manualHrs=Object.keys(mh).reduce((s,k)=>s+mh[k],0);
+  const inAppSec=Math.max(0,(u.study_seconds||0)-manualHrs*3600);
+  return { inAppMin:Math.round(inAppSec/60), manualHrs:manualHrs.toFixed(1), totalMin:Math.round((u.study_seconds||0)/60) };
 }
-/* CSV-safe: prefix formula characters to block spreadsheet formula injection,
-   and quote cells containing commas/quotes/newlines. */
-function csvCell(s){
-  s=String(s==null?'':s);
-  if(/^[=+\-@]/.test(s)) s="'"+s;
-  return (/[",\n]/.test(s)) ? '"'+s.replace(/"/g,'""')+'"' : s;
-}
+function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+// Safe string argument for inline onclick handlers (JSON-encode then HTML-escape).
+function jsStr(s){ return esc(JSON.stringify(s==null?'':s)); }
+function csvCell(s){ s=String(s==null?'':s); if(/^[=+\-@]/.test(s)) s="'"+s; return (/[",\n]/.test(s)) ? '"'+s.replace(/"/g,'""')+'"' : s; }
 
 /* ==== LOAD ADMIN ==== */
 async function loadAdmin(){
@@ -193,7 +190,7 @@ async function loadAdmin(){
     const totalUsers=users.length;
     const active = users.filter(u=>u.last_active && new Date(u.last_active)>Date.now()-7*86400000).length;
     let totalMin=0, totalAnswered=0;
-    users.forEach(u=>{ const mh=u.manual_hours||{}; const mn=Object.keys(mh).reduce((s,k)=>s+mh[k],0); const ia=Math.round(((u.study_seconds||0) - mn*3600)/60); totalMin += ia + Math.round(mn*60); totalAnswered += u.answered||0; });
+    users.forEach(u=>{ totalMin += appSplit(u).totalMin; totalAnswered += u.answered||0; });
     document.getElementById('summary').innerHTML = '<strong>'+totalUsers+'</strong> user(s) · <strong>'+Math.round(totalMin/60)+'h</strong> total study · <strong>'+totalAnswered+'</strong> questions answered. Use Download CSV for a full spreadsheet.';
     document.getElementById('stats').innerHTML =
       '<div class="stat"><div class="num">'+totalUsers+'</div><div class="lbl">Total Users</div></div>'+
@@ -203,34 +200,22 @@ async function loadAdmin(){
     let html='<tr><th>User</th><th>First</th><th>In-App(Min)</th><th>Manual(Hrs)</th><th>Study Days</th><th>Min/Day</th><th>Last Active</th><th>Weak Topic</th><th>Answered</th><th>Acc</th><th>Cards</th><th>Streak</th><th>Actions</th></tr>';
     (users).forEach(u=>{
       const acc=u.answered?Math.round(u.correct/u.answered*100)+'%':'0%';
-      const mh=u.manual_hours||{}; const manualHrs=Object.keys(mh).reduce((s,k)=>s+mh[k],0).toFixed(1);
-      const inAppMin=Math.round(((u.study_seconds||0) - parseFloat(manualHrs)*3600)/60);
-      const totalMin=inAppMin+Math.round(parseFloat(manualHrs)*60);
+      const sp=appSplit(u);
+      const manualHrs=sp.manualHrs, inAppMin=sp.inAppMin, totalMin=sp.totalMin;
       const studyDays=u.study_days||0; const minPerDay=studyDays>0?Math.round(totalMin/studyDays):0;
       const firstDate=u.first_started?new Date(u.first_started).toLocaleDateString('en-US',{month:'short',day:'numeric'}):'—';
       const lastActive=u.last_active?daysAgo(u.last_active):'—';
       const weakest=computeWeakestTopic(u.topic_stats);
-      const ename=escHtml(u.user_name);
       html+=`<tr>
-        <td>${ename}</td><td>${firstDate}</td><td>${inAppMin}</td><td>${manualHrs}</td><td>${studyDays}</td><td>${minPerDay}</td><td>${lastActive}</td><td>${weakest}</td><td>${u.answered||0}</td><td>${acc}</td><td>${u.known||0}</td><td>${u.streak||0}</td>
+        <td>${esc(u.user_name)}</td><td>${firstDate}</td><td>${inAppMin}</td><td>${manualHrs}</td><td>${studyDays}</td><td>${minPerDay}</td><td>${lastActive}</td><td>${weakest}</td><td>${u.answered||0}</td><td>${acc}</td><td>${u.known||0}</td><td>${u.streak||0}</td>
         <td>
-          <button class="btn-sm" data-pw="${ename}">Reset PW</button>
-          <button class="btn-sm" data-reset="${ename}">Reset</button>
-          <button class="btn-sm btn-danger" data-del="${ename}">Delete</button>
+          <button class="btn-sm" onclick="resetPassword(${jsStr(u.user_name)})">Reset PW</button>
+          <button class="btn-sm" onclick="resetUser(${jsStr(u.user_name)})">Reset</button>
+          <button class="btn-sm btn-danger" onclick="deleteUser(${jsStr(u.user_name)})">Delete</button>
         </td></tr>`;
     });
     if(users.length===0) html+='<tr><td colspan="13" class="empty">No users yet.</td></tr>';
     document.getElementById('adminTable').innerHTML=html;
-    // Event delegation: no inline onclick, so a crafted user_name can't inject JS.
-    const tbl=document.getElementById('adminTable');
-    tbl.onclick=function(ev){
-      const el=ev.target; if(!el) return;
-      const uname=el.getAttribute('data-pw')||el.getAttribute('data-reset')||el.getAttribute('data-del');
-      if(!uname) return;
-      if(el.hasAttribute('data-pw')) resetPassword(uname);
-      else if(el.hasAttribute('data-reset')) resetUser(uname);
-      else if(el.hasAttribute('data-del')) deleteUser(uname);
-    };
   } catch(e){ document.getElementById('adminTable').innerHTML='<tr><td class="empty">Backend error.</td></tr>'; }
 }
 
@@ -242,12 +227,12 @@ function exportCSV(){
     if(error){ alert('Backend error'); return; }
     (data||[]).forEach(u=>{
       const acc=u.answered?Math.round(u.correct/u.answered*100)+'%':'0%';
-      const mh=u.manual_hours||{}; const manualHrs=Object.keys(mh).reduce((s,k)=>s+mh[k],0).toFixed(1);
-      const inAppMin=Math.round(((u.study_seconds||0) - parseFloat(manualHrs)*3600)/60);
-      const totalMin=inAppMin+Math.round(parseFloat(manualHrs)*60); const sd=u.study_days||0; const mpd=sd>0?Math.round(totalMin/sd):0;
+      const sp=appSplit(u);
+      const manualHrs=sp.manualHrs, inAppMin=sp.inAppMin, totalMin=sp.totalMin;
+      const sd=u.study_days||0; const mpd=sd>0?Math.round(totalMin/sd):0;
       const fd=u.first_started?new Date(u.first_started).toLocaleDateString('en-US'):'';
       const la=u.last_active?daysAgo(u.last_active):''; const wt=computeWeakestTopic(u.topic_stats)||'';
-      csv+=`${csvCell(escHtml(u.user_name))},"${fd}",${inAppMin},${manualHrs},${sd},${mpd},"${la}","${wt}",${u.answered||0},${u.correct||0},${acc},${u.known||0},${u.sessions||0},${u.streak||0}\n`;
+      csv+=`${csvCell(u.user_name)},"${fd}",${inAppMin},${manualHrs},${sd},${mpd},"${la}","${wt}",${u.answered||0},${u.correct||0},${acc},${u.known||0},${u.sessions||0},${u.streak||0}\n`;
     });
     const blob=new Blob([csv],{type:'text/csv'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='cnn_study_progress.csv'; a.click();
   });
@@ -293,7 +278,7 @@ async function loadDeletedUsers(){
     let html='<tr><th>User</th><th>Deleted</th><th>Action</th></tr>';
     (data||[]).forEach(u=>{
       const d = u.deleted_at ? new Date(u.deleted_at).toLocaleString() : '';
-      html+=`<tr><td>${u.user_name}</td><td>${d}</td><td><button class="btn-sm" onclick="restoreUser(${u.id},'${u.user_name}')">Restore</button></td></tr>`;
+      html+=`<tr><td>${esc(u.user_name)}</td><td>${d}</td><td><button class="btn-sm" onclick="restoreUser(${jsStr(u.id)},${jsStr(u.user_name)})">Restore</button></td></tr>`;
     });
     if((data||[]).length===0) html+='<tr><td colspan="3" class="empty">No deleted users.</td></tr>';
     document.getElementById('deletedList').innerHTML=html;
@@ -317,12 +302,10 @@ function exportXLSX(){
     let rows = [['User','First Started','In-App Minutes','Manual Hours','Study Days','Min/Day','Last Active','Weakest Topic','Answered','Correct','Accuracy','Cards Known','Sessions','Streak']];
     (data||[]).forEach(u=>{
       const acc=u.answered?Math.round(u.correct/u.answered*100)+'%':'0%';
-      const mh=u.manual_hours||{}; const manualHrs=Object.keys(mh).reduce((s,k)=>s+mh[k],0).toFixed(1);
-      const inAppMin=Math.round(((u.study_seconds||0) - parseFloat(manualHrs)*3600)/60);
-      const totalMin=inAppMin+Math.round(parseFloat(manualHrs)*60); const sd=u.study_days||0; const mpd=sd>0?Math.round(totalMin/sd):0;
+      const sp=appSplit(u); const manualHrs=sp.manualHrs, inAppMin=sp.inAppMin, totalMin=sp.totalMin; const sd=u.study_days||0; const mpd=sd>0?Math.round(totalMin/sd):0;
       const fd=u.first_started?new Date(u.first_started).toLocaleDateString('en-US'):'';
       const la=u.last_active?daysAgo(u.last_active):''; const wt=computeWeakestTopic(u.topic_stats)||'';
-      rows.push([escHtml(u.user_name),fd,inAppMin,manualHrs,sd,mpd,la,wt,u.answered||0,u.correct||0,acc,u.known||0,u.sessions||0,u.streak||0]);
+      rows.push([esc(u.user_name),fd,inAppMin,manualHrs,sd,mpd,la,wt,u.answered||0,u.correct||0,acc,u.known||0,u.sessions||0,u.streak||0]);
     });
     // Build an HTML table with inline styles so Excel renders it
     let table = '<table border="1"><thead><tr>';
