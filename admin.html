@@ -167,6 +167,16 @@ function computeWeakestTopic(ts){
   return weakest || '—';
 }
 
+/* Shared helpers for the admin time split and safe output of user-controlled names */
+function appSplit(u){
+  const mh=u.manual_hours||{};
+  const manualHrs=Object.keys(mh).reduce((s,k)=>s+mh[k],0);
+  const inAppSec=Math.max(0,(u.study_seconds||0)-manualHrs*3600);
+  return { inAppMin:Math.round(inAppSec/60), manualHrs:manualHrs.toFixed(1), totalMin:Math.round((u.study_seconds||0)/60) };
+}
+function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function csvCell(s){ s=String(s==null?'':s); if(/^[=+\-@]/.test(s)) s="'"+s; return (/[",\n]/.test(s)) ? '"'+s.replace(/"/g,'""')+'"' : s; }
+
 /* ==== LOAD ADMIN ==== */
 async function loadAdmin(){
   if(!unlocked) return;
@@ -176,9 +186,9 @@ async function loadAdmin(){
     const users = data||[];
     // Summary + stats
     const totalUsers=users.length;
-    const active = users.filter(u=>u.last_active && daysAgo(u.last_active)!=='Today' && new Date(u.last_active)>Date.now()-7*86400000).length;
+    const active = users.filter(u=>u.last_active && new Date(u.last_active)>Date.now()-7*86400000).length;
     let totalMin=0, totalAnswered=0;
-    users.forEach(u=>{ const mh=u.manual_hours||{}; const mn=Object.keys(mh).reduce((s,k)=>s+mh[k],0); const ia=Math.round(((u.study_seconds||0) - mn*3600)/60); totalMin += ia + Math.round(mn*60); totalAnswered += u.answered||0; });
+    users.forEach(u=>{ totalMin += appSplit(u).totalMin; totalAnswered += u.answered||0; });
     document.getElementById('summary').innerHTML = '<strong>'+totalUsers+'</strong> user(s) · <strong>'+Math.round(totalMin/60)+'h</strong> total study · <strong>'+totalAnswered+'</strong> questions answered. Use Download CSV for a full spreadsheet.';
     document.getElementById('stats').innerHTML =
       '<div class="stat"><div class="num">'+totalUsers+'</div><div class="lbl">Total Users</div></div>'+
@@ -188,19 +198,18 @@ async function loadAdmin(){
     let html='<tr><th>User</th><th>First</th><th>In-App(Min)</th><th>Manual(Hrs)</th><th>Study Days</th><th>Min/Day</th><th>Last Active</th><th>Weak Topic</th><th>Answered</th><th>Acc</th><th>Cards</th><th>Streak</th><th>Actions</th></tr>';
     (users).forEach(u=>{
       const acc=u.answered?Math.round(u.correct/u.answered*100)+'%':'0%';
-      const mh=u.manual_hours||{}; const manualHrs=Object.keys(mh).reduce((s,k)=>s+mh[k],0).toFixed(1);
-      const inAppMin=Math.round(((u.study_seconds||0) - parseFloat(manualHrs)*3600)/60);
-      const totalMin=inAppMin+Math.round(parseFloat(manualHrs)*60);
+      const sp=appSplit(u);
+      const manualHrs=sp.manualHrs, inAppMin=sp.inAppMin, totalMin=sp.totalMin;
       const studyDays=u.study_days||0; const minPerDay=studyDays>0?Math.round(totalMin/studyDays):0;
       const firstDate=u.first_started?new Date(u.first_started).toLocaleDateString('en-US',{month:'short',day:'numeric'}):'—';
       const lastActive=u.last_active?daysAgo(u.last_active):'—';
       const weakest=computeWeakestTopic(u.topic_stats);
       html+=`<tr>
-        <td>${u.user_name}</td><td>${firstDate}</td><td>${inAppMin}</td><td>${manualHrs}</td><td>${studyDays}</td><td>${minPerDay}</td><td>${lastActive}</td><td>${weakest}</td><td>${u.answered||0}</td><td>${acc}</td><td>${u.known||0}</td><td>${u.streak||0}</td>
+        <td>${esc(u.user_name)}</td><td>${firstDate}</td><td>${inAppMin}</td><td>${manualHrs}</td><td>${studyDays}</td><td>${minPerDay}</td><td>${lastActive}</td><td>${weakest}</td><td>${u.answered||0}</td><td>${acc}</td><td>${u.known||0}</td><td>${u.streak||0}</td>
         <td>
-          <button class="btn-sm" onclick="resetPassword('${u.user_name}')">Reset PW</button>
-          <button class="btn-sm" onclick="resetUser('${u.user_name}')">Reset</button>
-          <button class="btn-sm btn-danger" onclick="deleteUser('${u.user_name}')">Delete</button>
+          <button class="btn-sm" onclick="resetPassword('${esc(u.user_name)}')">Reset PW</button>
+          <button class="btn-sm" onclick="resetUser('${esc(u.user_name)}')">Reset</button>
+          <button class="btn-sm btn-danger" onclick="deleteUser('${esc(u.user_name)}')">Delete</button>
         </td></tr>`;
     });
     if(users.length===0) html+='<tr><td colspan="13" class="empty">No users yet.</td></tr>';
@@ -216,12 +225,12 @@ function exportCSV(){
     if(error){ alert('Backend error'); return; }
     (data||[]).forEach(u=>{
       const acc=u.answered?Math.round(u.correct/u.answered*100)+'%':'0%';
-      const mh=u.manual_hours||{}; const manualHrs=Object.keys(mh).reduce((s,k)=>s+mh[k],0).toFixed(1);
-      const inAppMin=Math.round(((u.study_seconds||0) - parseFloat(manualHrs)*3600)/60);
-      const totalMin=inAppMin+Math.round(parseFloat(manualHrs)*60); const sd=u.study_days||0; const mpd=sd>0?Math.round(totalMin/sd):0;
+      const sp=appSplit(u);
+      const manualHrs=sp.manualHrs, inAppMin=sp.inAppMin, totalMin=sp.totalMin;
+      const sd=u.study_days||0; const mpd=sd>0?Math.round(totalMin/sd):0;
       const fd=u.first_started?new Date(u.first_started).toLocaleDateString('en-US'):'';
       const la=u.last_active?daysAgo(u.last_active):''; const wt=computeWeakestTopic(u.topic_stats)||'';
-      csv+=`${u.user_name},"${fd}",${inAppMin},${manualHrs},${sd},${mpd},"${la}","${wt}",${u.answered||0},${u.correct||0},${acc},${u.known||0},${u.sessions||0},${u.streak||0}\n`;
+      csv+=`${csvCell(u.user_name)},"${fd}",${inAppMin},${manualHrs},${sd},${mpd},"${la}","${wt}",${u.answered||0},${u.correct||0},${acc},${u.known||0},${u.sessions||0},${u.streak||0}\n`;
     });
     const blob=new Blob([csv],{type:'text/csv'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='cnn_study_progress.csv'; a.click();
   });
@@ -291,12 +300,10 @@ function exportXLSX(){
     let rows = [['User','First Started','In-App Minutes','Manual Hours','Study Days','Min/Day','Last Active','Weakest Topic','Answered','Correct','Accuracy','Cards Known','Sessions','Streak']];
     (data||[]).forEach(u=>{
       const acc=u.answered?Math.round(u.correct/u.answered*100)+'%':'0%';
-      const mh=u.manual_hours||{}; const manualHrs=Object.keys(mh).reduce((s,k)=>s+mh[k],0).toFixed(1);
-      const inAppMin=Math.round(((u.study_seconds||0) - parseFloat(manualHrs)*3600)/60);
-      const totalMin=inAppMin+Math.round(parseFloat(manualHrs)*60); const sd=u.study_days||0; const mpd=sd>0?Math.round(totalMin/sd):0;
+      const sp=appSplit(u); const manualHrs=sp.manualHrs, inAppMin=sp.inAppMin, totalMin=sp.totalMin; const sd=u.study_days||0; const mpd=sd>0?Math.round(totalMin/sd):0;
       const fd=u.first_started?new Date(u.first_started).toLocaleDateString('en-US'):'';
       const la=u.last_active?daysAgo(u.last_active):''; const wt=computeWeakestTopic(u.topic_stats)||'';
-      rows.push([u.user_name,fd,inAppMin,manualHrs,sd,mpd,la,wt,u.answered||0,u.correct||0,acc,u.known||0,u.sessions||0,u.streak||0]);
+      rows.push([esc(u.user_name),fd,inAppMin,manualHrs,sd,mpd,la,wt,u.answered||0,u.correct||0,acc,u.known||0,u.sessions||0,u.streak||0]);
     });
     // Build an HTML table with inline styles so Excel renders it
     let table = '<table border="1"><thead><tr>';

@@ -1118,7 +1118,7 @@ function renderTrackers(){
   const mh = p.manual_hours||{};
   const manualHrs = Object.keys(mh).reduce((s,k)=>s+mh[k],0);
   // In-app time = study_seconds minus manual hours (logStudyHours adds manual to study_seconds)
-  const inAppSec = Math.max(0, (p.study_seconds||0) - Math.round(manualHrs*3600));
+  const inAppSec = Math.max(0, (p.study_seconds||0) - manualHrs*3600);
   document.getElementById('tManual').textContent = fmtHours(manualHrs*3600);
   document.getElementById('tInApp').textContent = fmtHours(inAppSec);
   // 80-hour study goal (study_seconds already includes manual hours, so no double-count)
@@ -1579,6 +1579,15 @@ function showScreen(s){
   }
 }
 
+/* Shared helpers for the admin time split and safe output of user-controlled names */
+function appSplit(u){
+  const mh=u.manual_hours||{};
+  const manualHrs=Object.keys(mh).reduce((s,k)=>s+mh[k],0);
+  const inAppSec=Math.max(0,(u.study_seconds||0)-manualHrs*3600);
+  return { inAppMin:Math.round(inAppSec/60), manualHrs:manualHrs.toFixed(1), totalMin:Math.round((u.study_seconds||0)/60) };
+}
+function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function csvCell(s){ s=String(s==null?'':s); if(/^[=+\-@]/.test(s)) s="'"+s; return (/[",\n]/.test(s)) ? '"'+s.replace(/"/g,'""')+'"' : s; }
 async function loadAdmin(){
   if(!adminUnlocked) return;
   try {
@@ -1604,17 +1613,15 @@ async function loadAdmin(){
     (data||[]).forEach(u=>{
       const acc=u.answered?Math.round(u.correct/u.answered*100)+'%':'0%';
       // in-app time = study_seconds minus manual hours (logStudyHours adds manual to study_seconds)
-      const mh=u.manual_hours||{};
-      const manualHrs = Object.keys(mh).reduce((s,k)=>s+mh[k],0).toFixed(1);
-      const inAppMin = Math.round(((u.study_seconds||0) - parseFloat(manualHrs)*3600)/60);
-      const totalMin = inAppMin + Math.round(parseFloat(manualHrs)*60);
+      const sp=appSplit(u);
+      const manualHrs=sp.manualHrs, inAppMin=sp.inAppMin, totalMin=sp.totalMin;
       const studyDays = u.study_days||0;
       const minPerDay = studyDays>0 ? Math.round(totalMin/studyDays) : 0;
       const firstDate = u.first_started ? new Date(u.first_started).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'2-digit'}) : '—';
       const lastActive = u.last_active ? daysAgo(u.last_active) : '—';
       const weakest = computeWeakestTopic(u.topic_stats||{});
       html+=`<tr>
-        <td><a href="javascript:void(0)" onclick="viewUser('${u.user_name}')" style="color:var(--link);font-weight:600">${u.user_name}</a></td>
+        <td><a href="javascript:void(0)" onclick="viewUser('${esc(u.user_name)}')" style="color:var(--link);font-weight:600">${esc(u.user_name)}</a></td>
         <td>${firstDate}</td>
         <td>${inAppMin}</td>
         <td>${manualHrs}</td>
@@ -1629,9 +1636,9 @@ async function loadAdmin(){
         <td>${u.sessions||0}</td>
         <td>${u.streak||0}</td>
         <td>
-          <button onclick="resetPassword('${u.user_name}')" style="font-size:11px;padding:4px 8px;margin:2px;background:var(--light);color:var(--ink);border:1px solid var(--border);border-radius:6px">Reset PW</button>
-          <button onclick="resetUser('${u.user_name}')" style="font-size:11px;padding:4px 8px;margin:2px;background:var(--light);color:var(--ink);border:1px solid var(--border);border-radius:6px">Reset</button>
-          <button onclick="deleteUser('${u.user_name}')" style="font-size:11px;padding:4px 8px;margin:2px;background:var(--aggie-red);color:#fff;border:none;border-radius:6px">Delete</button>
+          <button onclick="resetPassword('${esc(u.user_name)}')" style="font-size:11px;padding:4px 8px;margin:2px;background:var(--light);color:var(--ink);border:1px solid var(--border);border-radius:6px">Reset PW</button>
+          <button onclick="resetUser('${esc(u.user_name)}')" style="font-size:11px;padding:4px 8px;margin:2px;background:var(--light);color:var(--ink);border:1px solid var(--border);border-radius:6px">Reset</button>
+          <button onclick="deleteUser('${esc(u.user_name)}')" style="font-size:11px;padding:4px 8px;margin:2px;background:var(--aggie-red);color:#fff;border:none;border-radius:6px">Delete</button>
         </td>
       </tr>`;
     });
@@ -1666,16 +1673,14 @@ function exportCSV(){
     if(error){ alert('Backend not ready: '+error.message); return; }
     (data||[]).forEach(u=>{
       const acc=u.answered?Math.round(u.correct/u.answered*100)+'%':'0%';
-      const mh=u.manual_hours||{};
-      const manualHrs = Object.keys(mh).reduce((s,k)=>s+mh[k],0).toFixed(1);
-      const inAppMin = Math.round(((u.study_seconds||0) - parseFloat(manualHrs)*3600)/60);
-      const totalMin = inAppMin + Math.round(parseFloat(manualHrs)*60);
+      const sp=appSplit(u);
+      const manualHrs=sp.manualHrs, inAppMin=sp.inAppMin, totalMin=sp.totalMin;
       const sd = u.study_days||0;
       const mpd = sd>0?Math.round(totalMin/sd):0;
       const fd = u.first_started ? new Date(u.first_started).toLocaleDateString('en-US') : '';
       const la = u.last_active ? daysAgo(u.last_active) : '';
       const wt = computeWeakestTopic(u.topic_stats||{}) || '';
-      csv+=`${u.user_name},"${fd}",${inAppMin},${manualHrs},${sd},${mpd},"${la}","${wt}",${u.answered||0},${u.correct||0},${acc},${u.known||0},${u.sessions||0},${u.streak||0}\n`;
+      csv+=`${csvCell(u.user_name)},"${fd}",${inAppMin},${manualHrs},${sd},${mpd},"${la}","${wt}",${u.answered||0},${u.correct||0},${acc},${u.known||0},${u.sessions||0},${u.streak||0}\n`;
     });
     const blob=new Blob([csv],{type:'text/csv'});
     const a=document.createElement('a');
@@ -1689,12 +1694,10 @@ function exportXLSX(){
     let rows = [['User','First Started','In-App Minutes','Manual Hours','Study Days','Min/Day','Last Active','Weakest Topic','Answered','Correct','Accuracy','Cards Known','Sessions','Streak']];
     (data||[]).forEach(u=>{
       const acc=u.answered?Math.round(u.correct/u.answered*100)+'%':'0%';
-      const mh=u.manual_hours||{}; const manualHrs=Object.keys(mh).reduce((s,k)=>s+mh[k],0).toFixed(1);
-      const inAppMin=Math.round(((u.study_seconds||0) - parseFloat(manualHrs)*3600)/60);
-      const totalMin=inAppMin+Math.round(parseFloat(manualHrs)*60); const sd=u.study_days||0; const mpd=sd>0?Math.round(totalMin/sd):0;
+      const sp=appSplit(u); const manualHrs=sp.manualHrs, inAppMin=sp.inAppMin, totalMin=sp.totalMin; const sd=u.study_days||0; const mpd=sd>0?Math.round(totalMin/sd):0;
       const fd=u.first_started?new Date(u.first_started).toLocaleDateString('en-US'):'';
       const la=u.last_active?daysAgo(u.last_active):''; const wt=computeWeakestTopic(u.topic_stats||{})||'';
-      rows.push([u.user_name,fd,inAppMin,manualHrs,sd,mpd,la,wt,u.answered||0,u.correct||0,acc,u.known||0,u.sessions||0,u.streak||0]);
+      rows.push([esc(u.user_name),fd,inAppMin,manualHrs,sd,mpd,la,wt,u.answered||0,u.correct||0,acc,u.known||0,u.sessions||0,u.streak||0]);
     });
     let table = '<table border="1"><thead><tr>';
     rows[0].forEach(h=>table += '<th style="background:#022851;color:#fff">'+h+'</th>');
