@@ -175,6 +175,8 @@ function appSplit(u){
   return { inAppMin:Math.round(inAppSec/60), manualHrs:manualHrs.toFixed(1), totalMin:Math.round((u.study_seconds||0)/60) };
 }
 function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+// Safe string argument for inline onclick handlers (JSON-encode then HTML-escape).
+function jsStr(s){ return esc(JSON.stringify(s==null?'':s)); }
 function csvCell(s){ s=String(s==null?'':s); if(/^[=+\-@]/.test(s)) s="'"+s; return (/[",\n]/.test(s)) ? '"'+s.replace(/"/g,'""')+'"' : s; }
 
 /* ==== LOAD ADMIN ==== */
@@ -207,9 +209,9 @@ async function loadAdmin(){
       html+=`<tr>
         <td>${esc(u.user_name)}</td><td>${firstDate}</td><td>${inAppMin}</td><td>${manualHrs}</td><td>${studyDays}</td><td>${minPerDay}</td><td>${lastActive}</td><td>${weakest}</td><td>${u.answered||0}</td><td>${acc}</td><td>${u.known||0}</td><td>${u.streak||0}</td>
         <td>
-          <button class="btn-sm" onclick="resetPassword('${esc(u.user_name)}')">Reset PW</button>
-          <button class="btn-sm" onclick="resetUser('${esc(u.user_name)}')">Reset</button>
-          <button class="btn-sm btn-danger" onclick="deleteUser('${esc(u.user_name)}')">Delete</button>
+          <button class="btn-sm" onclick="resetPassword(${jsStr(u.user_name)})">Reset PW</button>
+          <button class="btn-sm" onclick="resetUser(${jsStr(u.user_name)})">Reset</button>
+          <button class="btn-sm btn-danger" onclick="deleteUser(${jsStr(u.user_name)})">Delete</button>
         </td></tr>`;
     });
     if(users.length===0) html+='<tr><td colspan="13" class="empty">No users yet.</td></tr>';
@@ -276,7 +278,7 @@ async function loadDeletedUsers(){
     let html='<tr><th>User</th><th>Deleted</th><th>Action</th></tr>';
     (data||[]).forEach(u=>{
       const d = u.deleted_at ? new Date(u.deleted_at).toLocaleString() : '';
-      html+=`<tr><td>${u.user_name}</td><td>${d}</td><td><button class="btn-sm" onclick="restoreUser(${u.id},'${u.user_name}')">Restore</button></td></tr>`;
+      html+=`<tr><td>${esc(u.user_name)}</td><td>${d}</td><td><button class="btn-sm" onclick="restoreUser(${jsStr(u.id)},${jsStr(u.user_name)})">Restore</button></td></tr>`;
     });
     if((data||[]).length===0) html+='<tr><td colspan="3" class="empty">No deleted users.</td></tr>';
     document.getElementById('deletedList').innerHTML=html;
