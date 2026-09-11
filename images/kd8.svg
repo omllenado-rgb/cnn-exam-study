@@ -1,4 +1,87 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 420" width="640" height="420" font-family="Helvetica,Arial,sans-serif">
-    <rect x="0" y="0" width="640" height="52" fill="#022851"/>
-    <text x="16" y="22" fill="#fff" font-size="15" font-weight="bold">CKD Complications</text>
-    <text x="16" y="40" fill="#ffbf00" font-size="11">Anemia &amp; Mineral Bone Disorder</text><circle cx="320" cy="220" r="26.4" fill="#00b2e3" stroke="#022851" stroke-width="1.5"/><circle cx="310.4" cy="212.8" r="4.8" fill="#022851" stroke="#022851" stroke-width="1.5"/><circle cx="327.2" cy="210.4" r="4.8" fill="#022851" stroke="#022851" stroke-width="1.5"/><circle cx="329.6" cy="227.2" r="4.8" fill="#022851" stroke="#022851" stroke-width="1.5"/><circle cx="312.8" cy="229.6" r="4.8" fill="#022851" stroke="#022851" stroke-width="1.5"/><path d="M 284.0 220 a 30 30 0 0 1 60 0" fill="none" stroke="#022851" stroke-width="2"/><path d="M 356.0 220 q 15 -20 30 -10 q 15 10 30 -5" fill="none" stroke="#022851" stroke-width="2"/><path d="M 428.0 202.0 q 5 30 -10 50 q -15 20 5 40" fill="none" stroke="#022851" stroke-width="2"/><path d="M 422.0 310.0 q 20 5 30 -10" fill="none" stroke="#022851" stroke-width="2"/><text x="628" y="410" fill="#5b6b7a" font-size="9" text-anchor="end">CNN Exam Prep - Study Diagram</text></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 420" font-family="Helvetica,Arial,sans-serif">
+<defs>
+  <linearGradient id="kd8Head" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#022851"/><stop offset="1" stop-color="#003a6b"/></linearGradient>
+  <linearGradient id="kd8Kidney" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#a34a3f"/><stop offset="1" stop-color="#7a3b8f"/></linearGradient>
+  <marker id="kd8Arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#022851"/></marker>
+  <marker id="kd8ArrRed" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#c10230"/></marker>
+  <filter id="kd8Sh" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#022851" flood-opacity="0.18"/></filter>
+</defs>
+<rect width="640" height="420" fill="#f7fafc"/>
+<rect width="640" height="56" fill="url(#kd8Head)"/>
+<rect y="56" width="640" height="4" fill="#ffbf00"/>
+<text x="24" y="27" fill="#ffffff" font-size="17" font-weight="bold">CKD Complications: Anemia &amp; Mineral Bone Disorder</text>
+<text x="24" y="45" fill="#ffbf00" font-size="11" letter-spacing="0.5">Erythropoietin deficiency · Ca–P–PTH–vitamin D chaos</text>
+
+<!-- ============ ANEMIA (left) ============ -->
+<rect x="28" y="72" width="292" height="292" rx="12" fill="#ffffff" stroke="#e3e8ee" filter="url(#kd8Sh)"/>
+<text x="44" y="94" fill="#c10230" font-size="13" font-weight="bold">Anemia of CKD</text>
+<!-- kidney -> EPO -> marrow -->
+<g filter="url(#kd8Sh)">
+  <path d="M96 112 C78 106 62 118 62 138 C62 156 74 168 90 170 C102 168 108 162 106 156 C112 158 114 144 106 142 C110 130 108 118 96 112 Z" fill="url(#kd8Kidney)" stroke="#5f2d5e" stroke-width="1.2"/>
+</g>
+<text x="84" y="186" fill="#5f2d5e" font-size="8.5" text-anchor="middle" font-weight="bold">kidney</text>
+<line x1="118" y1="140" x2="164" y2="140" stroke="#c10230" stroke-width="2.5" marker-end="url(#kd8ArrRed)"/>
+<text x="141" y="130" fill="#c10230" font-size="8.5" text-anchor="middle" font-weight="bold">EPO</text>
+<!-- bone marrow -->
+<g filter="url(#kd8Sh)">
+  <path d="M170 108 q30 -12 56 6 q20 14 8 32 q-6 10 -22 10 q-30 6 -46 -12 q-10 -20 4 -36 z" fill="#d99a00" opacity="0.85"/>
+</g>
+<ellipse cx="200" cy="132" rx="26" ry="10" fill="#ffdf80"/>
+<text x="200" y="172" fill="#8a6d1b" font-size="8.5" text-anchor="middle" font-weight="bold">bone marrow</text>
+<!-- RBCs -->
+<g fill="#c10230" opacity="0.85">
+  <circle cx="196" cy="200" r="6"/><circle cx="216" cy="206" r="6"/><circle cx="238" cy="198" r="6"/><circle cx="228" cy="216" r="5"/>
+</g>
+<text x="220" y="232" fill="#5b6b7a" font-size="8.5" text-anchor="middle">fewer mature RBCs</text>
+<!-- key facts -->
+<rect x="44" y="248" width="256" height="106" rx="8" fill="#fff3f4" stroke="#c10230" stroke-width="1"/>
+<text x="56" y="268" fill="#1c2b39" font-size="9.5">· kidneys make <tspan font-weight="bold" fill="#c10230">90%</tspan> of erythropoietin</text>
+<text x="56" y="286" fill="#1c2b39" font-size="9.5">· affects 15–20% of stage 1–3;</text>
+<text x="68" y="300" fill="#c10230" font-size="9.5" font-weight="bold">70% of ESRD patients</text>
+<text x="56" y="320" fill="#1c2b39" font-size="9.5">· ESA therapy: start Hgb ≤ 10 g/dL,</text>
+<text x="56" y="336" fill="#1c2b39" font-size="9.5">  stop at 12 g/dL (cardiovascular risk)</text>
+
+<!-- ============ CKD-MBD (right) ============ -->
+<rect x="332" y="72" width="288" height="292" rx="12" fill="#ffffff" stroke="#e3e8ee" filter="url(#kd8Sh)"/>
+<text x="348" y="94" fill="#7a3b8f" font-size="13" font-weight="bold">CKD–Mineral Bone Disorder</text>
+<!-- vessel with calcification -->
+<g filter="url(#kd8Sh)">
+  <rect x="348" y="104" width="256" height="54" rx="27" fill="#f7d7c4" stroke="#c97b62" stroke-width="1.5"/>
+</g>
+<g fill="#e8b894" stroke="#b8860b" stroke-width="1">
+  <circle cx="392" cy="131" r="8"/><circle cx="416" cy="126" r="6"/><circle cx="428" cy="140" r="7"/>
+  <circle cx="452" cy="128" r="7"/><circle cx="470" cy="140" r="5"/><circle cx="478" cy="124" r="6"/>
+</g>
+<text x="348" y="176" fill="#b8860b" font-size="9" font-weight="bold">vascular calcification</text>
+<!-- bone -->
+<g filter="url(#kd8Sh)">
+  <path d="M348 196 q10 -18 30 -10 q14 -18 32 -6 q18 -12 26 8 q14 6 4 22 q6 16 -12 20 q-2 16 -22 12 q-14 12 -28 -2 q-18 4 -20 -14 q-14 -8 -10 -30 z" fill="#f7e6c4" stroke="#c9a227" stroke-width="1.5"/>
+</g>
+<g stroke="#c9a227" stroke-width="1" opacity="0.7">
+  <path d="M366 206 l24 8 M370 224 l28 -8 M394 198 l6 26 M408 226 l8 -18"/>
+</g>
+<text x="396" y="256" fill="#8a6d1b" font-size="9" font-weight="bold">bone abnormalities (renal osteodystrophy)</text>
+<text x="410" y="272" fill="#7a3b8f" font-size="8.5" text-anchor="middle" font-weight="bold">starts in stage 3 · monitor from there</text>
+<!-- mineral triangle -->
+<g>
+  <circle cx="384" cy="298" r="17" fill="#022851"/>
+  <text x="384" y="296" fill="#ffbf00" font-size="9" text-anchor="middle" font-weight="bold">Ca</text>
+  <text x="384" y="306" fill="#ffbf00" font-size="7" text-anchor="middle">calcium</text>
+  <circle cx="452" cy="298" r="17" fill="#c10230"/>
+  <text x="452" y="296" fill="#ffffff" font-size="9" text-anchor="middle" font-weight="bold">P</text>
+  <text x="452" y="306" fill="#ffffff" font-size="7" text-anchor="middle">phos</text>
+  <circle cx="417" cy="330" r="17" fill="#d99a00"/>
+  <text x="417" y="328" fill="#ffffff" font-size="9" text-anchor="middle" font-weight="bold">PTH</text>
+  <text x="417" y="338" fill="#ffffff" font-size="7" text-anchor="middle">↑</text>
+  <line x1="400" y1="298" x2="436" y2="298" stroke="#5b6b7a" stroke-width="1.5"/>
+  <line x1="392" y1="310" x2="405" y2="320" stroke="#5b6b7a" stroke-width="1.5"/>
+  <line x1="444" y1="310" x2="429" y2="321" stroke="#5b6b7a" stroke-width="1.5"/>
+</g>
+<rect x="496" y="306" width="112" height="52" rx="8" fill="#f3ecf8" stroke="#7a3b8f" stroke-width="1"/>
+<text x="552" y="324" fill="#5a2f73" font-size="9" text-anchor="middle" font-weight="bold">vitamin D deficiency</text>
+<text x="552" y="340" fill="#5a2f73" font-size="8.5" text-anchor="middle">up to 80% of CKD</text>
+<text x="552" y="352" fill="#5a2f73" font-size="8.5" text-anchor="middle">patients</text>
+
+<text x="320" y="390" fill="#022851" font-size="10.5" text-anchor="middle" font-weight="bold">Diagnosis standard for renal osteodystrophy: bone biopsy · ESA window: Hgb 10–12</text>
+<text x="616" y="414" fill="#9aa7b4" font-size="9" text-anchor="end">CNN Exam Prep · Kidney Disease</text>
+</svg>

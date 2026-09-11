@@ -1,4 +1,65 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 420" width="640" height="420" font-family="Helvetica,Arial,sans-serif">
-    <rect x="0" y="0" width="640" height="52" fill="#022851"/>
-    <text x="16" y="22" fill="#fff" font-size="15" font-weight="bold">Nutrition in AKI/CKD</text>
-    <text x="16" y="40" fill="#ffbf00" font-size="11">Protein &amp; calorie needs</text><circle cx="320" cy="220" r="26.4" fill="#00b2e3" stroke="#022851" stroke-width="1.5"/><circle cx="310.4" cy="212.8" r="4.8" fill="#022851" stroke="#022851" stroke-width="1.5"/><circle cx="327.2" cy="210.4" r="4.8" fill="#022851" stroke="#022851" stroke-width="1.5"/><circle cx="329.6" cy="227.2" r="4.8" fill="#022851" stroke="#022851" stroke-width="1.5"/><circle cx="312.8" cy="229.6" r="4.8" fill="#022851" stroke="#022851" stroke-width="1.5"/><path d="M 284.0 220 a 30 30 0 0 1 60 0" fill="none" stroke="#022851" stroke-width="2"/><path d="M 356.0 220 q 15 -20 30 -10 q 15 10 30 -5" fill="none" stroke="#022851" stroke-width="2"/><path d="M 428.0 202.0 q 5 30 -10 50 q -15 20 5 40" fill="none" stroke="#022851" stroke-width="2"/><path d="M 422.0 310.0 q 20 5 30 -10" fill="none" stroke="#022851" stroke-width="2"/><text x="628" y="410" fill="#5b6b7a" font-size="9" text-anchor="end">CNN Exam Prep - Study Diagram</text></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 420" font-family="Helvetica,Arial,sans-serif">
+<defs>
+  <linearGradient id="kd9Head" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#022851"/><stop offset="1" stop-color="#003a6b"/></linearGradient>
+  <marker id="kd9Arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#022851"/></marker>
+  <filter id="kd9Sh" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#022851" flood-opacity="0.18"/></filter>
+</defs>
+<rect width="640" height="420" fill="#f7fafc"/>
+<rect width="640" height="56" fill="url(#kd9Head)"/>
+<rect y="56" width="640" height="4" fill="#ffbf00"/>
+<text x="24" y="27" fill="#ffffff" font-size="17" font-weight="bold">Nutritional Therapy Across AKI &amp; CKD</text>
+<text x="24" y="45" fill="#ffbf00" font-size="11" letter-spacing="0.5">Protein and calories change with stage and modality</text>
+
+<!-- ============ AKI protein ladder ============ -->
+<rect x="40" y="76" width="272" height="200" rx="12" fill="#ffffff" stroke="#e3e8ee" filter="url(#kd9Sh)"/>
+<text x="56" y="98" fill="#022851" font-size="12.5" font-weight="bold">Protein needs in AKI</text>
+<!-- stage 1-2 -->
+<rect x="56" y="112" width="240" height="46" rx="8" fill="#e2f2e6" stroke="#00573f" stroke-width="1"/>
+<text x="68" y="130" fill="#00573f" font-size="9.5" font-weight="bold">Stage 1–2 AKI</text>
+<text x="68" y="148" fill="#1c2b39" font-size="9">20–30 kcal/kg · protein 1 g/kg — no restriction</text>
+<!-- stage 3 HD -->
+<rect x="56" y="166" width="240" height="46" rx="8" fill="#e2f2fb" stroke="#0090b8" stroke-width="1"/>
+<text x="68" y="184" fill="#0090b8" font-size="9.5" font-weight="bold">Stage 3 AKI on hemodialysis</text>
+<text x="68" y="202" fill="#1c2b39" font-size="9">protein 1.2–1.5 g/kg</text>
+<!-- CRRT -->
+<rect x="56" y="220" width="240" height="46" rx="8" fill="#ffe3e6" stroke="#c10230" stroke-width="1"/>
+<text x="68" y="238" fill="#c10230" font-size="9.5" font-weight="bold">CRRT</text>
+<text x="68" y="256" fill="#1c2b39" font-size="9">protein 1.8–2.5 g/kg — highest losses</text>
+<!-- ascending marker -->
+<line x1="306" y1="256" x2="306" y2="120" stroke="#d99a00" stroke-width="2" marker-end="url(#kd9Arr)" transform="translate(0,0)"/>
+<text x="322" y="240" fill="#8a6d1b" font-size="8.5" transform="rotate(-90 322 240)">more protein →</text>
+
+<!-- ============ CKD restriction vs dialysis ============ -->
+<rect x="328" y="76" width="288" height="200" rx="12" fill="#ffffff" stroke="#e3e8ee" filter="url(#kd9Sh)"/>
+<text x="344" y="98" fill="#022851" font-size="12.5" font-weight="bold">CKD 3–5: restrict… then re-feed</text>
+<!-- restriction -->
+<g filter="url(#kd9Sh)">
+  <rect x="344" y="112" width="122" height="150" rx="8" fill="#eef4f8" stroke="#022851" stroke-width="1"/>
+</g>
+<text x="405" y="134" fill="#022851" font-size="9.5" text-anchor="middle" font-weight="bold">NOT on dialysis</text>
+<text x="405" y="176" fill="#022851" font-size="20" text-anchor="middle" font-weight="bold">0.55–0.60</text>
+<text x="405" y="192" fill="#5b6b7a" font-size="9" text-anchor="middle">g/kg/day</text>
+<text x="405" y="216" fill="#5b6b7a" font-size="8.5" text-anchor="middle">protein restriction</text>
+<text x="405" y="230" fill="#5b6b7a" font-size="8.5" text-anchor="middle">may slow progression</text>
+<!-- dialysis -->
+<g filter="url(#kd9Sh)">
+  <rect x="474" y="112" width="122" height="150" rx="8" fill="#fdf6e3" stroke="#b8860b" stroke-width="1"/>
+</g>
+<text x="535" y="134" fill="#8a6d1b" font-size="9.5" text-anchor="middle" font-weight="bold">On dialysis</text>
+<text x="535" y="176" fill="#8a6d1b" font-size="20" text-anchor="middle" font-weight="bold">1.2</text>
+<text x="535" y="192" fill="#5b6b7a" font-size="9" text-anchor="middle">g/kg/day</text>
+<text x="535" y="216" fill="#5b6b7a" font-size="8.5" text-anchor="middle">higher — dialysis</text>
+<text x="535" y="230" fill="#5b6b7a" font-size="8.5" text-anchor="middle">removes amino acids</text>
+
+<!-- ============ bottom rules ============ -->
+<g filter="url(#kd9Sh)">
+  <rect x="40" y="292" width="576" height="76" rx="12" fill="#022851"/>
+</g>
+<circle cx="68" cy="318" r="10" fill="#00573f"/>
+<text x="68" y="322" fill="#ffffff" font-size="10" text-anchor="middle" font-weight="bold">✓</text>
+<text x="86" y="322" fill="#cfe0f2" font-size="10">Enteral nutrition preferred over parenteral — fewer complications</text>
+<circle cx="68" cy="346" r="10" fill="#c10230"/>
+<text x="68" y="350" fill="#ffffff" font-size="10" text-anchor="middle" font-weight="bold">!</text>
+<text x="86" y="350" fill="#cfe0f2" font-size="10">Limit vitamin C to <tspan fill="#ffbf00" font-weight="bold">200 mg/day</tspan> in parenteral nutrition — oxalate accumulation worsens AKI</text>
+<text x="616" y="414" fill="#9aa7b4" font-size="9" text-anchor="end">CNN Exam Prep · Kidney Disease</text>
+</svg>

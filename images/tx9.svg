@@ -1,4 +1,74 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 420" width="640" height="420" font-family="Helvetica,Arial,sans-serif">
-    <rect x="0" y="0" width="640" height="52" fill="#022851"/>
-    <text x="16" y="22" fill="#fff" font-size="15" font-weight="bold">Special Populations</text>
-    <text x="16" y="40" fill="#ffbf00" font-size="11">HIV &amp; HCV</text><path d="M 232.0 156.0 q 80 -30 160 0 q 20 60 0 80 q -80 30 -160 0 q -20 -60 0 -80" fill="#eef4f8" stroke="#022851" stroke-width="2"/><path d="M 309.0 189.0 a 25 15 0 1 0 0 30 a 25 15 0 1 0 0 -30" fill="#c10230" stroke="#022851" stroke-width="2"/><text x="320" y="208" fill="#fff" font-size="9" text-anchor="middle" font-weight="bold">Kidney</text><path d="M 320 222.0 q 10 30 0 50" fill="none" stroke="#022851" stroke-width="2"/><circle cx="320" cy="282.5" r="16.5" fill="#00b2e3" stroke="#022851" stroke-width="1.5"/><text x="320" y="285.8" fill="#022851" font-size="9" text-anchor="middle" font-weight="bold">Bladder</text><text x="628" y="410" fill="#5b6b7a" font-size="9" text-anchor="end">CNN Exam Prep - Study Diagram</text></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 420" font-family="Helvetica,Arial,sans-serif">
+<defs>
+  <linearGradient id="tx9Head" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#022851"/><stop offset="1" stop-color="#003a6b"/></linearGradient>
+  <filter id="tx9Sh" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#022851" flood-opacity="0.18"/></filter>
+</defs>
+<rect width="640" height="420" fill="#f7fafc"/>
+<rect width="640" height="56" fill="url(#tx9Head)"/>
+<rect y="56" width="640" height="4" fill="#ffbf00"/>
+<text x="24" y="27" fill="#ffffff" font-size="17" font-weight="bold">HIV &amp; Hepatitis C — Transplant Candidacy</text>
+<text x="24" y="45" fill="#ffbf00" font-size="11" letter-spacing="0.5">Control the virus, mind the drug interactions, cure HCV with DAAs</text>
+
+<!-- ============ HIV criteria (top) ============ -->
+<g filter="url(#tx9Sh)">
+  <rect x="36" y="74" width="568" height="112" rx="12" fill="#022851"/>
+</g>
+<text x="52" y="96" fill="#ffbf00" font-size="11" font-weight="bold">HIV-POSITIVE RECIPIENTS — criteria for transplant</text>
+<!-- virus icon -->
+<circle cx="72" cy="136" r="13" fill="none" stroke="#ffbf00" stroke-width="2"/>
+<line x1="72" y1="123" x2="72" y2="118" stroke="#ffbf00" stroke-width="2"/><line x1="72" y1="149" x2="72" y2="154" stroke="#ffbf00" stroke-width="2"/>
+<line x1="61" y1="128" x2="57" y2="125" stroke="#ffbf00" stroke-width="2"/><line x1="83" y1="128" x2="87" y2="125" stroke="#ffbf00" stroke-width="2"/>
+<line x1="61" y1="144" x2="57" y2="147" stroke="#ffbf00" stroke-width="2"/>
+<line x1="83" y1="149" x2="87" y2="152" stroke="#ffbf00" stroke-width="2"/>
+<!-- stat blocks -->
+<g filter="url(#tx9Sh)">
+  <rect x="108" y="110" width="150" height="60" rx="10" fill="#0c3a63"/>
+  <rect x="274" y="110" width="200" height="60" rx="10" fill="#0c3a63"/>
+</g>
+<text x="183" y="134" fill="#ffffff" font-size="15" text-anchor="middle" font-weight="bold">CD4 &gt; 200/μL</text>
+<text x="183" y="154" fill="#cfe0f2" font-size="8.5" text-anchor="middle">stable immune function</text>
+<text x="374" y="134" fill="#ffffff" font-size="15" text-anchor="middle" font-weight="bold">HIV-1 RNA &lt; 50 copies/mL</text>
+<text x="374" y="154" fill="#cfe0f2" font-size="8.5" text-anchor="middle">undetectable viral load on ART</text>
+<text x="540" y="132" fill="#ffbf00" font-size="9.5" text-anchor="middle" font-weight="bold">lifelong PJP</text>
+<text x="540" y="147" fill="#ffbf00" font-size="9.5" text-anchor="middle" font-weight="bold">prophylaxis</text>
+<text x="540" y="163" fill="#cfe0f2" font-size="8.5" text-anchor="middle">required after tx</text>
+
+<!-- ============ ART choice ============ -->
+<g filter="url(#tx9Sh)">
+  <rect x="36" y="202" width="272" height="118" rx="12" fill="#ffffff" stroke="#0090b8" stroke-width="1.5"/>
+</g>
+<rect x="36" y="202" width="272" height="26" rx="12" fill="#0090b8"/><rect x="36" y="216" width="272" height="12" fill="#0090b8"/>
+<text x="172" y="220" fill="#ffffff" font-size="10.5" text-anchor="middle" font-weight="bold">ART CHOICE MATTERS</text>
+<g filter="url(#tx9Sh)">
+  <rect x="52" y="240" width="150" height="26" rx="8" fill="#022851"/>
+</g>
+<text x="127" y="257" fill="#ffbf00" font-size="9.5" text-anchor="middle" font-weight="bold">Raltegravir — preferred</text>
+<text x="52" y="286" fill="#1c2b39" font-size="9">integrase inhibitor — does NOT shift</text>
+<text x="52" y="300" fill="#1c2b39" font-size="9">tacrolimus levels</text>
+<text x="52" y="313" fill="#c10230" font-size="8.5" font-weight="bold">protease inhibitors interact with tacrolimus</text>
+
+<!-- ============ HCV workup ============ -->
+<g filter="url(#tx9Sh)">
+  <rect x="324" y="202" width="280" height="118" rx="12" fill="#ffffff" stroke="#00573f" stroke-width="1.5"/>
+</g>
+<rect x="324" y="202" width="280" height="26" rx="12" fill="#00573f"/><rect x="324" y="216" width="280" height="12" fill="#00573f"/>
+<text x="464" y="220" fill="#ffffff" font-size="10.5" text-anchor="middle" font-weight="bold">HEPATITIS C — WORKUP FIRST</text>
+<!-- liver icon -->
+<path d="M350 268 q-4 -14 12 -16 q20 -3 34 0 q14 3 12 14 q-2 10 -16 12 q-18 2 -32 -2 q-9 -3 -10 -8 z" fill="#e2f2e6" stroke="#00573f" stroke-width="1.2"/>
+<text x="418" y="250" fill="#1c2b39" font-size="9">· hepatology consult</text>
+<text x="418" y="268" fill="#1c2b39" font-size="9">· assess fibrosis severity</text>
+<g filter="url(#tx9Sh)">
+  <rect x="348" y="286" width="240" height="24" rx="8" fill="#e2f2e6"/>
+</g>
+<text x="464" y="302" fill="#00573f" font-size="9" text-anchor="middle" font-weight="bold">accepting HCV-viremic donors → shorter wait</text>
+
+<!-- ============ DAA banner ============ -->
+<g filter="url(#tx9Sh)">
+  <rect x="36" y="336" width="568" height="58" rx="12" fill="#fdf6e3" stroke="#b8860b" stroke-width="1.5"/>
+</g>
+<text x="52" y="356" fill="#8a6d1b" font-size="10.5" font-weight="bold">Direct-acting antivirals: grazoprevir + elbasvir — cure rates 90–95% (SVR)</text>
+<text x="52" y="374" fill="#5b6b7a" font-size="9">safe and well tolerated in transplant candidates and recipients</text>
+<text x="52" y="387" fill="#5b6b7a" font-size="9">treat ideally BEFORE transplant; post-transplant treatment is an option for cirrhosis or progressive disease</text>
+
+<text x="616" y="410" fill="#9aa7b4" font-size="9" text-anchor="end">CNN Exam Prep · Transplant</text>
+</svg>

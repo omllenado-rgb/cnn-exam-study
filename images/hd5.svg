@@ -1,4 +1,87 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 420" width="640" height="420" font-family="Helvetica,Arial,sans-serif">
-    <rect x="0" y="0" width="640" height="52" fill="#022851"/>
-    <text x="16" y="22" fill="#fff" font-size="15" font-weight="bold">Anticoagulation</text>
-    <text x="16" y="40" fill="#ffbf00" font-size="11">Heparin &amp; Alternatives</text><circle cx="155.0" cy="220" r="33.0" fill="#eef4f8" stroke="#022851" stroke-width="1.5"/><text x="155.0" y="224" fill="#022851" font-size="10" text-anchor="middle" font-weight="bold">Patient</text><circle cx="254.0" cy="220" r="17.6" fill="#ffbf00" stroke="#022851" stroke-width="1.5"/><text x="254.0" y="224" fill="#022851" font-size="9" text-anchor="middle" font-weight="bold">Pump</text><rect x="342.0" y="176.0" width="44.0" height="88.0" fill="#00b2e3" stroke="#022851" stroke-width="2" rx="10"/><text x="364.0" y="224" fill="#022851" font-size="9" text-anchor="middle" font-weight="bold">Dialyzer</text><line x1="342.0" y1="198.0" x2="309.0" y2="198.0" stroke="#5b6b7a" stroke-width="2"/><line x1="309.0" y1="242.0" x2="342.0" y2="242.0" stroke="#5b6b7a" stroke-width="2"/><line x1="188.0" y1="220" x2="236.39999999999998" y2="220" stroke="#022851" stroke-width="2"/><line x1="271.6" y1="220" x2="342.0" y2="220" stroke="#022851" stroke-width="2"/><line x1="386.0" y1="220" x2="441.0" y2="220" stroke="#022851" stroke-width="2"/><line x1="441.0" y1="220" x2="441.0" y2="154.0" stroke="#022851" stroke-width="2"/><line x1="441.0" y1="154.0" x2="155.0" y2="154.0" stroke="#022851" stroke-width="2"/><line x1="155.0" y1="154.0" x2="155.0" y2="187.0" stroke="#022851" stroke-width="2"/><text x="628" y="410" fill="#5b6b7a" font-size="9" text-anchor="end">CNN Exam Prep - Study Diagram</text></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 420" font-family="Helvetica,Arial,sans-serif">
+<defs>
+  <linearGradient id="hd5Head" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#022851"/><stop offset="1" stop-color="#003a6b"/></linearGradient>
+  <marker id="hd5Arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#022851"/></marker>
+  <marker id="hd5ArrRed" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#c10230"/></marker>
+  <filter id="hd5Sh" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#022851" flood-opacity="0.18"/></filter>
+</defs>
+<rect width="640" height="420" fill="#f7fafc"/>
+<rect width="640" height="56" fill="url(#hd5Head)"/>
+<rect y="56" width="640" height="4" fill="#ffbf00"/>
+<text x="24" y="27" fill="#ffffff" font-size="17" font-weight="bold">Anticoagulation: Heparin &amp; Alternatives</text>
+<text x="24" y="45" fill="#ffbf00" font-size="11" letter-spacing="0.5">Keep blood from clotting in the circuit — without bleeding the patient</text>
+
+<!-- ============ circuit strip (top) ============ -->
+<rect x="40" y="74" width="576" height="120" rx="12" fill="#ffffff" stroke="#e3e8ee" filter="url(#hd5Sh)"/>
+<text x="56" y="96" fill="#022851" font-size="12" font-weight="bold">Where heparin enters</text>
+<!-- circuit line -->
+<path d="M70 140 H576" fill="none" stroke="#c10230" stroke-width="5" stroke-linecap="round"/>
+<rect x="316" y="124" width="52" height="32" rx="6" fill="#e9f1f8" stroke="#5b6b7a" stroke-width="1.5"/>
+<text x="342" y="144" fill="#5b6b7a" font-size="8" text-anchor="middle" font-weight="bold">DIALYZER</text>
+<rect x="432" y="124" width="30" height="32" rx="6" fill="#e9f1f8" stroke="#5b6b7a" stroke-width="1.5"/>
+<text x="447" y="144" fill="#5b6b7a" font-size="7.5" text-anchor="middle">chamber</text>
+<text x="216" y="166" fill="#5b6b7a" font-size="9">access → arterial line → dialyzer → venous return →</text>
+<!-- heparin syringe -->
+<g filter="url(#hd5Sh)">
+  <rect x="116" y="100" width="70" height="22" rx="6" fill="#ffffff" stroke="#022851" stroke-width="2"/>
+</g>
+<rect x="114" y="104" width="26" height="14" rx="3" fill="#ffbf00"/>
+<line x1="151" y1="122" x2="151" y2="136" stroke="#022851" stroke-width="3" marker-end="url(#hd5Arr)"/>
+<text x="196" y="96" fill="#022851" font-size="10" font-weight="bold">Heparin pump (arterial line)</text>
+<text x="196" y="108" fill="#5b6b7a" font-size="8.5">onset 3–5 min · half-life 30–120 min</text>
+<!-- clamp -->
+<rect x="546" y="132" width="10" height="16" rx="2" fill="#022851"/>
+<text x="552" y="166" fill="#5b6b7a" font-size="8" text-anchor="middle">return</text>
+
+<!-- HIT warning -->
+<g filter="url(#hd5Sh)">
+  <rect x="40" y="206" width="204" height="110" rx="10" fill="#fff3f4" stroke="#c10230" stroke-width="1.5"/>
+</g>
+<rect x="40" y="206" width="204" height="26" rx="10" fill="#c10230"/>
+<rect x="40" y="220" width="204" height="12" fill="#c10230"/>
+<text x="142" y="224" fill="#ffffff" font-size="9.5" text-anchor="middle" font-weight="bold">HIT — heparin-induced thrombocytopenia</text>
+<text x="52" y="252" fill="#1c2b39" font-size="9.5" font-weight="bold">Type I</text>
+<text x="52" y="266" fill="#5b6b7a" font-size="9">modest platelet drop at 2–3 days,</text>
+<text x="52" y="279" fill="#5b6b7a" font-size="9">self-resolves</text>
+<text x="52" y="298" fill="#1c2b39" font-size="9.5" font-weight="bold">Type II (immune) ⚠</text>
+<text x="52" y="308" fill="#c10230" font-size="8.5">big drop 4–10 days → stop ALL heparin</text>
+
+<!-- ============ alternatives grid (bottom right) ============ -->
+<text x="260" y="222" fill="#022851" font-size="12.5" font-weight="bold">Alternatives when heparin is unsafe</text>
+<!-- citrate -->
+<g filter="url(#hd5Sh)">
+  <rect x="260" y="232" width="176" height="94" rx="10" fill="#ffffff" stroke="#00573f" stroke-width="1.5"/>
+</g>
+<text x="272" y="252" fill="#00573f" font-size="11" font-weight="bold">Regional citrate (RCA)</text>
+<text x="272" y="268" fill="#5b6b7a" font-size="9">citrate binds ionized Ca²⁺ in</text>
+<text x="272" y="281" fill="#5b6b7a" font-size="9">the circuit → anticoagulated</text>
+<text x="272" y="294" fill="#5b6b7a" font-size="9">regionally; Ca infused back</text>
+<text x="272" y="307" fill="#5b6b7a" font-size="9">to the patient</text>
+<circle cx="416" cy="250" r="9" fill="#00573f"/>
+<text x="416" y="253.5" fill="#ffffff" font-size="9" text-anchor="middle" font-weight="bold">Ca</text>
+<!-- heparin-free -->
+<g filter="url(#hd5Sh)">
+  <rect x="448" y="232" width="168" height="94" rx="10" fill="#ffffff" stroke="#0090b8" stroke-width="1.5"/>
+</g>
+<text x="460" y="252" fill="#0090b8" font-size="11" font-weight="bold">Heparin-free HD</text>
+<text x="460" y="268" fill="#5b6b7a" font-size="9">saline boluses every</text>
+<text x="460" y="281" fill="#5b6b7a" font-size="9">15–60 min flush the</text>
+<text x="460" y="294" fill="#5b6b7a" font-size="9">circuit; best for</text>
+<text x="460" y="307" fill="#5b6b7a" font-size="9">active bleeding risk</text>
+<!-- LMWH -->
+<g filter="url(#hd5Sh)">
+  <rect x="260" y="338" width="176" height="60" rx="10" fill="#ffffff" stroke="#7a3b8f" stroke-width="1.5"/>
+</g>
+<text x="272" y="358" fill="#7a3b8f" font-size="11" font-weight="bold">LMWH</text>
+<text x="272" y="374" fill="#5b6b7a" font-size="9">longer half-life, more</text>
+<text x="272" y="387" fill="#5b6b7a" font-size="9">predictable dosing</text>
+<!-- argatroban -->
+<g filter="url(#hd5Sh)">
+  <rect x="448" y="338" width="168" height="60" rx="10" fill="#ffffff" stroke="#b8860b" stroke-width="1.5"/>
+</g>
+<text x="460" y="358" fill="#b8860b" font-size="11" font-weight="bold">Argatroban (DTI)</text>
+<text x="460" y="374" fill="#5b6b7a" font-size="9">direct thrombin inhibitor —</text>
+<text x="460" y="387" fill="#5b6b7a" font-size="9">the pick for HIT patients</text>
+
+<text x="616" y="414" fill="#9aa7b4" font-size="9" text-anchor="end">CNN Exam Prep · Hemodialysis</text>
+</svg>

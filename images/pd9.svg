@@ -1,4 +1,74 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 420" width="640" height="420" font-family="Helvetica,Arial,sans-serif">
-    <rect x="0" y="0" width="640" height="52" fill="#022851"/>
-    <text x="16" y="22" fill="#fff" font-size="15" font-weight="bold">PD Patient Selection</text>
-    <text x="16" y="40" fill="#ffbf00" font-size="11">Special Populations</text><ellipse cx="320" cy="220" rx="70*s" ry="50*s" fill="#eef4f8" stroke="#022851" stroke-width="2"/><path d="M 243.0 220 q -20 0 -20 -20 l 0 -30" fill="none" stroke="#022851" stroke-width="2"/><rect x="215.5" y="143.0" width="44.0" height="33.0" fill="#00b2e3" stroke="#022851" stroke-width="2" rx="6"/><text x="237.5" y="162.8" fill="#022851" font-size="9" text-anchor="middle" font-weight="bold">Dialysate</text><text x="320" y="224" fill="#022851" font-size="10" text-anchor="middle" font-weight="bold">Peritoneum</text><text x="628" y="410" fill="#5b6b7a" font-size="9" text-anchor="end">CNN Exam Prep - Study Diagram</text></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 420" font-family="Helvetica,Arial,sans-serif">
+<defs>
+  <linearGradient id="pd9Head" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#022851"/><stop offset="1" stop-color="#003a6b"/></linearGradient>
+  <filter id="pd9Sh" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#022851" flood-opacity="0.18"/></filter>
+</defs>
+<rect width="640" height="420" fill="#f7fafc"/>
+<rect width="640" height="56" fill="url(#pd9Head)"/>
+<rect y="56" width="640" height="4" fill="#ffbf00"/>
+<text x="24" y="27" fill="#ffffff" font-size="17" font-weight="bold">Patient Selection &amp; Training</text>
+<text x="24" y="45" fill="#ffbf00" font-size="11" letter-spacing="0.5">Who qualifies · contraindications · the home visit</text>
+
+<!-- ============ eligibility stat (left) ============ -->
+<rect x="36" y="70" width="180" height="170" rx="12" fill="#ffffff" stroke="#e3e8ee" filter="url(#pd9Sh)"/>
+<text x="52" y="92" fill="#022851" font-size="12" font-weight="bold">Who qualifies?</text>
+<g filter="url(#pd9Sh)">
+  <circle cx="128" cy="152" r="46" fill="#00573f"/>
+</g>
+<path d="M128 152 L128 110 A42 42 0 0 1 164 174 Z" fill="#0a6b52"/>
+<text x="128" y="150" fill="#ffffff" font-size="17" text-anchor="middle" font-weight="bold">75%</text>
+<text x="128" y="166" fill="#cfe0d8" font-size="7.5" text-anchor="middle">medically eligible</text>
+<text x="126" y="216" fill="#5b6b7a" font-size="8" text-anchor="middle">most dialysis patients could do PD —</text>
+<text x="126" y="228" fill="#5b6b7a" font-size="8" text-anchor="middle">it is usually a choice, not a verdict</text>
+
+<!-- ============ absolute contraindications (middle) ============ -->
+<rect x="228" y="70" width="196" height="170" rx="12" fill="#ffffff" stroke="#c10230" stroke-width="1.5" filter="url(#pd9Sh)"/>
+<rect x="228" y="70" width="196" height="24" rx="12" fill="#c10230"/><rect x="228" y="82" width="196" height="12" fill="#c10230"/>
+<text x="326" y="87" fill="#ffffff" font-size="10.5" text-anchor="middle" font-weight="bold">ABSOLUTE contraindications</text>
+<g font-size="8.5" fill="#1c2b39">
+  <text x="246" y="112" font-weight="bold">· Loss of peritoneal function</text>
+  <text x="246" y="124" fill="#5b6b7a">(sclerosing peritonitis)</text>
+  <text x="246" y="142" font-weight="bold">· Extensive adhesions</text>
+  <text x="246" y="160" font-weight="bold">· Uncorrectable hernia</text>
+  <text x="246" y="178" font-weight="bold">· Body wall defect</text>
+  <text x="246" y="180" opacity="0"/>
+</g>
+<text x="246" y="212" fill="#5b6b7a" font-size="8">dialysate will not stay put if the wall cannot hold it</text>
+
+<!-- ============ gray zones (right) ============ -->
+<rect x="436" y="70" width="168" height="170" rx="12" fill="#ffffff" stroke="#e3e8ee" filter="url(#pd9Sh)"/>
+<text x="452" y="92" fill="#022851" font-size="12" font-weight="bold">Relative, not absolute</text>
+<text x="452" y="110" fill="#8a6d1b" font-size="8.5" font-weight="bold">Obesity</text>
+<text x="452" y="121" fill="#5b6b7a" font-size="8">presternal catheter, fills 2.5–3 L</text>
+<text x="452" y="139" fill="#8a6d1b" font-size="8.5" font-weight="bold">Ostomy</text>
+<text x="452" y="150" fill="#5b6b7a" font-size="8">OK — maximize exit-site distance</text>
+<text x="452" y="163" fill="#8a6d1b" font-size="8.5" font-weight="bold">Diabetic &gt; 55 y</text>
+<text x="452" y="174" fill="#5b6b7a" font-size="8">↑ mortality on PD, but less</text>
+<text x="452" y="185" fill="#5b6b7a" font-size="8">myocardial stunning and slower</text>
+<text x="452" y="196" fill="#5b6b7a" font-size="8">retinopathy progression than HD</text>
+<text x="452" y="216" fill="#c10230" font-size="8" font-weight="bold">Active IBD → ↑ peritonitis risk</text>
+
+<!-- ============ home assessment (bottom) ============ -->
+<rect x="36" y="252" width="568" height="136" rx="12" fill="#ffffff" stroke="#e3e8ee" filter="url(#pd9Sh)"/>
+<text x="52" y="274" fill="#022851" font-size="12.5" font-weight="bold">Before the first exchange: assess the home</text>
+<g font-size="9" font-weight="bold" text-anchor="middle" fill="#022851">
+  <rect x="52" y="286" width="122" height="52" rx="8" fill="#e9f1f8"/>
+  <rect x="186" y="286" width="122" height="52" rx="8" fill="#e9f1f8"/>
+  <rect x="320" y="286" width="122" height="52" rx="8" fill="#e9f1f8"/>
+  <rect x="454" y="286" width="134" height="52" rx="8" fill="#e9f1f8"/>
+</g>
+<g text-anchor="middle" font-size="9" font-weight="bold" fill="#022851">
+  <text x="97" y="304">Reliable electricity</text>
+  <text x="97" y="316" fill="#5b6b7a" font-weight="normal" font-size="8">for the cycler</text>
+  <text x="247" y="304">Drain access</text>
+  <text x="247" y="316" fill="#5b6b7a" font-weight="normal" font-size="8">toilet or sink</text>
+  <text x="381" y="304">Storage space</text>
+  <text x="381" y="316" fill="#5b6b7a" font-weight="normal" font-size="8">boxes of supplies</text>
+  <text x="521" y="304">Clean, aseptic area</text>
+  <text x="521" y="316" fill="#5b6b7a" font-weight="normal" font-size="8">no pets at exchange time</text>
+</g>
+<text x="52" y="362" fill="#00573f" font-size="9" font-weight="bold">Training covers: exit-site care · aseptic exchange technique · troubleshooting</text>
+<text x="52" y="378" fill="#00573f" font-size="9" font-weight="bold">emergencies (cloudy fluid, catheter problems) · ordering and storing supplies</text>
+
+<text x="616" y="412" fill="#9aa7b4" font-size="9" text-anchor="end">CNN Exam Prep · Peritoneal Dialysis</text>
+</svg>

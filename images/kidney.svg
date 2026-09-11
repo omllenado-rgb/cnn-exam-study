@@ -1,155 +1,90 @@
-<?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<!-- Created with Inkscape (http://www.inkscape.org/) -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 420" font-family="Helvetica,Arial,sans-serif">
+<defs>
+  <linearGradient id="kidHead" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#022851"/><stop offset="1" stop-color="#003a6b"/></linearGradient>
+  <linearGradient id="kidBody" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#c96a72"/><stop offset="0.5" stop-color="#a83a48"/><stop offset="1" stop-color="#8d1f33"/></linearGradient>
+  <linearGradient id="kidInner" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f0dde0"/><stop offset="1" stop-color="#e0c2c8"/></linearGradient>
+  <linearGradient id="kidUreter" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f0dde0"/><stop offset="1" stop-color="#d8b8c0"/></linearGradient>
+  <filter id="kidSh" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="3" stdDeviation="4" flood-color="#022851" flood-opacity="0.2"/></filter>
+</defs>
+<rect width="640" height="420" fill="#f7fafc"/>
+<rect width="640" height="56" fill="url(#kidHead)"/>
+<rect y="56" width="640" height="4" fill="#ffbf00"/>
+<text x="24" y="27" fill="#ffffff" font-size="17" font-weight="bold">The Kidneys</text>
+<text x="24" y="45" fill="#ffbf00" font-size="11" letter-spacing="0.5">Anatomy · blood supply · urine outflow</text>
 
-<svg
-   xmlns:dc="http://purl.org/dc/elements/1.1/"
-   xmlns:cc="http://creativecommons.org/ns#"
-   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
-   xmlns:svg="http://www.w3.org/2000/svg"
-   xmlns="http://www.w3.org/2000/svg"
-   version="1.2"
-   width="356"
-   height="300"
-   id="svg2">
-  <defs
-     id="defs4">
-    <marker
-       refX="0"
-       refY="0"
-       orient="auto"
-       id="Arrow1Lend"
-       style="overflow:visible">
-      <path
-         d="M 0,0 5,-5 -12.5,0 5,5 0,0 z"
-         transform="matrix(-0.8,0,0,-0.8,-10,0)"
-         id="path3299"
-         style="fill-rule:evenodd;stroke:#000000;stroke-width:1pt;marker-start:none" />
-    </marker>
-  </defs>
-  <metadata
-     id="metadata7">
-    <rdf:RDF>
-      <cc:Work
-         rdf:about="">
-        <dc:format>image/svg+xml</dc:format>
-        <dc:type
-           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
-        <dc:title></dc:title>
-      </cc:Work>
-    </rdf:RDF>
-  </metadata>
-  <g
-     transform="translate(0,-752.36215)"
-     id="layer1">
-    <path
-       d="m 206.47422,952.63428 9.28572,5.71429 c 0,0 6.42857,0.71428 5,14.28571 -1.42857,13.57143 1.42857,29.28572 -20,42.14292 -21.42857,12.8571 -30,10.7143 -30,10.7143 0,0 -33.57143,0 -54.28572,-54.28579 -20.714284,-54.28571 13.57143,-105 13.57143,-105 0,0 27.14286,-46.42857 66.42857,-42.14286 39.28572,4.28572 39.28572,51.42858 39.28572,51.42858 0,0 -12.14286,26.42857 -30,32.14286"
-       id="path2479"
-       style="fill:none;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1" />
-    <g
-       transform="translate(-102.81148,668.84353)"
-       id="g2497">
-      <path
-         d="m 347.14286,336.6479 c 0,0 -0.71429,-34.28572 -7.14286,-43.57143 -6.42857,-9.28572 -20.35402,-21.78885 -40.71429,-1.42857 -14.28571,14.28571 -6.42856,23.57142 -6.42856,23.57142 0,0 4.01424,19.09418 -16.42858,25.71429 -17.3711,5.62538 -28.57142,-10.71428 -28.57142,-10.71428 0,0 -23.58478,-21.46963 -8.57143,-34.28572 8.64689,-7.38139 48.57142,-1.80983 45.71428,-20.71428 -3.07891,-20.3718 -37.55544,23.34963 -56.42857,-1.42857 -14.27611,-18.74286 -6.62215,-55.23073 13.57142,-54.28572 19.53712,0.91429 12.33945,31.02492 30.7143,20 10.71428,-6.42857 10.99208,-17.91842 -3.57144,-25 -9.70198,-4.71763 -13.4211,-11.27384 -12.85714,-22.85714 1.08343,-22.25235 18.57143,-22.85715 37.85715,-20.00001 19.28571,2.85715 44.27093,17.51286 33.57141,30 -12.5018,14.59054 -15.0141,12.5703 -14.28571,12.85715"
-         id="path2481"
-         style="fill:none;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1" />
-      <path
-         d="m 363.57143,331.6479 c 0,-5 -4.28572,-39.28572 -4.28572,-39.28572 0,0 -7.85714,-25.71428 -17.85714,-33.57143 -10,-7.85714 -15,-13.57143 -25,-17.14285 -10,-3.57143 -13.48348,4.09902 -16.42857,-13.57143 -1.42858,-8.57144 15,-14.28572 15,-14.28572"
-         id="path2483"
-         style="fill:none;stroke:#000000;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1" />
-    </g>
-    <path
-       d="m 120.04565,795.49143 45.71429,45"
-       id="path2521"
-       style="fill:none;stroke:#000000;stroke-width:0.89999998;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;marker-end:url(#Arrow1Lend)" />
-    <path
-       d="m 74.331378,858.56285 45.714282,45"
-       id="path4071"
-       style="fill:none;stroke:#000000;stroke-width:0.89999998;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;marker-end:url(#Arrow1Lend)" />
-    <path
-       d="m 84.759953,928.70571 45.714277,45"
-       id="path4073"
-       style="fill:none;stroke:#000000;stroke-width:0.89999998;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;marker-end:url(#Arrow1Lend)" />
-    <path
-       d="m 304.33137,928.41999 -45.71429,48.57143"
-       id="path4075"
-       style="fill:none;stroke:#000000;stroke-width:0.89999998;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;marker-end:url(#Arrow1Lend)" />
-    <text
-       x="29.331369"
-       y="921.23206"
-       id="text3811"
-       xml:space="preserve"
-       style="font-size:40px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:Bitstream Vera Sans"><tspan
-         x="29.331369"
-         y="921.23206"
-         id="tspan3813"><tspan
-           x="29.331369"
-           y="921.23206"
-           id="tspan3815"
-           style="font-size:12px">Lower calyx</tspan></tspan></text>
-    <text
-       x="27.236643"
-       y="852.80939"
-       id="text3805"
-       xml:space="preserve"
-       style="font-size:40px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:Bitstream Vera Sans"><tspan
-         x="27.236643"
-         y="852.80939"
-         id="tspan3807"><tspan
-           x="27.236643"
-           y="852.80939"
-           id="tspan3809"
-           style="font-size:12px">Middle calyx</tspan></tspan></text>
-    <text
-       x="102.18853"
-       y="782.63434"
-       id="text4093"
-       xml:space="preserve"
-       style="font-size:40px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:Bitstream Vera Sans"><tspan
-         x="102.18853"
-         y="782.63434"
-         id="tspan4095" /></text>
-    <text
-       x="77.236641"
-       y="789.23798"
-       id="text3799"
-       xml:space="preserve"
-       style="font-size:40px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:Bitstream Vera Sans"><tspan
-         x="77.236641"
-         y="789.23798"
-         id="tspan3801"><tspan
-           x="77.236641"
-           y="789.23798"
-           id="tspan3803"
-           style="font-size:12px">Upper calyx</tspan></tspan></text>
-    <text
-       x="292.52237"
-       y="925.09509"
-       id="text3823"
-       xml:space="preserve"
-       style="font-size:40px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:Bitstream Vera Sans"><tspan
-         x="292.52237"
-         y="925.09509"
-         id="tspan3825"><tspan
-           x="292.52237"
-           y="925.09509"
-           id="tspan3827"
-           style="font-size:12px">Ureter</tspan></tspan></text>
-    <path
-       d="m 259.98292,873.2238 -45.71429,48.57143"
-       id="path4113"
-       style="fill:none;stroke:#000000;stroke-width:0.89999998;stroke-linecap:butt;stroke-linejoin:miter;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none;marker-end:url(#Arrow1Lend)" />
-    <text
-       x="248.17392"
-       y="869.89893"
-       id="text3817"
-       xml:space="preserve"
-       style="font-size:40px;font-style:normal;font-weight:normal;fill:#000000;fill-opacity:1;stroke:none;font-family:Bitstream Vera Sans"><tspan
-         x="248.17392"
-         y="869.89893"
-         id="tspan3819"><tspan
-           x="248.17392"
-           y="869.89893"
-           id="tspan3821"
-           style="font-size:12px">Renal Pelvis</tspan></tspan></text>
-  </g>
+<!-- ============ kidney with cutaway (center-left) ============ -->
+<g filter="url(#kidSh)">
+  <!-- whole kidney silhouette -->
+  <path d="M250 130 C210 120 172 148 168 196 C164 246 198 292 244 296 C258 293 266 284 268 270 L268 152 C266 140 260 132 250 130 Z" fill="url(#kidBody)" stroke="#7a1c2e" stroke-width="2"/>
+</g>
+<!-- hilum (medial side) -->
+<path d="M268 180 q26 -6 30 8 q-4 14 -30 10 z" fill="#5e1622"/>
+<!-- renal artery / vein / ureter -->
+<path d="M300 176 H352" stroke="#c10230" stroke-width="7" stroke-linecap="round"/>
+<path d="M300 196 H358" stroke="#0090b8" stroke-width="8" stroke-linecap="round"/>
+<path d="M296 214 q40 10 60 44 q14 26 14 52" fill="none" stroke="url(#kidUreter)" stroke-width="8" stroke-linecap="round"/>
+<text x="358" y="176" fill="#c10230" font-size="9.5" font-weight="bold">renal artery</text>
+<text x="372" y="200" fill="#0090b8" font-size="9.5" font-weight="bold">renal vein</text>
+<text x="378" y="272" fill="#8a5a66" font-size="9.5" font-weight="bold">ureter</text>
+
+<!-- cutaway: cortex/medulla bands -->
+<path d="M250 130 C210 120 172 148 168 196 C164 246 198 292 244 292 C254 289 260 282 262 270 L262 152 C260 140 258 132 250 130 Z" fill="url(#kidBody)"/>
+<!-- cortex band (outer rim of cut face) -->
+<path d="M244 138 C208 130 178 152 175 194 C172 238 202 278 242 282 C250 279 254 274 255 266 L255 144 C253 138 250 136 244 138 Z" fill="url(#kidBody)"/>
+<rect x="175" y="130" width="0" height="0"/>
+<!-- medulla pyramids -->
+<g fill="#e8cdd3" stroke="#c9a0aa" stroke-width="1">
+  <path d="M196 160 L232 168 L232 190 L200 196 Z"/>
+  <path d="M192 202 L232 196 L232 224 L196 226 Z"/>
+  <path d="M196 236 L232 230 L232 258 L202 254 Z"/>
+  <path d="M206 264 L232 264 L230 280 L212 276 Z"/>
+</g>
+<!-- renal pelvis -->
+<path d="M236 176 q14 -4 18 8 q-2 22 -18 30 q-14 -10 -16 -30 q4 -10 16 -8 z" fill="#fff" stroke="#c9a0aa" stroke-width="1.2"/>
+<text x="330" y="130" fill="#8d1f33" font-size="10" font-weight="bold">cutaway</text>
+<line x1="292" y1="134" x2="252" y2="150" stroke="#8d1f33" stroke-width="1" stroke-dasharray="3 2"/>
+
+<!-- labels on kidney -->
+<line x1="200" y1="145" x2="150" y2="122" stroke="#022851" stroke-width="1.2"/>
+<text x="66" y="118" fill="#022851" font-size="10" font-weight="bold">Cortex — filters blood</text>
+<line x1="214" y1="210" x2="140" y2="210" stroke="#022851" stroke-width="1.2"/>
+<text x="60" y="206" fill="#022851" font-size="10" font-weight="bold">Medulla (pyramids) —</text>
+<text x="60" y="218" fill="#022851" font-size="10" font-weight="bold">concentrates urine</text>
+<line x1="242" y1="196" x2="140" y2="252" stroke="#022851" stroke-width="1.2"/>
+<text x="52" y="266" fill="#022851" font-size="10" font-weight="bold">Renal pelvis — collects</text>
+<text x="52" y="278" fill="#022851" font-size="10" font-weight="bold">urine → ureter</text>
+
+<!-- ============ right: function facts ============ -->
+<g filter="url(#kidSh)">
+  <rect x="418" y="86" width="198" height="130" rx="12" fill="#ffffff" stroke="#e3e8ee"/>
+</g>
+<text x="434" y="108" fill="#022851" font-size="12" font-weight="bold">What healthy kidneys do</text>
+<g font-size="9.5" fill="#1c2b39">
+  <text x="434" y="130">· Filter ~180 L of plasma a day</text>
+  <text x="434" y="148">· Clear wastes (urea, creatinine)</text>
+  <text x="434" y="166">· Balance water &amp; electrolytes</text>
+  <text x="434" y="184">· Make erythropoietin (RBCs)</text>
+  <text x="434" y="202">· Activate vitamin D; regulate BP</text>
+</g>
+
+<!-- GFR chip -->
+<g filter="url(#kidSh)">
+  <rect x="418" y="228" width="198" height="66" rx="12" fill="#022851"/>
+</g>
+<text x="434" y="250" fill="#ffbf00" font-size="10.5" font-weight="bold">GFR — the kidney's report card</text>
+<text x="434" y="268" fill="#cfe0f2" font-size="9">normal ≈ ≥ 90 mL/min; it falls as</text>
+<text x="434" y="282" fill="#cfe0f2" font-size="9">kidney disease progresses (CKD 1→5)</text>
+
+<!-- nephron count -->
+<g filter="url(#kidSh)">
+  <rect x="418" y="306" width="198" height="58" rx="12" fill="#e2f2fb" stroke="#0090b8" stroke-width="1.2"/>
+</g>
+<text x="434" y="328" fill="#00573f" font-size="10" font-weight="bold">≈ 1 million nephrons each</text>
+<text x="434" y="344" fill="#1c2b39" font-size="9">tiny filters that do all the work —</text>
+<text x="434" y="357" fill="#1c2b39" font-size="9">lost ones never grow back</text>
+
+<!-- blood flow ribbon -->
+<path d="M352 176 q40 -14 66 0" fill="none" stroke="#c10230" stroke-width="2" opacity="0"/>
+<text x="320" y="392" fill="#022851" font-size="10.5" text-anchor="middle" font-weight="bold">~20% of cardiac output flows through the kidneys at all times</text>
+<text x="616" y="412" fill="#9aa7b4" font-size="9" text-anchor="end">CNN Exam Prep</text>
 </svg>

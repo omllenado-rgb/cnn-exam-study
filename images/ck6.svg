@@ -1,4 +1,86 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 420" width="640" height="420" font-family="Helvetica,Arial,sans-serif">
-    <rect x="0" y="0" width="640" height="52" fill="#022851"/>
-    <text x="16" y="22" fill="#fff" font-size="15" font-weight="bold">Metabolic Acidosis</text>
-    <text x="16" y="40" fill="#ffbf00" font-size="11">&amp; Hyperkalemia</text><circle cx="320" cy="200" r="22.0" fill="#00b2e3" stroke="#022851" stroke-width="1.5"/><circle cx="312.0" cy="194.0" r="4.0" fill="#022851" stroke="#022851" stroke-width="1.5"/><circle cx="326.0" cy="192.0" r="4.0" fill="#022851" stroke="#022851" stroke-width="1.5"/><circle cx="328.0" cy="206.0" r="4.0" fill="#022851" stroke="#022851" stroke-width="1.5"/><circle cx="314.0" cy="208.0" r="4.0" fill="#022851" stroke="#022851" stroke-width="1.5"/><path d="M 290.0 200 a 30 30 0 0 1 60 0" fill="none" stroke="#022851" stroke-width="2"/><path d="M 350.0 200 q 15 -20 30 -10 q 15 10 30 -5" fill="none" stroke="#022851" stroke-width="2"/><path d="M 410.0 185.0 q 5 30 -10 50 q -15 20 5 40" fill="none" stroke="#022851" stroke-width="2"/><path d="M 405.0 275.0 q 20 5 30 -10" fill="none" stroke="#022851" stroke-width="2"/><text x="628" y="410" fill="#5b6b7a" font-size="9" text-anchor="end">CNN Exam Prep - Study Diagram</text></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 420" font-family="Helvetica,Arial,sans-serif">
+<defs>
+  <linearGradient id="ck6Head" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#022851"/><stop offset="1" stop-color="#003a6b"/></linearGradient>
+  <linearGradient id="ck6EKG" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffffff"/><stop offset="1" stop-color="#f4f8fb"/></linearGradient>
+  <marker id="ck6Arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#022851"/></marker>
+  <marker id="ck6ArrRed" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#c10230"/></marker>
+  <filter id="ck6Sh" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#022851" flood-opacity="0.18"/></filter>
+</defs>
+<rect width="640" height="420" fill="#f7fafc"/>
+<rect width="640" height="56" fill="url(#ck6Head)"/>
+<rect y="56" width="640" height="4" fill="#ffbf00"/>
+<text x="24" y="27" fill="#ffffff" font-size="17" font-weight="bold">Metabolic Acidosis &amp; Hyperkalemia</text>
+<text x="24" y="45" fill="#ffbf00" font-size="11" letter-spacing="0.5">Two problems that travel together in low GFR</text>
+
+<!-- ============ left: metabolic acidosis ============ -->
+<rect x="24" y="76" width="286" height="200" rx="12" fill="#ffffff" stroke="#e3e8ee" filter="url(#ck6Sh)"/>
+<text x="40" y="98" fill="#022851" font-size="12" font-weight="bold">Metabolic acidosis — GFR &lt; 25</text>
+<text x="40" y="118" fill="#5b6b7a" font-size="9">Nephron mass falls → acid can't be excreted</text>
+<!-- consequences -->
+<g font-size="9" fill="#1c2b39">
+  <text x="40" y="140" font-weight="bold" fill="#022851">Consequences</text>
+  <text x="40" y="158">· Protein catabolism &amp; muscle wasting</text>
+  <text x="40" y="174">· Inflammation · insulin resistance</text>
+  <text x="40" y="190">· Cardiac impairment ↑ mortality</text>
+  <text x="40" y="206">· Severe: vasodilation, venoconstriction,</text>
+  <text x="52" y="220">hypotension, pulmonary edema</text>
+</g>
+<!-- bicarb treatment chip -->
+<rect x="40" y="234" width="254" height="32" rx="8" fill="#e2f2e6" stroke="#00573f" stroke-width="1.2"/>
+<text x="52" y="248" fill="#00573f" font-size="9" font-weight="bold">HCO₃ &lt; 22 → oral bicarbonate</text>
+<text x="52" y="261" fill="#5b6b7a" font-size="8">0.5 mEq/kg/day · HCO₃ &gt; 32 ↑ mortality</text>
+
+<!-- ============ right: hyperkalemia ============ -->
+<rect x="330" y="76" width="286" height="200" rx="12" fill="#ffffff" stroke="#e3e8ee" filter="url(#ck6Sh)"/>
+<text x="346" y="98" fill="#022851" font-size="12" font-weight="bold">Hyperkalemia — three mechanisms</text>
+<!-- mechanisms -->
+<g font-size="9" fill="#1c2b39">
+  <text x="346" y="122" font-weight="bold" fill="#c10230">1 · Excess intake</text>
+  <text x="446" y="122" font-weight="bold" fill="#c10230">2 · ↓ Excretion</text>
+  <text x="544" y="122" font-weight="bold" fill="#c10230">3 · Shift out</text>
+</g>
+<g font-size="8" fill="#5b6b7a">
+  <text x="346" y="136">diet · salt substitutes</text>
+  <text x="446" y="136">low GFR · oliguria</text>
+  <text x="544" y="136">acidosis, lysis</text>
+</g>
+<!-- drug list -->
+<g font-size="9" fill="#1c2b39">
+  <text x="346" y="160" font-weight="bold" fill="#022851">Drugs that raise K⁺</text>
+  <text x="346" y="178">· ACE inhibitors &amp; ARBs</text>
+  <text x="346" y="194">· Potassium-sparing diuretics</text>
+  <text x="346" y="210">· NSAIDs</text>
+  <text x="346" y="228" fill="#c10230" font-weight="bold">+ acidosis itself shifts K⁺ out of cells</text>
+</g>
+
+<!-- ============ bottom: EKG progression ============ -->
+<rect x="24" y="290" width="592" height="86" rx="12" fill="url(#ck6EKG)" stroke="#e3e8ee" filter="url(#ck6Sh)"/>
+<text x="40" y="310" fill="#022851" font-size="11.5" font-weight="bold">EKG changes progress with rising K⁺</text>
+<!-- grid background -->
+<g stroke="#eef4f8" stroke-width="1">
+  <line x1="40" y1="322" x2="600" y2="322"/><line x1="40" y1="336" x2="600" y2="336"/>
+  <line x1="40" y1="350" x2="600" y2="350"/><line x1="40" y1="364" x2="600" y2="364"/>
+</g>
+<!-- stage 1: peaked T -->
+<path d="M70 358 h30 l8 -26 l8 26 h30" fill="none" stroke="#c10230" stroke-width="2.5" stroke-linejoin="round"/>
+<text x="108" y="328" fill="#c10230" font-size="8.5" text-anchor="middle" font-weight="bold">Peaked T waves</text>
+<!-- stage 2: wide QRS -->
+<path d="M230 358 h26 l6 -22 l6 22 h20 l10 -30 l12 30 h30" fill="none" stroke="#c10230" stroke-width="2.5" stroke-linejoin="round"/>
+<text x="282" y="328" fill="#c10230" font-size="8.5" text-anchor="middle" font-weight="bold">Widened QRS</text>
+<!-- stage 3: absent P -->
+<path d="M410 358 h30 l8 -22 l8 22 h36" fill="none" stroke="#c10230" stroke-width="2.5" stroke-linejoin="round"/>
+<text x="462" y="328" fill="#c10230" font-size="8.5" text-anchor="middle" font-weight="bold">P waves disappear</text>
+<!-- arrest -->
+<path d="M530 358 h20" fill="none" stroke="#c10230" stroke-width="2.5"/>
+<path d="M556 350 l10 10 M566 350 l-10 10" stroke="#c10230" stroke-width="2.5"/>
+<text x="562" y="328" fill="#c10230" font-size="8.5" text-anchor="middle" font-weight="bold">Cardiac arrest</text>
+<!-- progression arrows -->
+<g stroke="#5b6b7a" stroke-width="1.5">
+  <line x1="170" y1="356" x2="196" y2="356" marker-end="url(#ck6Arr)"/>
+  <line x1="356" y1="356" x2="382" y2="356" marker-end="url(#ck6Arr)"/>
+  <line x1="506" y1="356" x2="524" y2="356" marker-end="url(#ck6Arr)"/>
+</g>
+
+<text x="320" y="392" fill="#c10230" font-size="9.5" text-anchor="middle" font-weight="bold">Acidosis and hyperkalemia reinforce each other — correcting one helps the other</text>
+<text x="616" y="410" fill="#9aa7b4" font-size="9" text-anchor="end">CNN Exam Prep · CKD Complications</text>
+</svg>

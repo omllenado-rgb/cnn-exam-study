@@ -1,4 +1,84 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 420" width="640" height="420" font-family="Helvetica,Arial,sans-serif">
-    <rect x="0" y="0" width="640" height="52" fill="#022851"/>
-    <text x="16" y="22" fill="#fff" font-size="15" font-weight="bold">HELLP Syndrome</text>
-    <text x="16" y="40" fill="#ffbf00" font-size="11">Pregnancy-related AKI</text><circle cx="320" cy="220" r="26.4" fill="#00b2e3" stroke="#022851" stroke-width="1.5"/><circle cx="310.4" cy="212.8" r="4.8" fill="#022851" stroke="#022851" stroke-width="1.5"/><circle cx="327.2" cy="210.4" r="4.8" fill="#022851" stroke="#022851" stroke-width="1.5"/><circle cx="329.6" cy="227.2" r="4.8" fill="#022851" stroke="#022851" stroke-width="1.5"/><circle cx="312.8" cy="229.6" r="4.8" fill="#022851" stroke="#022851" stroke-width="1.5"/><path d="M 284.0 220 a 30 30 0 0 1 60 0" fill="none" stroke="#022851" stroke-width="2"/><path d="M 356.0 220 q 15 -20 30 -10 q 15 10 30 -5" fill="none" stroke="#022851" stroke-width="2"/><path d="M 428.0 202.0 q 5 30 -10 50 q -15 20 5 40" fill="none" stroke="#022851" stroke-width="2"/><path d="M 422.0 310.0 q 20 5 30 -10" fill="none" stroke="#022851" stroke-width="2"/><text x="628" y="410" fill="#5b6b7a" font-size="9" text-anchor="end">CNN Exam Prep - Study Diagram</text></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 420" font-family="Helvetica,Arial,sans-serif">
+<defs>
+  <linearGradient id="kd4Head" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#022851"/><stop offset="1" stop-color="#003a6b"/></linearGradient>
+  <linearGradient id="kd4Dress" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#4d7fa8"/><stop offset="1" stop-color="#2c4a68"/></linearGradient>
+  <marker id="kd4Arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#022851"/></marker>
+  <marker id="kd4ArrRed" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#c10230"/></marker>
+  <filter id="kd4Sh" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#022851" flood-opacity="0.18"/></filter>
+</defs>
+<rect width="640" height="420" fill="#f7fafc"/>
+<rect width="640" height="56" fill="url(#kd4Head)"/>
+<rect y="56" width="640" height="4" fill="#ffbf00"/>
+<text x="24" y="27" fill="#ffffff" font-size="17" font-weight="bold">HELLP Syndrome &amp; Pregnancy-Related AKI</text>
+<text x="24" y="45" fill="#ffbf00" font-size="11" letter-spacing="0.5">A potentially fatal complication of severe preeclampsia</text>
+
+<!-- ============ pregnant mother (left) ============ -->
+<g filter="url(#kd4Sh)">
+  <circle cx="96" cy="110" r="18" fill="#f4d5bc"/>
+  <path d="M84 130 q12 -6 24 0 q22 6 26 34 q30 -6 40 22 q8 24 -12 34 l0 66 h-76 l0 -60 q-14 -8 -12 -30 q2 -30 10 -66 z" fill="url(#kd4Dress)"/>
+</g>
+<!-- belly -->
+<circle cx="138" cy="204" r="24" fill="#e8b894" opacity="0.9"/>
+<text x="138" y="208" fill="#7a4a35" font-size="8" text-anchor="middle" font-weight="bold">fetus</text>
+<text x="96" y="298" fill="#5b6b7a" font-size="9" text-anchor="middle">severe preeclampsia</text>
+<!-- maternal effects -->
+<g font-size="9" fill="#1c2b39">
+  <text x="46" y="312">· vasoconstriction, inadequate</text>
+  <text x="58" y="324">organ perfusion</text>
+  <text x="46" y="342">· increased blood pressure</text>
+  <text x="46" y="360">· ↓ GFR · ↑ creatinine &amp; BUN</text>
+</g>
+
+<!-- ============ HELLP letters (right top) ============ -->
+<g filter="url(#kd4Sh)">
+  <rect x="216" y="76" width="400" height="66" rx="12" fill="#022851"/>
+</g>
+<text x="416" y="98" fill="#ffbf00" font-size="13" text-anchor="middle" font-weight="bold" letter-spacing="3">H · E · L · L · P</text>
+<g font-size="9.5" fill="#cfe0f2" text-anchor="middle">
+  <text x="280" y="120">Hemolysis</text>
+  <text x="400" y="120">Elevated Liver enzymes</text>
+  <text x="530" y="120">Low Platelets</text>
+</g>
+
+<!-- ============ classification (right mid) ============ -->
+<rect x="216" y="156" width="400" height="118" rx="12" fill="#ffffff" stroke="#e3e8ee" filter="url(#kd4Sh)"/>
+<text x="232" y="178" fill="#022851" font-size="12" font-weight="bold">Classified by platelet count — drives timing of delivery</text>
+<!-- platelet gauge -->
+<rect x="232" y="188" width="352" height="26" rx="13" fill="#eef4f8"/>
+<rect x="232" y="188" width="112" height="26" rx="13" fill="#c10230"/>
+<rect x="344" y="188" width="116" height="26" fill="#d99a00"/>
+<rect x="460" y="188" width="140" height="26" rx="13" fill="#00573f"/>
+<g font-size="8.5" fill="#ffffff" text-anchor="middle" font-weight="bold">
+  <text x="288" y="205">Class I</text>
+  <text x="402" y="205">Class II</text>
+  <text x="530" y="205">Class III</text>
+</g>
+<g font-size="9" fill="#1c2b39">
+  <text x="232" y="236" font-weight="bold">&lt; 50,000/µL → deliver within 48 hours</text>
+  <text x="232" y="254" font-weight="bold">50,000–100,000 → close monitoring</text>
+  <text x="232" y="268" font-weight="bold" font-size="9">100,000–150,000 → close monitoring</text>
+</g>
+
+<!-- ============ renal + fetal effects (bottom) ============ -->
+<g filter="url(#kd4Sh)">
+  <rect x="216" y="288" width="192" height="100" rx="12" fill="#fff3f4" stroke="#c10230" stroke-width="1.5"/>
+</g>
+<text x="232" y="304" fill="#c10230" font-size="11" font-weight="bold">Kidney effects</text>
+<g font-size="9" fill="#1c2b39">
+  <text x="232" y="322">· ↓ GFR, ↓ urine output</text>
+  <text x="232" y="338">· ↑ creatinine and BUN</text>
+  <text x="232" y="354">· proteinuria</text>
+  <text x="232" y="370">· watch for progressing AKI</text>
+</g>
+<g filter="url(#kd4Sh)">
+  <rect x="424" y="290" width="192" height="100" rx="12" fill="#f3ecf8" stroke="#7a3b8f" stroke-width="1.5"/>
+</g>
+<text x="440" y="308" fill="#7a3b8f" font-size="11" font-weight="bold">Fetal risks</text>
+<g font-size="8.5" fill="#1c2b39">
+  <text x="440" y="324">hypoxia · acidosis · growth restriction</text>
+  <text x="440" y="340">malnutrition · long-term neuro-</text>
+  <text x="440" y="352">developmental impairment · death</text>
+</g>
+
+<text x="616" y="414" fill="#9aa7b4" font-size="9" text-anchor="end">CNN Exam Prep · Kidney Disease</text>
+</svg>

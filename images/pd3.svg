@@ -1,4 +1,103 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 420" width="640" height="420" font-family="Helvetica,Arial,sans-serif">
-    <rect x="0" y="0" width="640" height="52" fill="#022851"/>
-    <text x="16" y="22" fill="#fff" font-size="15" font-weight="bold">Peritoneal Transport</text>
-    <text x="16" y="40" fill="#ffbf00" font-size="11">PET Testing</text><ellipse cx="320" cy="220" rx="70*s" ry="50*s" fill="#eef4f8" stroke="#022851" stroke-width="2"/><path d="M 243.0 220 q -20 0 -20 -20 l 0 -30" fill="none" stroke="#022851" stroke-width="2"/><rect x="215.5" y="143.0" width="44.0" height="33.0" fill="#00b2e3" stroke="#022851" stroke-width="2" rx="6"/><text x="237.5" y="162.8" fill="#022851" font-size="9" text-anchor="middle" font-weight="bold">Dialysate</text><text x="320" y="224" fill="#022851" font-size="10" text-anchor="middle" font-weight="bold">Peritoneum</text><text x="628" y="410" fill="#5b6b7a" font-size="9" text-anchor="end">CNN Exam Prep - Study Diagram</text></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 420" font-family="Helvetica,Arial,sans-serif">
+<defs>
+  <linearGradient id="pd3Head" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#022851"/><stop offset="1" stop-color="#003a6b"/></linearGradient>
+  <marker id="pd3Arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#022851"/></marker>
+  <marker id="pd3ArrG" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#00573f"/></marker>
+  <filter id="pd3Sh" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#022851" flood-opacity="0.18"/></filter>
+</defs>
+<rect width="640" height="420" fill="#f7fafc"/>
+<rect width="640" height="56" fill="url(#pd3Head)"/>
+<rect y="56" width="640" height="4" fill="#ffbf00"/>
+<text x="24" y="27" fill="#ffffff" font-size="17" font-weight="bold">Membrane Transport &amp; the PET</text>
+<text x="24" y="45" fill="#ffbf00" font-size="11" letter-spacing="0.5">Peritoneal equilibration test · transporter types · sodium sieving</text>
+
+<!-- ============ PET protocol (left) ============ -->
+<rect x="36" y="70" width="270" height="180" rx="12" fill="#ffffff" stroke="#e3e8ee" filter="url(#pd3Sh)"/>
+<text x="52" y="92" fill="#022851" font-size="12.5" font-weight="bold">Running the PET</text>
+<!-- dialysate bag -->
+<g filter="url(#pd3Sh)">
+  <path d="M56 108 h48 v40 q0 10 -24 10 t-24 -10 z" fill="#e2f2fb" stroke="#0090b8" stroke-width="2"/>
+</g>
+<rect x="60" y="102" width="40" height="8" rx="2" fill="#022851"/>
+<text x="80" y="136" fill="#0090b8" font-size="8" text-anchor="middle" font-weight="bold">2.5%</text>
+<text x="80" y="146" fill="#5b6b7a" font-size="7" text-anchor="middle">dextrose</text>
+<text x="80" y="178" fill="#5b6b7a" font-size="8.5" text-anchor="middle">2 L fill</text>
+<!-- arrow to dwell -->
+<line x1="112" y1="130" x2="140" y2="130" stroke="#022851" stroke-width="2.5" marker-end="url(#pd3Arr)"/>
+<!-- dwell clock -->
+<g filter="url(#pd3Sh)">
+  <circle cx="164" cy="130" r="22" fill="#ffffff" stroke="#022851" stroke-width="2"/>
+</g>
+<line x1="164" y1="130" x2="164" y2="116" stroke="#022851" stroke-width="2" stroke-linecap="round"/>
+<line x1="164" y1="130" x2="176" y2="136" stroke="#c10230" stroke-width="2" stroke-linecap="round"/>
+<text x="164" y="176" fill="#022851" font-size="8.5" text-anchor="middle" font-weight="bold">dwell 4 hours</text>
+<text x="164" y="188" fill="#5b6b7a" font-size="7.5" text-anchor="middle">glucose absorbs across</text>
+<text x="164" y="197" fill="#5b6b7a" font-size="7.5" text-anchor="middle">the membrane</text>
+<!-- arrow to effluent -->
+<line x1="190" y1="130" x2="218" y2="130" stroke="#022851" stroke-width="2.5" marker-end="url(#pd3Arr)"/>
+<!-- effluent vial -->
+<g filter="url(#pd3Sh)">
+  <path d="M226 112 v34 a8 8 0 0 0 16 0 v-34 z" fill="#fdf3d1" stroke="#8a6d1b" stroke-width="1.5"/>
+</g>
+<rect x="224" y="106" width="20" height="7" rx="2" fill="#8a6d1b"/>
+<text x="234" y="178" fill="#8a6d1b" font-size="8.5" text-anchor="middle" font-weight="bold">sample effluent</text>
+<text x="234" y="189" fill="#5b6b7a" font-size="7.5" text-anchor="middle">D/P creatinine,</text>
+<text x="234" y="198" fill="#5b6b7a" font-size="7.5" text-anchor="middle">D/D0 glucose</text>
+<!-- result -->
+<rect x="52" y="212" width="238" height="28" rx="6" fill="#e9f1f8"/>
+<text x="171" y="230" fill="#022851" font-size="9" text-anchor="middle" font-weight="bold">Result → high · high-average · low-average · low</text>
+<text x="52" y="246" fill="#00573f" font-size="8.5" font-weight="bold">Membrane surface area ≈ your skin — the body's largest dialyzer</text>
+
+<!-- ============ transporter comparison (right) ============ -->
+<rect x="318" y="70" width="286" height="180" rx="12" fill="#ffffff" stroke="#e3e8ee" filter="url(#pd3Sh)"/>
+<text x="334" y="92" fill="#022851" font-size="12.5" font-weight="bold">Two transporter phenotypes</text>
+<!-- HIGH -->
+<rect x="334" y="102" width="122" height="134" rx="8" fill="#ffe3e6"/>
+<text x="395" y="120" fill="#c10230" font-size="10" text-anchor="middle" font-weight="bold">HIGH transport</text>
+<text x="395" y="140" fill="#5b6b7a" font-size="7.5" text-anchor="middle">glucose absorbed fast</text>
+<text x="395" y="154" fill="#5b6b7a" font-size="7.5" text-anchor="middle">gradient lost early</text>
+<text x="395" y="168" fill="#5b6b7a" font-size="7.5" text-anchor="middle">UF falls on long dwells</text>
+<rect x="346" y="180" width="98" height="26" rx="6" fill="#c10230"/>
+<text x="395" y="197" fill="#ffffff" font-size="9" text-anchor="middle" font-weight="bold">SHORT dwells</text>
+<text x="395" y="222" fill="#8d1f33" font-size="7.5" text-anchor="middle">→ cycler (CCPD)</text>
+<!-- LOW -->
+<rect x="466" y="102" width="122" height="134" rx="8" fill="#e2f2e6"/>
+<text x="527" y="120" fill="#00573f" font-size="10" text-anchor="middle" font-weight="bold">LOW transport</text>
+<text x="527" y="140" fill="#5b6b7a" font-size="7.5" text-anchor="middle">glucose lingers,</text>
+<text x="527" y="154" fill="#5b6b7a" font-size="7.5" text-anchor="middle">gradient persists</text>
+<text x="527" y="170" fill="#5b6b7a" font-size="7.5" text-anchor="middle">excellent UF</text>
+<rect x="478" y="180" width="98" height="26" rx="6" fill="#00573f"/>
+<text x="527" y="197" fill="#ffffff" font-size="9" text-anchor="middle" font-weight="bold">LONG dwells</text>
+<text x="527" y="222" fill="#00573f" font-size="7.5" text-anchor="middle">→ manual (CAPD)</text>
+
+<!-- ============ sodium sieving + retest (bottom) ============ -->
+<rect x="36" y="262" width="346" height="122" rx="12" fill="#ffffff" stroke="#e3e8ee" filter="url(#pd3Sh)"/>
+<text x="52" y="284" fill="#022851" font-size="12.5" font-weight="bold">Sodium sieving — the first 30 minutes</text>
+<!-- membrane + aquaporin -->
+<rect x="52" y="296" width="120" height="52" rx="8" fill="#e9f1f8" stroke="#5b6b7a" stroke-width="1.5"/>
+<path d="M58 322 q10 -12 22 -6 q14 -10 24 0 q12 -8 22 4 q10 8 20 2 q14 -6 20 6" fill="none" stroke="#5b6b7a" stroke-width="2"/>
+<circle cx="92" cy="314" r="5" fill="#00b2e3"/>
+<circle cx="116" cy="308" r="5" fill="#00b2e3"/>
+<circle cx="140" cy="318" r="5" fill="#00b2e3"/>
+<line x1="92" y1="320" x2="92" y2="336" stroke="#0090b8" stroke-width="1" marker-end="url(#pd3Arr)"/>
+<text x="92" y="360" fill="#0090b8" font-size="8" text-anchor="middle" font-weight="bold">aquaporin-1</text>
+<text x="182" y="308" fill="#1c2b39" font-size="9">Water channels pass <tspan font-weight="bold">free water only</tspan> —</text>
+<text x="182" y="322" fill="#1c2b39" font-size="9">sodium stays behind early in the dwell</text>
+<text x="182" y="338" fill="#5b6b7a" font-size="8.5">→ UF is low-sodium at first ("sieving")</text>
+<text x="182" y="352" fill="#5b6b7a" font-size="8.5">later sodium diffuses in; loss of sieving</text>
+<text x="182" y="364" fill="#5b6b7a" font-size="8.5">signals membrane change → morning thirst</text>
+
+<rect x="394" y="262" width="210" height="122" rx="12" fill="#ffffff" stroke="#e3e8ee" filter="url(#pd3Sh)"/>
+<text x="410" y="284" fill="#022851" font-size="12.5" font-weight="bold">Repeat the PET when…</text>
+<g font-size="9" fill="#1c2b39">
+  <circle cx="404" cy="300" r="3" fill="#ffbf00"/>
+  <text x="414" y="304">after an episode of peritonitis</text>
+  <circle cx="404" cy="324" r="3" fill="#ffbf00"/>
+  <text x="414" y="327" font-weight="bold" fill="#c10230">unexplained ultrafiltration loss</text>
+  <circle cx="404" cy="348" r="3" fill="#ffbf00"/>
+  <text x="414" y="348">clinical picture does not match</text>
+  <text x="414" y="362">the assigned transport type</text>
+</g>
+
+<text x="616" y="412" fill="#9aa7b4" font-size="9" text-anchor="end">CNN Exam Prep · Peritoneal Dialysis</text>
+</svg>

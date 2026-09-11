@@ -1,4 +1,74 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 420" width="640" height="420" font-family="Helvetica,Arial,sans-serif">
-    <rect x="0" y="0" width="640" height="52" fill="#022851"/>
-    <text x="16" y="22" fill="#fff" font-size="15" font-weight="bold">Acute Kidney Injury</text>
-    <text x="16" y="40" fill="#ffbf00" font-size="11">Prerenal / Intrarenal / Postrenal</text><circle cx="320" cy="220" r="26.4" fill="#00b2e3" stroke="#022851" stroke-width="1.5"/><circle cx="310.4" cy="212.8" r="4.8" fill="#022851" stroke="#022851" stroke-width="1.5"/><circle cx="327.2" cy="210.4" r="4.8" fill="#022851" stroke="#022851" stroke-width="1.5"/><circle cx="329.6" cy="227.2" r="4.8" fill="#022851" stroke="#022851" stroke-width="1.5"/><circle cx="312.8" cy="229.6" r="4.8" fill="#022851" stroke="#022851" stroke-width="1.5"/><path d="M 284.0 220 a 30 30 0 0 1 60 0" fill="none" stroke="#022851" stroke-width="2"/><path d="M 356.0 220 q 15 -20 30 -10 q 15 10 30 -5" fill="none" stroke="#022851" stroke-width="2"/><path d="M 428.0 202.0 q 5 30 -10 50 q -15 20 5 40" fill="none" stroke="#022851" stroke-width="2"/><path d="M 422.0 310.0 q 20 5 30 -10" fill="none" stroke="#022851" stroke-width="2"/><text x="628" y="410" fill="#5b6b7a" font-size="9" text-anchor="end">CNN Exam Prep - Study Diagram</text></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 420" font-family="Helvetica,Arial,sans-serif">
+<defs>
+  <linearGradient id="kd1Head" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#022851"/><stop offset="1" stop-color="#003a6b"/></linearGradient>
+  <linearGradient id="kd1Kidney" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#a34a3f"/><stop offset="1" stop-color="#7a3b8f"/></linearGradient>
+  <linearGradient id="kd1Kid2" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#c97b62"/><stop offset="1" stop-color="#9d5545"/></linearGradient>
+  <marker id="kd1Arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#022851"/></marker>
+  <marker id="kd1ArrRed" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#c10230"/></marker>
+  <marker id="kd1ArrCyan" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#0090b8"/></marker>
+  <marker id="kd1ArrGold" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#d99a00"/></marker>
+  <filter id="kd1Sh" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#022851" flood-opacity="0.18"/></filter>
+</defs>
+<rect width="640" height="420" fill="#f7fafc"/>
+<rect width="640" height="56" fill="url(#kd1Head)"/>
+<rect y="56" width="640" height="4" fill="#ffbf00"/>
+<text x="24" y="27" fill="#ffffff" font-size="17" font-weight="bold">Acute Kidney Injury: Types &amp; Pathophysiology</text>
+<text x="24" y="45" fill="#ffbf00" font-size="11" letter-spacing="0.5">Prerenal · intrarenal · postrenal — where is the injury?</text>
+
+<!-- central kidney -->
+<g filter="url(#kd1Sh)">
+  <path d="M330 130 C282 112 234 146 232 208 C230 262 266 302 316 304 C348 305 366 288 358 272 C382 264 386 228 362 220 C372 186 366 144 330 130 Z" fill="url(#kd1Kidney)" stroke="#5f2d5e" stroke-width="1.5"/>
+</g>
+<path d="M300 150 C270 140 250 168 252 210 C254 248 280 274 312 276" fill="none" stroke="#e8b894" stroke-width="5" opacity="0.5" stroke-linecap="round"/>
+<text x="296" y="250" fill="#f3d9cf" font-size="11" font-weight="bold">KIDNEY</text>
+<!-- renal artery in, ureter out -->
+<path d="M150 190 H262" fill="none" stroke="#c10230" stroke-width="6" stroke-linecap="round"/>
+<path d="M150 190 H262" fill="none" stroke="#ffffff" stroke-width="1.5" stroke-dasharray="8 7" opacity="0.55"/>
+<line x1="160" y1="172" x2="196" y2="172" stroke="#c10230" stroke-width="2.5" marker-end="url(#kd1ArrRed)"/>
+<path d="M366 226 q26 10 26 34 v30" fill="none" stroke="#d99a00" stroke-width="6" stroke-linecap="round"/>
+<text x="170" y="206" fill="#c10230" font-size="9" text-anchor="middle" font-weight="bold">blood in</text>
+
+<!-- PRERENAL (top-left) -->
+<g>
+  <rect x="24" y="72" width="220" height="92" rx="10" fill="#ffffff" stroke="#0090b8" stroke-width="1.5" filter="url(#kd1Sh)"/>
+  <text x="38" y="92" fill="#0090b8" font-size="12.5" font-weight="bold">1 · Prerenal — BEFORE the kidney</text>
+  <text x="38" y="112" fill="#1c2b39" font-size="9.5">· hypotension, hypovolemia ↓ blood flow</text>
+  <text x="38" y="128" fill="#1c2b39" font-size="9.5">· kidney tissue itself is healthy</text>
+  <rect x="38" y="138" width="192" height="18" rx="9" fill="#e2f2fb"/>
+  <text x="134" y="151" fill="#005a7a" font-size="8.5" text-anchor="middle" font-weight="bold">triggers renin-angiotensin-aldosterone</text>
+</g>
+
+<!-- INTRARENAL (bottom-left) -->
+<g>
+  <rect x="24" y="256" width="220" height="96" rx="10" fill="#ffffff" stroke="#c10230" stroke-width="1.5" filter="url(#kd1Sh)"/>
+  <text x="38" y="276" fill="#c10230" font-size="12.5" font-weight="bold">2 · Intrarenal — INSIDE the kidney</text>
+  <text x="38" y="296" fill="#1c2b39" font-size="9.5">· direct tissue damage: toxins, ischemia</text>
+  <text x="38" y="312" fill="#1c2b39" font-size="9.5">· medications: NSAIDs, antibiotics</text>
+  <rect x="38" y="324" width="192" height="18" rx="9" fill="#ffe3e6"/>
+  <text x="134" y="337" fill="#c10230" font-size="8.5" text-anchor="middle" font-weight="bold">most common form: ATN</text>
+</g>
+
+<!-- POSTRENAL (right) -->
+<g>
+  <rect x="446" y="128" width="170" height="128" rx="10" fill="#ffffff" stroke="#7a3b8f" stroke-width="1.5" filter="url(#kd1Sh)"/>
+  <text x="460" y="148" fill="#7a3b8f" font-size="12.5" font-weight="bold">3 · Postrenal — AFTER</text>
+  <text x="460" y="166" fill="#1c2b39" font-size="9.5">urinary tract obstruction:</text>
+  <circle cx="472" cy="192" r="6" fill="#d99a00"/>
+  <text x="484" y="196" fill="#1c2b39" font-size="9.5">calculi (stones)</text>
+  <circle cx="472" cy="214" r="6" fill="#7a3b8f"/>
+  <text x="484" y="218" fill="#1c2b39" font-size="9.5">neoplasms</text>
+  <circle cx="472" cy="236" r="6" fill="#5b6b7a"/>
+  <text x="484" y="240" fill="#1c2b39" font-size="9.5">strictures</text>
+</g>
+<!-- blocked ureter callout -->
+<line x1="392" y1="266" x2="440" y2="240" stroke="#7a3b8f" stroke-width="1.2" stroke-dasharray="4 3"/>
+<rect x="384" y="296" width="12" height="10" rx="3" fill="#7a3b8f" transform="rotate(24 390 301)"/>
+<text x="410" y="308" fill="#7a3b8f" font-size="9" font-weight="bold">blocked flow</text>
+
+<!-- footer stat -->
+<g filter="url(#kd1Sh)">
+  <rect x="24" y="366" width="592" height="34" rx="10" fill="#022851"/>
+</g>
+<text x="320" y="388" fill="#ffffff" font-size="10.5" text-anchor="middle">All three types can cause permanent damage if not corrected quickly — <tspan fill="#ffbf00" font-weight="bold">infection-related AKI causes 75% of AKI deaths</tspan></text>
+<text x="616" y="414" fill="#9aa7b4" font-size="9" text-anchor="end">CNN Exam Prep · Kidney Disease</text>
+</svg>

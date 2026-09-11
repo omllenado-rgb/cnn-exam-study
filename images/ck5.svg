@@ -1,4 +1,90 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 420" width="640" height="420" font-family="Helvetica,Arial,sans-serif">
-    <rect x="0" y="0" width="640" height="52" fill="#022851"/>
-    <text x="16" y="22" fill="#fff" font-size="15" font-weight="bold">Vitamin D Deficiency</text>
-    <text x="16" y="40" fill="#ffbf00" font-size="11">MBD Treatment</text><path d="M 272.0 200 q 40 -30 80 0 q -40 30 -80 0" fill="#eef4f8" stroke="#022851" stroke-width="2"/><path d="M 296.0 190.4 q 20 -15 40 0" fill="none" stroke="#022851" stroke-width="1.5"/><text x="628" y="410" fill="#5b6b7a" font-size="9" text-anchor="end">CNN Exam Prep - Study Diagram</text></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 420" font-family="Helvetica,Arial,sans-serif">
+<defs>
+  <linearGradient id="ck5Head" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#022851"/><stop offset="1" stop-color="#003a6b"/></linearGradient>
+  <marker id="ck5Arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#022851"/></marker>
+  <filter id="ck5Sh" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#022851" flood-opacity="0.18"/></filter>
+</defs>
+<rect width="640" height="420" fill="#f7fafc"/>
+<rect width="640" height="56" fill="url(#ck5Head)"/>
+<rect y="56" width="640" height="4" fill="#ffbf00"/>
+<text x="24" y="27" fill="#ffffff" font-size="17" font-weight="bold">Vitamin D Deficiency &amp; MBD Treatment</text>
+<text x="24" y="45" fill="#ffbf00" font-size="11" letter-spacing="0.5">Up to 80% of CKD patients are deficient — starting in stage 2</text>
+
+<!-- ============ left: why deficient ============ -->
+<rect x="24" y="76" width="196" height="160" rx="12" fill="#ffffff" stroke="#e3e8ee" filter="url(#ck5Sh)"/>
+<text x="40" y="98" fill="#022851" font-size="12" font-weight="bold">Why vitamin D falls</text>
+<g font-size="9.5" fill="#1c2b39">
+  <text x="40" y="122">· Poor appetite &amp; diet limits</text>
+  <text x="40" y="140">· Low sun exposure</text>
+  <text x="40" y="158">· Skin hyperpigmentation</text>
+  <text x="52" y="172" fill="#5b6b7a" font-size="8.5">impairs UV synthesis</text>
+  <text x="40" y="192">· Damaged kidneys can't</text>
+  <text x="52" y="206" fill="#5b6b7a" font-size="8.5">activate 25-OH → calcitriol</text>
+</g>
+<!-- sun icon -->
+<circle cx="192" cy="126" r="12" fill="#ffbf00"/>
+<g stroke="#ffbf00" stroke-width="2" stroke-linecap="round">
+  <line x1="192" y1="108" x2="192" y2="102"/><line x1="192" y1="144" x2="192" y2="150"/>
+  <line x1="174" y1="126" x2="186" y2="126"/><line x1="202" y1="126" x2="214" y2="126"/>
+</g>
+
+<!-- ============ left lower: what low vit D does ============ -->
+<rect x="24" y="250" width="196" height="112" rx="12" fill="#fdf0f0" stroke="#c10230" stroke-width="1.2" filter="url(#ck5Sh)"/>
+<text x="40" y="272" fill="#c10230" font-size="12" font-weight="bold">Linked to worse outcomes</text>
+<g font-size="9" fill="#1c2b39">
+  <text x="40" y="294">· Lower bone mineral density</text>
+  <text x="40" y="310">· Higher bone turnover</text>
+  <text x="40" y="326">· Diabetes · heart failure · HTN</text>
+  <text x="40" y="342">· Increased mortality</text>
+</g>
+
+<!-- ============ center: treatment goals ============ -->
+<rect x="236" y="76" width="180" height="160" rx="12" fill="#022851" filter="url(#ck5Sh)"/>
+<text x="252" y="98" fill="#ffbf00" font-size="11" font-weight="bold">Treatment goals</text>
+<text x="252" y="122" fill="#ffffff" font-size="10" font-weight="bold">1 · Lower phosphate</text>
+<text x="264" y="136" fill="#cfe0f2" font-size="8.5">to the normal range</text>
+<text x="252" y="160" fill="#ffffff" font-size="10" font-weight="bold">2 · Avoid hypercalcemia</text>
+<text x="264" y="174" fill="#cfe0f2" font-size="8.5">watch serum calcium closely</text>
+<text x="252" y="198" fill="#cfe0f2" font-size="8.5">calcium-based binders are first</text>
+<text x="252" y="210" fill="#cfe0f2" font-size="8.5">line in stage 3–4 CKD</text>
+<text x="252" y="224" fill="#ffbf00" font-size="8.5">— but NOT if Ca is elevated</text>
+
+<!-- ============ center lower: calcitriol caution ============ -->
+<rect x="236" y="250" width="180" height="112" rx="12" fill="#ffffff" stroke="#c10230" stroke-width="1.5" filter="url(#ck5Sh)"/>
+<text x="252" y="272" fill="#c10230" font-size="11.5" font-weight="bold">Do NOT use routinely</text>
+<text x="252" y="292" fill="#1c2b39" font-size="9">Calcitriol / vitamin D sterols are</text>
+<text x="252" y="306" fill="#1c2b39" font-size="9">not routine in stage 3–5 CKD —</text>
+<text x="252" y="320" fill="#1c2b39" font-size="9">reserve for severe</text>
+<text x="252" y="334" fill="#c10230" font-size="9" font-weight="bold">hyperparathyroidism</text>
+
+<!-- ============ right: binder choices ============ -->
+<rect x="432" y="76" width="184" height="190" rx="12" fill="#ffffff" stroke="#e3e8ee" filter="url(#ck5Sh)"/>
+<rect x="432" y="76" width="184" height="30" rx="12" fill="#022851"/>
+<rect x="432" y="94" width="184" height="12" fill="#022851"/>
+<text x="524" y="96" fill="#ffbf00" font-size="10.5" text-anchor="middle" font-weight="bold">PHOSPHATE BINDERS</text>
+<!-- calcium-based -->
+<g filter="url(#ck5Sh)">
+  <rect x="448" y="120" width="152" height="62" rx="8" fill="#e2f2e6" stroke="#00573f" stroke-width="1.2"/>
+</g>
+<text x="524" y="140" fill="#00573f" font-size="9.5" text-anchor="middle" font-weight="bold">Calcium-based</text>
+<text x="524" y="154" fill="#1c2b39" font-size="8.5" text-anchor="middle">first-line, CKD stage 3–4</text>
+<text x="524" y="170" fill="#c10230" font-size="8.5" text-anchor="middle" font-weight="bold">avoid if serum Ca is high</text>
+<!-- non-calcium -->
+<g filter="url(#ck5Sh)">
+  <rect x="448" y="194" width="152" height="56" rx="8" fill="#e2f2fb" stroke="#0090b8" stroke-width="1.2"/>
+</g>
+<text x="524" y="214" fill="#0090b8" font-size="9.5" text-anchor="middle" font-weight="bold">Non-calcium binders</text>
+<text x="524" y="230" fill="#1c2b39" font-size="8.5" text-anchor="middle">sevelamer · lanthanum</text>
+<text x="524" y="242" fill="#5b6b7a" font-size="8" text-anchor="middle">when calcium is already high</text>
+
+<!-- ============ right lower: biopsy ============ -->
+<rect x="432" y="280" width="184" height="82" rx="12" fill="#fdf6e3" stroke="#b8860b" stroke-width="1.2" filter="url(#ck5Sh)"/>
+<text x="448" y="302" fill="#8a6d1b" font-size="10" font-weight="bold">When to consider bone biopsy</text>
+<text x="448" y="322" fill="#1c2b39" font-size="9">MBD with fragility fractures —</text>
+<text x="448" y="336" fill="#5b6b7a" font-size="8.5">before starting antiresorptive</text>
+<text x="448" y="350" fill="#5b6b7a" font-size="8.5">therapy (bisphosphonates)</text>
+
+<!-- caption -->
+<text x="320" y="390" fill="#022851" font-size="10.5" text-anchor="middle" font-weight="bold">Deficiency begins in stage 2 — screen early, treat phosphate first, reserve calcitriol</text>
+<text x="616" y="406" fill="#9aa7b4" font-size="9" text-anchor="end">CNN Exam Prep · CKD Complications</text>
+</svg>

@@ -1,4 +1,90 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 420" width="640" height="420" font-family="Helvetica,Arial,sans-serif">
-    <rect x="0" y="0" width="640" height="52" fill="#022851"/>
-    <text x="16" y="22" fill="#fff" font-size="15" font-weight="bold">Anemia in CKD</text>
-    <text x="16" y="40" fill="#ffbf00" font-size="11">Pathophysiology &amp; Diagnosis</text><ellipse cx="272.0" cy="176.0" rx="14*s" ry="10*s" fill="#c10230" stroke="#022851" stroke-width="1.5"/><ellipse cx="320.0" cy="170.0" rx="14*s" ry="10*s" fill="#c10230" stroke="#022851" stroke-width="1.5"/><ellipse cx="368.0" cy="182.0" rx="14*s" ry="10*s" fill="#c10230" stroke="#022851" stroke-width="1.5"/><ellipse cx="290.0" cy="218.0" rx="14*s" ry="10*s" fill="#c10230" stroke="#022851" stroke-width="1.5"/><ellipse cx="344.0" cy="224.0" rx="14*s" ry="10*s" fill="#c10230" stroke="#022851" stroke-width="1.5"/><text x="628" y="410" fill="#5b6b7a" font-size="9" text-anchor="end">CNN Exam Prep - Study Diagram</text></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 420" font-family="Helvetica,Arial,sans-serif">
+<defs>
+  <linearGradient id="ck1Head" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#022851"/><stop offset="1" stop-color="#003a6b"/></linearGradient>
+  <linearGradient id="ck1Kid" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#c96a72"/><stop offset="0.5" stop-color="#a83a48"/><stop offset="1" stop-color="#8d1f33"/></linearGradient>
+  <marker id="ck1Arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#022851"/></marker>
+  <marker id="ck1ArrRed" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#c10230"/></marker>
+  <filter id="ck1Sh" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#022851" flood-opacity="0.18"/></filter>
+</defs>
+<rect width="640" height="420" fill="#f7fafc"/>
+<rect width="640" height="56" fill="url(#ck1Head)"/>
+<rect y="56" width="640" height="4" fill="#ffbf00"/>
+<text x="24" y="27" fill="#ffffff" font-size="17" font-weight="bold">Anemia in CKD — Why &amp; How to Diagnose</text>
+<text x="24" y="45" fill="#ffbf00" font-size="11" letter-spacing="0.5">Erythropoietin deficiency is the primary cause</text>
+
+<!-- ============ left: the main cause ============ -->
+<rect x="24" y="76" width="186" height="150" rx="12" fill="#ffffff" stroke="#e3e8ee" filter="url(#ck1Sh)"/>
+<text x="40" y="98" fill="#022851" font-size="12" font-weight="bold">The main cause</text>
+<g filter="url(#ck1Sh)">
+  <path d="M84 118 C70 114 58 124 56 142 C54 161 66 178 82 180 C88 178 91 174 92 169 L92 128 C91 122 88 119 84 118 Z" fill="url(#ck1Kid)" stroke="#7a1c2e" stroke-width="1.5"/>
+</g>
+<line x1="92" y1="148" x2="112" y2="148" stroke="#c10230" stroke-width="4" stroke-linecap="round"/>
+<line x1="118" y1="148" x2="150" y2="128" stroke="#c10230" stroke-width="2" marker-end="url(#ck1ArrRed)"/>
+<text x="154" y="122" fill="#c10230" font-size="9" font-weight="bold">↓ EPO</text>
+<text x="40" y="202" fill="#1c2b39" font-size="9.5">Kidneys make 90% of the body's</text>
+<text x="40" y="215" fill="#1c2b39" font-size="9.5">erythropoietin — production falls</text>
+<text x="40" y="228" fill="#5b6b7a" font-size="9.5">as GFR declines</text>
+
+<!-- ============ left lower: prevalence ============ -->
+<rect x="24" y="240" width="186" height="118" rx="12" fill="#ffffff" stroke="#e3e8ee" filter="url(#ck1Sh)"/>
+<text x="40" y="262" fill="#022851" font-size="12" font-weight="bold">How common</text>
+<text x="40" y="284" fill="#5b6b7a" font-size="9">CKD stage 1–3</text>
+<rect x="40" y="290" width="150" height="12" rx="6" fill="#eef4f8"/>
+<rect x="40" y="290" width="36" height="12" rx="6" fill="#00b2e3"/>
+<text x="82" y="300" fill="#0090b8" font-size="9.5" font-weight="bold">15–20%</text>
+<text x="40" y="322" fill="#5b6b7a" font-size="9">ESRD / dialysis</text>
+<rect x="40" y="328" width="150" height="12" rx="6" fill="#eef4f8"/>
+<rect x="40" y="328" width="124" height="12" rx="6" fill="#c10230"/>
+<text x="110" y="338" fill="#ffffff" font-size="9.5" font-weight="bold">70%</text>
+
+<!-- ============ center: RBC lifespan ============ -->
+<rect x="224" y="76" width="200" height="130" rx="12" fill="#ffffff" stroke="#e3e8ee" filter="url(#ck1Sh)"/>
+<text x="240" y="98" fill="#022851" font-size="12" font-weight="bold">RBCs don't last as long</text>
+<circle cx="272" cy="142" r="26" fill="#c10230"/>
+<circle cx="264" cy="134" r="8" fill="#e25563" opacity="0.7"/>
+<text x="272" y="186" fill="#1c2b39" font-size="11" text-anchor="middle" font-weight="bold">120 days</text>
+<text x="272" y="199" fill="#5b6b7a" font-size="9" text-anchor="middle">normal life span</text>
+<text x="312" y="146" fill="#5b6b7a" font-size="12" font-weight="bold">→</text>
+<circle cx="360" cy="142" r="26" fill="#e25563" stroke-dasharray="4 3" stroke="#c10230" stroke-width="2"/>
+<circle cx="353" cy="134" r="8" fill="#ffffff" opacity="0.5"/>
+<text x="360" y="186" fill="#c10230" font-size="11" text-anchor="middle" font-weight="bold">60–90 days</text>
+<text x="360" y="199" fill="#5b6b7a" font-size="9" text-anchor="middle">in CKD (uremia)</text>
+
+<!-- ============ center lower: other contributors ============ -->
+<rect x="224" y="220" width="200" height="138" rx="12" fill="#ffffff" stroke="#e3e8ee" filter="url(#ck1Sh)"/>
+<text x="240" y="242" fill="#022851" font-size="12" font-weight="bold">Other contributors</text>
+<g font-size="9.5" fill="#1c2b39">
+  <text x="240" y="264">· Chronic inflammation</text>
+  <text x="240" y="281">· Iron deficiency</text>
+  <text x="240" y="298">· Folate / B₁₂ deficiency</text>
+  <text x="240" y="315">· Aluminum toxicity</text>
+  <text x="240" y="332">· Severe hyperparathyroidism</text>
+</g>
+
+<!-- ============ right: KDIGO workup ============ -->
+<rect x="438" y="76" width="178" height="282" rx="12" fill="#ffffff" stroke="#e3e8ee" filter="url(#ck1Sh)"/>
+<rect x="438" y="76" width="178" height="30" rx="12" fill="#022851"/>
+<rect x="438" y="94" width="178" height="12" fill="#022851"/>
+<text x="527" y="96" fill="#ffbf00" font-size="10.5" text-anchor="middle" font-weight="bold">KDIGO DIAGNOSTIC WORKUP</text>
+<g font-size="9.5" fill="#1c2b39">
+  <text x="454" y="126" font-weight="bold" fill="#022851">Hemoglobin</text>
+  <text x="454" y="140">&lt;13 g/dL men</text>
+  <text x="454" y="154">&lt;12 g/dL women</text>
+  <text x="454" y="174" font-weight="bold" fill="#022851">Iron studies</text>
+  <text x="454" y="188">Ferritin &lt;30 mcg/L →</text>
+  <text x="454" y="202" fill="#c10230">iron deficiency</text>
+  <text x="454" y="216">TSAT &lt;16% →</text>
+  <text x="454" y="230" fill="#c10230">iron-deficiency anemia</text>
+  <text x="454" y="250" font-weight="bold" fill="#022851">Also check</text>
+  <text x="454" y="268">· Reticulocyte count</text>
+  <text x="454" y="286">· Erythropoietin level</text>
+  <text x="454" y="304">· Folate &amp; B₁₂</text>
+  <text x="454" y="322">· Stool occult blood</text>
+</g>
+<rect x="450" y="332" width="154" height="18" rx="6" fill="#fdf6e3" stroke="#b8860b" stroke-width="1"/>
+<text x="527" y="345" fill="#8a6d1b" font-size="8.5" text-anchor="middle" font-weight="bold">CBC is the first step</text>
+
+<!-- caption -->
+<text x="320" y="386" fill="#022851" font-size="10.5" text-anchor="middle" font-weight="bold">Anemia is often multifactorial — treat reversible causes before starting an ESA</text>
+<text x="616" y="406" fill="#9aa7b4" font-size="9" text-anchor="end">CNN Exam Prep · CKD Complications</text>
+</svg>
