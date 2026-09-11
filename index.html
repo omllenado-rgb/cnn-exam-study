@@ -1579,6 +1579,20 @@ function showScreen(s){
   }
 }
 
+/* HTML-escape a value for safe use inside the admin table's attributes and text.
+   Protects against stored-XSS via user_name. */
+function escHtml(s){
+  return String(s==null?'':s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+/* CSV-safe: prefix formula characters to block spreadsheet formula injection,
+   and quote cells containing commas/quotes/newlines. */
+function csvCell(s){
+  s=String(s==null?'':s);
+  if(/^[=+\-@]/.test(s)) s="'"+s;
+  return (/[",\n]/.test(s)) ? '"'+s.replace(/"/g,'""')+'"' : s;
+}
 async function loadAdmin(){
   if(!adminUnlocked) return;
   try {
@@ -1613,8 +1627,9 @@ async function loadAdmin(){
       const firstDate = u.first_started ? new Date(u.first_started).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'2-digit'}) : '—';
       const lastActive = u.last_active ? daysAgo(u.last_active) : '—';
       const weakest = computeWeakestTopic(u.topic_stats||{});
+      const ename = escHtml(u.user_name);
       html+=`<tr>
-        <td><a href="javascript:void(0)" onclick="viewUser('${u.user_name}')" style="color:var(--link);font-weight:600">${u.user_name}</a></td>
+        <td><a href="javascript:void(0)" data-view="${ename}" style="color:var(--link);font-weight:600">${ename}</a></td>
         <td>${firstDate}</td>
         <td>${inAppMin}</td>
         <td>${manualHrs}</td>
@@ -1629,14 +1644,25 @@ async function loadAdmin(){
         <td>${u.sessions||0}</td>
         <td>${u.streak||0}</td>
         <td>
-          <button onclick="resetPassword('${u.user_name}')" style="font-size:11px;padding:4px 8px;margin:2px;background:var(--light);color:var(--ink);border:1px solid var(--border);border-radius:6px">Reset PW</button>
-          <button onclick="resetUser('${u.user_name}')" style="font-size:11px;padding:4px 8px;margin:2px;background:var(--light);color:var(--ink);border:1px solid var(--border);border-radius:6px">Reset</button>
-          <button onclick="deleteUser('${u.user_name}')" style="font-size:11px;padding:4px 8px;margin:2px;background:var(--aggie-red);color:#fff;border:none;border-radius:6px">Delete</button>
+          <button data-pw="${ename}" style="font-size:11px;padding:4px 8px;margin:2px;background:var(--light);color:var(--ink);border:1px solid var(--border);border-radius:6px">Reset PW</button>
+          <button data-reset="${ename}" style="font-size:11px;padding:4px 8px;margin:2px;background:var(--light);color:var(--ink);border:1px solid var(--border);border-radius:6px">Reset</button>
+          <button data-del="${ename}" style="font-size:11px;padding:4px 8px;margin:2px;background:var(--aggie-red);color:#fff;border:none;border-radius:6px">Delete</button>
         </td>
       </tr>`;
     });
     if(!data||data.length===0) html+='<tr><td colspan="15">No users yet.</td></tr>';
     document.getElementById('adminTable').innerHTML=html;
+    // Event delegation: no inline onclick, so a crafted user_name can't inject JS.
+    const tbl=document.getElementById('adminTable');
+    tbl.onclick=function(ev){
+      const el=ev.target; if(!el) return;
+      const uname=el.getAttribute('data-view')||el.getAttribute('data-pw')||el.getAttribute('data-reset')||el.getAttribute('data-del');
+      if(!uname) return;
+      if(el.hasAttribute('data-view')) viewUser(uname);
+      else if(el.hasAttribute('data-pw')) resetPassword(uname);
+      else if(el.hasAttribute('data-reset')) resetUser(uname);
+      else if(el.hasAttribute('data-del')) deleteUser(uname);
+    };
   } catch(e){ document.getElementById('adminTable').innerHTML='<tr><td>Backend not ready.</td></tr>'; }
 }
 function daysAgo(iso){
@@ -1675,7 +1701,7 @@ function exportCSV(){
       const fd = u.first_started ? new Date(u.first_started).toLocaleDateString('en-US') : '';
       const la = u.last_active ? daysAgo(u.last_active) : '';
       const wt = computeWeakestTopic(u.topic_stats||{}) || '';
-      csv+=`${u.user_name},"${fd}",${inAppMin},${manualHrs},${sd},${mpd},"${la}","${wt}",${u.answered||0},${u.correct||0},${acc},${u.known||0},${u.sessions||0},${u.streak||0}\n`;
+      csv+=`${csvCell(escHtml(u.user_name))},"${fd}",${inAppMin},${manualHrs},${sd},${mpd},"${la}","${wt}",${u.answered||0},${u.correct||0},${acc},${u.known||0},${u.sessions||0},${u.streak||0}\n`;
     });
     const blob=new Blob([csv],{type:'text/csv'});
     const a=document.createElement('a');
@@ -1694,7 +1720,7 @@ function exportXLSX(){
       const totalMin=inAppMin+Math.round(parseFloat(manualHrs)*60); const sd=u.study_days||0; const mpd=sd>0?Math.round(totalMin/sd):0;
       const fd=u.first_started?new Date(u.first_started).toLocaleDateString('en-US'):'';
       const la=u.last_active?daysAgo(u.last_active):''; const wt=computeWeakestTopic(u.topic_stats||{})||'';
-      rows.push([u.user_name,fd,inAppMin,manualHrs,sd,mpd,la,wt,u.answered||0,u.correct||0,acc,u.known||0,u.sessions||0,u.streak||0]);
+      rows.push([escHtml(u.user_name),fd,inAppMin,manualHrs,sd,mpd,la,wt,u.answered||0,u.correct||0,acc,u.known||0,u.sessions||0,u.streak||0]);
     });
     let table = '<table border="1"><thead><tr>';
     rows[0].forEach(h=>table += '<th style="background:#022851;color:#fff">'+h+'</th>');
