@@ -169,6 +169,7 @@
           <h2 id="qQuestion" style="font-size:17px;line-height:1.4;"></h2>
           <div id="qOptions"></div>
           <div class="explain" id="qExplain" style="display:none"></div>
+          <button class="btn secondary" id="aiExplainBtn" onclick="aiExplain('quiz')" style="display:none;margin-top:10px">🤖 Explain with AI</button>
           <div class="btn-row">
             <button class="btn" id="qNext" onclick="nextQuestion()" style="display:none">Next</button>
             <button class="btn secondary" onclick="quitQuiz()">End Quiz</button>
@@ -848,9 +849,56 @@ function selectAnswer(i){
   const exp=document.getElementById('qExplain');
   exp.style.display='block';
   exp.innerHTML=(quizState.shuffledOpts[i].idx===q.ans?'Correct! ':'Incorrect. ')+q.expl;
+  document.getElementById('aiExplainBtn').style.display='block';
   document.getElementById('qNext').style.display='block';
 }
 function nextQuestion(){ quizState.idx++; if(quizState.idx<quizState.list.length) renderQuestion(); else finishQuiz(); }
+
+/* ===== AI EXPLAIN (optional, free) =====
+   Uses the Gemini API when a free API key is configured below.
+   If no key / rate-limited / offline, falls back to a friendly message.
+   Users need no setup. */
+// TODO: user to add a free Gemini API key (https://aistudio.google.com -> Get API key)
+const GEMINI_API_KEY = "";   // set to the "AIza..." key; leave "" to disable AI
+const GEMINI_MODEL   = "gemini-2.0-flash";
+
+let lastAiQuestion = null; // cache so refresh of same Q doesn't re-call
+let aiCache = null;         // {question, text} of last generated explanation
+
+async function aiExplain(mode){
+  const btn = document.getElementById('aiExplainBtn');
+  const q = quizState.list ? quizState.list[quizState.idx] : null;
+  if(!q){ return; }
+  // reuse a generated explanation if we already produced one for this question
+  if(aiCache && aiCache.question === q.q){ btn.innerHTML='🤖 Explain again'; document.getElementById('qExplain').innerHTML = aiCache.text; return; }
+  if(!GEMINI_API_KEY){
+    btn.innerHTML='🤖 AI requires a Gemini key (coming soon)';
+    return;
+  }
+  btn.textContent = '🤖 Thinking…';
+  btn.disabled = true;
+  const prompt = "You are a nephrology nursing tutor. Explain this CNN exam question in plain, simple language (2-4 short sentences), focusing on WHY the correct answer is right. Keep it to 60 words or less. Question: " + q.q;
+  try{
+    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${encodeURIComponent(GEMINI_API_KEY)}`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ contents:[{ parts:[{ text: prompt }] }],
+                             generationConfig:{ temperature:0.4, maxOutputTokens:200 } })
+    });
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    const data = await res.json();
+    const text = (data.candidates && data.candidates[0] && data.candidates[0].content &&
+                 data.candidates[0].content.parts && data.candidates[0].content.parts[0].text) || '';
+    if(!text) throw new Error('empty');
+    aiCache = { question: q.q, text };
+    document.getElementById('qExplain').innerHTML = text;
+    btn.textContent = '🤖 Explain again';
+  }catch(err){
+    document.getElementById('qExplain').innerHTML = 'AI is busy right now — try again in a minute. (Still keep the written explanation above.)';
+    btn.textContent = '🤖 Retry';
+  } finally {
+    btn.disabled = false;
+  }
+}
 function finishQuiz(){
   const total=quizState.list.length;
   const correct=quizState.list.filter(q=>window.userProgress.answers[q.q]).length;
