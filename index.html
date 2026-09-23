@@ -529,6 +529,9 @@ function initTheme(){
   document.body.classList.remove('dark');
   document.getElementById('themeToggle').textContent = '\u{1F319} Dark';
 }
+// iPhone Safari uses back-forward cache: on restore (pageshow), force light
+// again so a previously-toggled dark state can't stick across navigation.
+window.addEventListener('pageshow', function(){ try{ initTheme(); }catch(e){} });
 
 /* ============ LOGIN ============ */
 // Client-side SHA-256 (Web Crypto) so we never store/compare plaintext passwords.
