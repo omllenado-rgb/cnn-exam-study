@@ -963,14 +963,14 @@ async function aiEvaluate(){
 - Total study time: ${totalHrs.toFixed(1)}h (${inAppHrs.toFixed(1)}h in-app + ${manualHrs.toFixed(1)}h manual), ${goalPct}% of the 80h goal
 - Topic breakdown: ${topicLines.length?topicLines.join('; '):'no topic answers yet'}`;
 
-  const prompt = "You are an experienced nephrology nursing educator. Based on this student's study metrics, give SHORT, specific, encouraging advice to pass the CNN exam. If there are weak topics, name them and tell them exactly what to drill. Keep it to 3-4 bullet points, under 120 words, friendly and practical.\n\n" + summary + "\n---\nAdvice:";
+  const prompt = "You are an experienced nephrology nursing educator. Based on this student's study metrics, give a THOROUGH, in-depth, personalized assessment to help them pass the CNN exam. Structure it into clear sections:\n\n1. Overall readiness — a brief read on where they stand.\n2. Strengths — topics they're doing well on.\n3. Weak areas — name the specific topics with low accuracy AND tell them exactly how to drill each one (e.g. which concepts to review, what kind of questions to practice).\n4. Study plan — concrete next steps given their study time/streak/goal, including any balance between quiz/practice-test/flashcard time.\n5. Exam-day tips tailored to weak spots.\n\nBe specific, practical, and supportive. Write 250-400 words.\n\n" + summary + "\n---\nAssessment:";
 
   out.innerHTML = '<p class="muted">🤖 Analyzing your progress…</p>';
   btn.disabled = true;
   try{
     const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${encodeURIComponent(GEMINI_API_KEY)}`, {
       method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ contents:[{ parts:[{ text: prompt }] }], generationConfig:{ temperature:0.5, maxOutputTokens:350 } })
+      body: JSON.stringify({ contents:[{ parts:[{ text: prompt }] }], generationConfig:{ temperature:0.5, maxOutputTokens:1200 } })
     });
     if(!res.ok) throw new Error('HTTP '+res.status);
     const data = await res.json();
