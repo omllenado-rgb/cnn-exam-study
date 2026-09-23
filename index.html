@@ -347,6 +347,12 @@
         <div class="stat"><div class="num" id="tManual">0h</div><div class="lbl">Manual Hours</div></div>
         <div class="stat"><div class="num" id="tInApp">0h</div><div class="lbl">In-App Time</div></div>
       </div>
+      <div class="card" style="border-left:4px solid var(--violet)">
+        <h2>🤖 AI Evaluate</h2>
+        <p class="muted" style="margin:6px 0 10px">Let AI review your study metrics and give personalized advice for the CNN exam.</p>
+        <button class="btn" id="aiEvalBtn" onclick="aiEvaluate()" style="width:100%">🔍 Evaluate my progress</button>
+        <div id="aiEvalResult" style="margin-top:12px"></div>
+      </div>
       <div class="card" style="border-left:4px solid var(--gold)">
         <h2>80-Hour Study Goal</h2>
         <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px">
@@ -921,6 +927,63 @@ async function aiExplain(mode){
     btn.textContent = '🤖 Retry';
   } finally {
     btn.disabled = false;
+  }
+}
+
+/* ===== AI EVALUATE (Tracker > analyze metrics -> advice) =====
+   Gathers the user's study metrics and asks Gemini for personalized CNN-exam
+   advice. Reuses the same per-user daily cap (aiUsageToday/aiBumpUsage). */
+async function aiEvaluate(){
+  const btn = document.getElementById('aiEvalBtn');
+  const out  = document.getElementById('aiEvalResult');
+  const p    = window.userProgress || {};
+  if(!GEMINI_API_KEY){ out.innerHTML = '<p class="muted">🤖 AI requires a Gemini key (coming soon).</p>'; return; }
+  if(AI_DAILY_LIMIT > 0 && aiUsageToday().count >= AI_DAILY_LIMIT){
+    out.innerHTML = `<p class="muted">🤖 Daily AI limit reached (${AI_DAILY_LIMIT} today) — resets tomorrow.</p>`;
+    return;
+  }
+  // Build the metric summary
+  const answered = p.answered||0, correct = p.correct||0;
+  const acc = answered ? Math.round(correct/answered*100) : 0;
+  const ts = p.topic_stats||{};
+  const topicLines = [];
+  topics.forEach(t=>{
+    const s=ts[t]||{};
+    if((s.answered||0)>0) topicLines.push(`${t}: ${s.correct||0}/${s.answered} (${Math.round((s.correct||0)/(s.answered||1)*100)}%)`);
+  });
+  const mh = p.manual_hours||{};
+  const manualHrs = Object.keys(mh).reduce((s,k)=>s+mh[k],0);
+  const inAppHrs = Math.max(0,(p.study_seconds||0)-manualHrs*3600)/3600;
+  const totalHrs = (p.study_seconds||0)/3600;
+  const goalPct = Math.min(100, Math.round(totalHrs/80*100));
+  const summary =
+`Study data for a Certified Nephrology Nurse (CNN) exam candidate:
+- Accuracy: ${acc}% (${correct}/${answered} correct)
+- Study days: ${p.study_days||0}, Day streak: ${p.streak||0}, Sessions: ${p.sessions||0}
+- Total study time: ${totalHrs.toFixed(1)}h (${inAppHrs.toFixed(1)}h in-app + ${manualHrs.toFixed(1)}h manual), ${goalPct}% of the 80h goal
+- Topic breakdown: ${topicLines.length?topicLines.join('; '):'no topic answers yet'}`;
+
+  const prompt = "You are an experienced nephrology nursing educator. Based on this student's study metrics, give SHORT, specific, encouraging advice to pass the CNN exam. If there are weak topics, name them and tell them exactly what to drill. Keep it to 3-4 bullet points, under 120 words, friendly and practical.\n\n" + summary + "\n---\nAdvice:";
+
+  out.innerHTML = '<p class="muted">🤖 Analyzing your progress…</p>';
+  btn.disabled = true;
+  try{
+    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${encodeURIComponent(GEMINI_API_KEY)}`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ contents:[{ parts:[{ text: prompt }] }], generationConfig:{ temperature:0.5, maxOutputTokens:350 } })
+    });
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    const data = await res.json();
+    let text = (data.candidates&&data.candidates[0]&&data.candidates[0].content&&data.candidates[0].content.parts&&data.candidates[0].content.parts[0].text)||'';
+    if(!text.trim()) throw new Error('empty');
+    // Render advice: allow simple line breaks / bullets as html
+    text = text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
+    aiBumpUsage();
+    out.innerHTML = `<div style="background:var(--light);border-left:4px solid var(--violet);border-radius:8px;padding:12px;font-size:14px;color:var(--ink)"><strong>🤖 AI advice:</strong><br>${text}</div>`;
+  }catch(err){
+    out.innerHTML = '<p class="muted">🤖 AI is busy right now — try again in a minute.</p>';
+  } finally {
+    btn.disabled=false;
   }
 }
 function finishQuiz(){
