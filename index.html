@@ -865,6 +865,24 @@ const GEMINI_MODEL   = "gemini-3.6-flash";
 let lastAiQuestion = null; // cache so refresh of same Q doesn't re-call
 let aiCache = null;         // {question, text} of last generated explanation
 
+// Per-user daily cap so the free-tier quota isn't exhausted at scale.
+const AI_DAILY_LIMIT = 10;  // explains per user per day (set to 0 to disable cap)
+function aiUsageToday(){
+  if(!currentUser) return {count:0};
+  const today = new Date().toDateString();
+  try{
+    const raw = JSON.parse(localStorage.getItem('cnn_ai_'+currentUser)||'null');
+    if(raw && raw.date===today) return raw;
+  }catch(e){}
+  return {date:today, count:0};
+}
+function aiBumpUsage(){
+  if(!currentUser) return;
+  const u = aiUsageToday();
+  u.count++;
+  try{ localStorage.setItem('cnn_ai_'+currentUser, JSON.stringify({date:u.date, count:u.count})); }catch(e){}
+}
+
 async function aiExplain(mode){
   const btn = document.getElementById('aiExplainBtn');
   const q = quizState.list ? quizState.list[quizState.idx] : null;
@@ -873,6 +891,11 @@ async function aiExplain(mode){
   if(aiCache && aiCache.question === q.q){ btn.innerHTML='🤖 Explain again'; document.getElementById('qExplain').innerHTML = aiCache.text; return; }
   if(!GEMINI_API_KEY){
     btn.innerHTML='🤖 AI requires a Gemini key (coming soon)';
+    return;
+  }
+  // daily cap
+  if(AI_DAILY_LIMIT > 0 && aiUsageToday().count >= AI_DAILY_LIMIT){
+    btn.textContent = `🤖 Daily AI limit reached (${AI_DAILY_LIMIT}) — resets tomorrow`;
     return;
   }
   btn.textContent = '🤖 Thinking…';
@@ -890,6 +913,7 @@ async function aiExplain(mode){
                  data.candidates[0].content.parts && data.candidates[0].content.parts[0].text) || '';
     if(!text) throw new Error('empty');
     aiCache = { question: q.q, text };
+    aiBumpUsage();               // count this successful explanation
     document.getElementById('qExplain').innerHTML = text;
     btn.textContent = '🤖 Explain again';
   }catch(err){
