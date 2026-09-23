@@ -5,16 +5,20 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Certified Nephrology Nurse Exam Prep Course</title>
 <style>
-  :root{--navy:#022851;--gold:#ffbf00;--cyan:#00b2e3;--blue:#0a4f50;--light:#eef4f8;--ink:#1c2b39;--gray:#44525f;--green:#2e7d32;--red:#c62828;--aggie-blue:#022851;--aggie-gold:#ffbf00;--aggie-light:#00b2e3;--aggie-green:#00573f;--aggie-red:#c10230;
-    --bg:#f5f7fa;--card:#fff;--border:#e3e8ee;--input-border:#d5dde5;--stat:#fff;--link:#022851;}
-  body.dark{--bg:#0f1520;--card:#1b2533;--border:#2c3a4d;--input-border:#33425a;--stat:#1b2533;--ink:#e6edf5;--gray:#9aa8b8;--light:#22303f;--blue:#00b2e3;--link:#ffbf00;}
+  :root{--violet:#7c3aed;--fuchsia:#c026d3;--coral:#ff5e3a;
+    --grad:linear-gradient(135deg,#7c3aed 0%,#c026d3 55%,#ff5e3a 100%);
+    --grad-soft:linear-gradient(135deg,rgba(124,58,237,.10),rgba(192,38,211,.10),rgba(255,94,58,.10));
+    --bg:#f6f4fb;--card:#fff;--border:#ece7f5;--input-border:#dcd4ec;--stat:#fff;--ink:#13111d;--muted:#5b6472;
+    --navy:#7c3aed;--gold:#ff5e3a;--cyan:#c026d3;--blue:#7c3aed;--light:#f3edf9;--gray:#5b6472;--green:#2e7d32;--red:#c62828;
+    --aggie-blue:#7c3aed;--aggie-gold:#ff5e3a;--aggie-light:#c026d3;--aggie-green:#00573f;--aggie-red:#c10230;}
+  body.dark{--bg:#13111d;--card:#1f1b2e;--border:#312a49;--input-border:#3d3459;--stat:#1f1b2e;--ink:#ece7f5;--light:#2a2340;--blue:#c026d3;--muted:#9a93ad;--gray:#9a93ad;--navy:#7c3aed;--aggie-blue:#7c3aed;--aggie-gold:#ff5e3a;--aggie-light:#c026d3;}
   *{box-sizing:border-box;margin:0;padding:0;}
   body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--ink);transition:background .2s,color .2s;}
   .topbar,nav,main{position:relative;z-index:1;}
-  .topbar{background:linear-gradient(135deg,var(--aggie-blue) 0%,#003a6b 100%);color:#fff;padding:18px 20px;border-bottom:4px solid var(--aggie-gold);display:flex;justify-content:space-between;align-items:center;gap:10px;}
+  .topbar{background:var(--grad);color:#fff;padding:18px 20px;border-bottom:4px solid rgba(255,255,255,.5);display:flex;justify-content:space-between;align-items:center;gap:10px;}
   .topbar .tb-text{min-width:0;}
   .topbar h1{font-size:19px;line-height:1.25;font-weight:700;}
-  .topbar p{font-size:12px;opacity:.9;margin-top:2px;color:#ffd966;}
+  .topbar p{font-size:12px;opacity:.95;margin-top:2px;color:#ffe9dd;}
   .theme-toggle{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.4);color:#fff;border-radius:20px;padding:7px 12px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;}
   nav{display:flex;background:var(--card);border-bottom:1px solid var(--border);overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
   nav::-webkit-scrollbar{display:none;}
@@ -124,6 +128,7 @@
     <input type="password" id="loginPass" placeholder="Password" autocomplete="off">
     <button class="btn" style="width:100%" onclick="login()">Sign In</button>
     <p class="muted" id="loginMsg" style="margin-top:8px"></p>
+    <p class="muted" style="margin-top:10px;font-size:12px">Your name is your login. Capitalization doesn't matter, but keep the same spelling each time so your progress stays on one account.</p>
   </div>
 </div>
 
@@ -534,18 +539,26 @@ function makeSalt(){ // random per-user salt (hex)
 }
 async function hashPass(salt, pass){ return await sha256(salt + '::' + pass); }
 async function login(){
-  const name = document.getElementById('loginName').value.trim();
+  // Normalize the entered name to a canonical key (trim + lowercase) so
+  // 'DS', 'ds', 'Ds' all reach the same account, preventing duplicate rows.
+  const rawName = document.getElementById('loginName').value.trim();
+  let name = rawName.toLowerCase();
   const pass = document.getElementById('loginPass').value;
   const msg = document.getElementById('loginMsg');
   if(!name || !pass){ msg.textContent = 'Enter your name and password.'; return; }
   msg.textContent = 'Signing in...';
   try {
-    // Check if user exists
-    const {data,error} = await sbClient.from('progress').select('user_name').eq('user_name',name).maybeSingle();
-    if(error){ msg.textContent = 'Could not reach the server. Try again.'; return; }
-    if(data){
+    // Case-insensitive lookup: build a map of lowercase -> actual stored name
+    // so 'DS'/'ds'/'Ds' all find the same account, without breaking existing
+    // accounts that store a different casing.
+    const {data:allUsers, error:listErr} = await sbClient.from('progress').select('user_name');
+    if(listErr){ msg.textContent = 'Could not reach the server. Try again.'; return; }
+    const byKey = {};
+    (allUsers||[]).forEach(u => { if(u.user_name) byKey[String(u.user_name).toLowerCase()] = u.user_name; });
+    const existingKey = byKey[name]; // name is already lowercased
+    if(existingKey){
       // Existing user - fetch record and verify password against stored hash
-      const {data:rec,error:recErr} = await sbClient.from('progress').select('*').eq('user_name',name).maybeSingle();
+      const {data:rec,error:recErr} = await sbClient.from('progress').select('*').eq('user_name',existingKey).maybeSingle();
       if(recErr){ msg.textContent = 'Could not reach the server.'; return; }
       const hash = await hashPass(rec.pass_salt || '', pass);
       let ok = (rec.pass_hash && rec.pass_hash === hash);
@@ -555,10 +568,11 @@ async function login(){
       if(rec.password && !rec.pass_hash){
         const salt = makeSalt();
         const nh = await hashPass(salt, pass);
-        await sbClient.from('progress').update({pass_salt:salt, pass_hash:nh, password:null}).eq('user_name',name);
+        await sbClient.from('progress').update({pass_salt:salt, pass_hash:nh, password:null}).eq('user_name',existingKey);
         rec.pass_salt=salt; rec.pass_hash=nh; rec.password=null;
       }
       window.userProgress = rec;
+      name = existingKey; // use the stored canonical name going forward
     } else {
       // New user - create account with hashed password (never store plaintext)
       const salt = makeSalt();
@@ -1746,7 +1760,7 @@ function exportXLSX(){
       rows.push([esc(u.user_name),fd,inAppMin,manualHrs,sd,mpd,la,wt,u.answered||0,u.correct||0,acc,u.known||0,u.sessions||0,u.streak||0]);
     });
     let table = '<table border="1"><thead><tr>';
-    rows[0].forEach(h=>table += '<th style="background:#022851;color:#fff">'+h+'</th>');
+    rows[0].forEach(h=>table += '<th style="background:#7c3aed;color:#fff">'+h+'</th>');
     table += '</tr></thead><tbody>';
     for(let i=1;i<rows.length;i++){ table += '<tr>' + rows[i].map(c=>'<td>'+c+'</td>').join('') + '</tr>'; }
     table += '</tbody></table>';
