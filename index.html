@@ -519,12 +519,9 @@ function toggleTheme(){
   try { localStorage.setItem('cnn_theme', isDark ? 'dark' : 'light'); } catch(e){}
 }
 function initTheme(){
-  let saved = 'light';
-  try { saved = localStorage.getItem('cnn_theme') || 'light'; } catch(e){}
-  if(saved === 'dark'){
-    document.body.classList.add('dark');
-    document.getElementById('themeToggle').textContent = '\u2600\ufe0f Light';
-  }
+  // Always start on light mode (per project preference).
+  document.body.classList.remove('dark');
+  document.getElementById('themeToggle').textContent = '\u{1F319} Dark';
 }
 
 /* ============ LOGIN ============ */
