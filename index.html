@@ -863,10 +863,9 @@ function selectAnswer(i){
 function nextQuestion(){ quizState.idx++; if(quizState.idx<quizState.list.length) renderQuestion(); else finishQuiz(); }
 
 /* ===== AI (Tracker Evaluate) =====
-   Uses the free Gemini API. Per-user daily cap protects the free quota.
+   Calls the Netlify proxy (cnn-ai) which holds the Gemini key server-side,
+   so no API key is exposed in the app. Per-user daily cap protects free quota.
    NOTE: quiz "Explain with AI" was removed to avoid burning tokens. */
-const GEMINI_API_KEY = "AIzaSyBPD9x-I6VeeNdE9zCXETa9x2GtT3cLbPo";
-const GEMINI_MODEL   = "gemini-3.6-flash";
 const AI_DAILY_LIMIT = 10;  // AI calls per user per day
 
 function aiUsageToday(){
@@ -892,7 +891,6 @@ async function aiEvaluate(){
   const btn = document.getElementById('aiEvalBtn');
   const out  = document.getElementById('aiEvalResult');
   const p    = window.userProgress || {};
-  if(!GEMINI_API_KEY){ out.innerHTML = '<p class="muted">🤖 AI requires a Gemini key (coming soon).</p>'; return; }
   if(AI_DAILY_LIMIT > 0 && aiUsageToday().count >= AI_DAILY_LIMIT){
     out.innerHTML = `<p class="muted">🤖 Daily AI limit reached (${AI_DAILY_LIMIT} today) — resets tomorrow.</p>`;
     return;
@@ -923,13 +921,13 @@ async function aiEvaluate(){
   out.innerHTML = '<p class="muted">🤖 Analyzing your progress…</p>';
   btn.disabled = true;
   try{
-    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${encodeURIComponent(GEMINI_API_KEY)}`, {
+    const res = await fetch('https://cnn-ai-proxy.netlify.app/.netlify/functions/cnn-ai', {
       method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ contents:[{ parts:[{ text: prompt }] }], generationConfig:{ temperature:0.5, maxOutputTokens:2000, thinkingConfig:{ thinkingBudget:100 } } })
+      body: JSON.stringify({ prompt })
     });
     if(!res.ok) throw new Error('HTTP '+res.status);
     const data = await res.json();
-    let text = (data.candidates&&data.candidates[0]&&data.candidates[0].content&&data.candidates[0].content.parts&&data.candidates[0].content.parts[0].text)||'';
+    let text = data.text || '';
     if(!text.trim()) throw new Error('empty');
     // Render advice: allow simple line breaks / bullets as html
     text = text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/\n/g,'<br>');
