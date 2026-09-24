@@ -383,6 +383,11 @@
         <h2>Accuracy by Topic</h2>
         <div id="tTopicBars"></div>
       </div>
+      <div class="card" style="border-left:4px solid var(--cyan)">
+        <h2>📊 Blueprint Readiness</h2>
+        <p class="muted" style="margin-bottom:8px">Your practice-exam scores across the 7 exam objectives, and how they move between attempts.</p>
+        <div id="tBlueprint"></div>
+      </div>
       <div class="card">
         <h2>Time by Section</h2>
         <p class="muted" style="margin-bottom:8px">Minutes spent in each part of the app.</p>
@@ -1311,6 +1316,119 @@ function cardAction(a){
   cardState.flipped=false; renderCard();
 }
 
+/* ============ BLUEPRINT READINESS (practice-exam history) ============
+   Read-only view of the signed-in user's own test_results rows. Loaded lazily
+   on the first Trackers render, cached per user, and never written back. */
+const TEST_PASS_PCT = 70;        // same passing standard the test result screen uses
+const TREND_MAX_ATTEMPTS = 12;   // max points drawn in the trend line
+let testHistory = null;          // null = not loaded yet; [] = loaded (possibly empty)
+let testHistoryOwner = null;     // which user the cached history belongs to
+let testHistoryLoading = false;
+let testHistoryError = false;
+
+// A completed exam recorded a score for every blueprint objective. An abandoned
+// attempt only records the few objectives it reached, so this excludes those.
+function isCompletedExam(r){
+  if(!r || !r.total_questions || r.total_questions<=0) return false;
+  const o=r.objective_scores;
+  if(!o || typeof o!=='object') return false;
+  return TEST_WEIGHTS.every(w=>Object.prototype.hasOwnProperty.call(o, String(w.obj)));
+}
+
+function loadTestHistory(){
+  if(!document.getElementById('tBlueprint')) return;
+  if(!currentUser){
+    testHistory=[]; testHistoryOwner=null; testHistoryLoading=false; testHistoryError=false;
+    renderBlueprintTrend(); return;
+  }
+  if(testHistoryOwner!==currentUser){
+    testHistoryOwner=currentUser; testHistory=null; testHistoryLoading=false; testHistoryError=false;
+  }
+  if(testHistory!==null || testHistoryLoading){ renderBlueprintTrend(); return; }
+  testHistoryLoading=true;
+  renderBlueprintTrend();
+  const who=currentUser;
+  try{
+    sbClient.from('test_results')
+      .select('created_at,correct,total_questions,objective_scores')
+      .eq('user_name',who)
+      .order('created_at',{ascending:true})
+      .then(res=>{
+        if(testHistoryOwner!==who) return;              // user switched mid-request
+        if(res && res.error) testHistoryError=true;
+        testHistory=((res && res.data)||[]).filter(isCompletedExam);
+        testHistoryLoading=false;
+        renderBlueprintTrend();
+      }, ()=>{
+        if(testHistoryOwner!==who) return;
+        testHistory=[]; testHistoryLoading=false; testHistoryError=true;
+        renderBlueprintTrend();
+      });
+  }catch(e){
+    testHistory=[]; testHistoryLoading=false; testHistoryError=true;
+    renderBlueprintTrend();
+  }
+}
+
+function renderBlueprintTrend(){
+  const el=document.getElementById('tBlueprint');
+  if(!el) return;
+  if(!currentUser){ el.innerHTML='<p class="muted">Sign in to track your readiness across the exam blueprint.</p>'; return; }
+  if(testHistoryError){ el.innerHTML='<p class="muted">Could not load your practice-exam history right now.</p>'; return; }
+  if(testHistory===null){ el.innerHTML='<p class="muted">Loading your practice-exam history…</p>'; return; }
+  if(!testHistory.length){
+    el.innerHTML='<p class="muted">No completed practice exams yet. Finish a practice test, and your score on each of the 7 objectives will appear here.</p>';
+    return;
+  }
+  const all=testHistory, rows=all.slice(-TREND_MAX_ATTEMPTS), n=rows.length;
+  const pctOf=r=>Math.max(0,Math.min(100,Math.round(r.correct/r.total_questions*100)));
+  const last=rows[n-1], prev=n>1?rows[n-2]:null;
+  const lastPct=pctOf(last);
+
+  // Overall trend line. Uniform scaling (no preserveAspectRatio="none") keeps
+  // the dots round and the stroke even at any card width.
+  const W=320, H=70;
+  const px=i=>(n===1 ? W/2 : (i/(n-1))*W);
+  const py=v=>H-(v/100)*H;
+  let svg=`<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;display:block" role="img" aria-label="Overall practice exam score trend">`;
+  svg+=`<line x1="0" y1="${py(TEST_PASS_PCT).toFixed(1)}" x2="${W}" y2="${py(TEST_PASS_PCT).toFixed(1)}" stroke="var(--border)" stroke-width="1" stroke-dasharray="4 4"/>`;
+  if(n>1) svg+=`<polyline points="${rows.map((r,i)=>px(i).toFixed(1)+','+py(pctOf(r)).toFixed(1)).join(' ')}" fill="none" stroke="var(--cyan)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>`;
+  rows.forEach((r,i)=>{ svg+=`<circle cx="${px(i).toFixed(1)}" cy="${py(pctOf(r)).toFixed(1)}" r="3" fill="var(--cyan)"/>`; });
+  svg+=`</svg>`;
+
+  let html=`<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:2px">
+      <div><span style="font-size:24px;font-weight:700">${lastPct}%</span><span class="muted" style="font-size:12px"> on ${last.correct}/${last.total_questions}</span></div>
+      <div class="muted" style="font-size:12px">${all.length} exam${all.length===1?'':'s'} tracked</div>
+    </div>
+    <p class="muted" style="font-size:12px;margin-bottom:8px">Latest attempt ${lastPct>=TEST_PASS_PCT?'<span style="color:var(--green)">at or above':'<span style="color:var(--red)">below'} the ${TEST_PASS_PCT}% passing standard</span>${all.length>n?` · showing the last ${n}`:''}. Dashed line marks the standard.</p>
+    ${svg}`;
+
+  // Per-objective rows for the latest attempt, with change vs the attempt before it.
+  let objRows='';
+  const below=[];
+  TEST_WEIGHTS.forEach(w=>{
+    const lv=Number(last.objective_scores[String(w.obj)]);
+    if(!isFinite(lv)) return;
+    const pv=prev?Number(prev.objective_scores[String(w.obj)]):NaN;
+    let dTxt='';
+    if(isFinite(pv)){
+      const d=lv-pv;
+      if(d>0) dTxt=` <span style="color:var(--green);font-weight:600">▲${d}</span>`;
+      else if(d<0) dTxt=` <span style="color:var(--red);font-weight:600">▼${Math.abs(d)}</span>`;
+      else dTxt=' <span class="muted">–</span>';
+    }
+    if(lv<TEST_PASS_PCT) below.push({label:w.label, pct:lv});
+    objRows+=`<div style="margin:8px 0"><div style="display:flex;justify-content:space-between;font-size:13px"><span>${w.label} <span class="muted" style="font-size:11px">${w.pct}% of exam</span></span><span>${lv}%${dTxt}</span></div><div class="bar"><div style="width:${lv}%;background:${lv>=TEST_PASS_PCT?'var(--green)':'var(--red)'}"></div></div></div>`;
+  });
+  html+=`<div style="margin-top:10px">${objRows}</div>`;
+
+  if(below.length){
+    below.sort((a,b)=>a.pct-b.pct);
+    html+=`<p class="muted" style="font-size:12px;margin-top:10px">Weakest objective: <strong>${below[0].label}</strong> at ${below[0].pct}%${below.length>1?` — ${below.length} objectives are below ${TEST_PASS_PCT}%`:''}.</p>`;
+  }
+  el.innerHTML=html;
+}
+
 /* ============ TRACKERS ============ */
 function renderTrackers(){
   const p=window.userProgress||{};
@@ -1356,6 +1474,7 @@ function renderTrackers(){
   renderFocusSuggestions();
   renderLogBreakdown();
   renderSectionBars();
+  loadTestHistory();
 }
 function renderSectionBars(){
   const p=window.userProgress||{};
