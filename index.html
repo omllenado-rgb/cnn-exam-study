@@ -161,6 +161,7 @@
           <p class="muted" style="margin-top:12px">Or drill by exam objective:</p>
           <div class="filter" id="objFilter"></div>
           <button class="btn" onclick="startQuiz()">Start Quiz</button>
+          <button class="btn secondary" onclick="startWeakDrill()" style="margin-top:8px">🎯 Weak-Topic Drill (15 questions)</button>
         </div>
       </div>
       <div id="quizRun" style="display:none">
@@ -817,6 +818,15 @@ function shuffle(arr){
   }
   return arr;
 }
+// Deterministic seeded PRNG (mulberry32) so each exam version draws its own reproducible subset
+function mulberry32(a){
+  return function(){
+    a |= 0; a = a + 0x6D2B79F5 | 0;
+    let t = Math.imul(a ^ a >>> 15, 1 | a);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
 function startQuiz(){
   let pool = quizFilter==="all" ? QUESTIONS.slice() : QUESTIONS.filter(q=>q.topic===quizFilter);
   // Apply objective filter if set
@@ -962,6 +972,34 @@ function startWrongReview(){
   renderQuestion();
 }
 
+// Weak-Topic Drill: auto-build a 15-question set from your lowest-accuracy topics.
+// Uses the per-topic stats already collected in recordAnswer(), so no new data capture needed.
+function startWeakDrill(){
+  const p = window.userProgress, stats = p.topic_stats || {};
+  // Rank each topic you've studied by accuracy (lowest first)
+  const ranked = Object.entries(stats)
+    .filter(([t,s]) => s && s.answered > 0)
+    .map(([t,s]) => ({topic:t, acc: s.correct / s.answered}))
+    .sort((a,b) => a.acc - b.acc);
+  // Include any topic with below-average accuracy, else the single weakest
+  const allAcc = ranked.reduce((a,x)=>a+x.acc,0);
+  const avgAcc = ranked.length ? allAcc/ranked.length : 0;
+  const weakNames = ranked.filter(r => r.acc <= avgAcc).map(r => r.topic);
+  const target = weakNames.length ? weakNames : (ranked[0] ? [ranked[0].topic] : []);
+  let pool = target.length ? QUESTIONS.filter(q => target.includes(q.topic)) : QUESTIONS.slice();
+  // Fall back to all topics if the user has no tracked answers yet
+  if(pool.length < 15) pool = QUESTIONS.slice();
+  shuffle(pool);
+  pool = pool.slice(0, 15);
+  if(pool.length === 0){ alert('No questions available yet.'); return; }
+  quizState={active:true,list:pool,idx:0,correct:0,selected:false};
+  document.getElementById('quizSetup').style.display='none';
+  document.getElementById('quizResult').style.display='none';
+  document.getElementById('quizRun').style.display='block';
+  showScreen('quiz');
+  renderQuestion();
+}
+
 /* ============ PRACTICE TEST (150 Q, 3 hr, blueprint-weighted) ============ */
 let testState = {active:false, list:[], idx:0, correct:0, selected:false, timer:null, secondsLeft:0, objCorrect:{}, objTotal:{}, simMode:false, examVersion:0};
 // CNN exam blueprint: 150 questions weighted by objective percentages
@@ -989,12 +1027,24 @@ function setExamVersion(btn,v){
   btn.classList.add('active');
 }
 function startPracticeTest(){
-  // Build a 150-question pool weighted by blueprint objective
+  // Build a 150-question pool weighted by blueprint objective.
+  // Use a per-version seeded PRNG so each exam version draws its OWN distinct
+  // subset of the full question bank (not the same 150 in a different order).
+  const version = testState.examVersion || 0;
+  const seeded = mulberry32(version*100000 + 42);
   const pool = [];
+  // Fisher-Yates using the seeded generator, applied to a local copy
+  const seededShuffle = (arr) => {
+    for(let i=arr.length-1;i>0;i--){
+      const j = Math.floor(seeded()*(i+1));
+      [arr[i],arr[j]]=[arr[j],arr[i]];
+    }
+    return arr;
+  };
   TEST_WEIGHTS.forEach(w=>{
     // Questions tagged with this objective
     const tagged = QUESTIONS.filter(q=>q.obj===w.obj);
-    shuffle(tagged);
+    seededShuffle(tagged);
     // Take up to the blueprint count
     pool.push(...tagged.slice(0, w.count));
   });
@@ -1002,17 +1052,14 @@ function startPracticeTest(){
   if(pool.length < 150){
     const used = new Set(pool.map(q=>q.q));
     const rest = QUESTIONS.filter(q=>!used.has(q.q));
-    shuffle(rest);
+    seededShuffle(rest);
     pool.push(...rest.slice(0, 150-pool.length));
   }
   if(pool.length < 150){ alert('Not enough questions yet ('+pool.length+' available).'); return; }
-  // Rotate the pool by exam version so each version starts at a different offset
-  const version = testState.examVersion || 0;
-  const offset = Math.floor(version * (pool.length / EXAM_VERSIONS));
-  const rotated = pool.slice(offset).concat(pool.slice(0, offset));
-  shuffle(rotated);
+  // Final scramble so each version presents in a fresh order
+  seededShuffle(pool);
   const simMode = document.getElementById('simMode').checked;
-  testState = {active:true, list:rotated, idx:0, correct:0, selected:false, timer:null, secondsLeft:3*3600, objCorrect:{}, objTotal:{}, simMode:simMode, examVersion:version};
+  testState = {active:true, list:pool, idx:0, correct:0, selected:false, timer:null, secondsLeft:3*3600, objCorrect:{}, objTotal:{}, simMode:simMode, examVersion:version};
   document.getElementById('testSetup').style.display='none';
   document.getElementById('testResult').style.display='none';
   document.getElementById('testRun').style.display='block';
