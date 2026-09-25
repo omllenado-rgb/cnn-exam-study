@@ -44,6 +44,17 @@
   .btn{background:var(--aggie-blue);color:#fff;border:none;border-radius:10px;padding:13px 18px;font-size:15px;font-weight:600;cursor:pointer;margin-top:10px;}
   .btn.secondary{background:var(--card);color:var(--aggie-blue);border:1.5px solid var(--aggie-blue);}
   body.dark .btn.secondary{color:var(--aggie-gold);border-color:var(--aggie-gold);}
+  /* ===== In-app "How to Use" overlay ===== */
+  #howToOverlay{display:none;position:fixed;inset:0;z-index:999;background:rgba(10,8,18,.55);backdrop-filter:blur(3px);align-items:center;justify-content:center;padding:16px;}
+  #howToOverlay.show{display:flex;}
+  .howto-box{background:var(--card);color:var(--ink);border-radius:14px;max-width:520px;width:100%;max-height:82vh;overflow-y:auto;padding:20px;box-shadow:0 10px 40px rgba(0,0,0,.35);}
+  .howto-box h2{margin:0 0 12px;color:var(--aggie-blue);display:flex;justify-content:space-between;align-items:center;gap:10px;}
+  body.dark .howto-box h2{color:var(--aggie-gold);}
+  .howto-box h3{font-size:15px;margin:16px 0 6px;color:var(--blue);}
+  .howto-box p,.howto-box li{font-size:14px;line-height:1.55;color:var(--ink);}
+  .howto-box ul{margin:4px 0 0 18px;}
+  .howto-close{background:var(--light);color:var(--aggie-blue);border:1px solid var(--input-border);border-radius:8px;padding:7px 12px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;}
+  body.dark .howto-close{color:var(--aggie-gold);}
   .btn:disabled{opacity:.5;cursor:not-allowed;}
   .explain{background:var(--light);border-left:4px solid var(--blue);padding:12px;border-radius:8px;margin-top:12px;font-size:14px;color:var(--ink);}
   .tag{display:inline-block;background:var(--light);color:var(--aggie-blue);font-size:11px;font-weight:600;padding:3px 9px;border-radius:20px;margin-bottom:8px;}
@@ -124,12 +135,34 @@
   <div class="login-box card">
     <h2>Welcome</h2>
     <p class="muted">Enter your name and password to sign in. New users set a password on first login.</p>
-    <p class="muted" style="margin:8px 0"><a href="CNN_App_How_To_Use.pdf" target="_blank" style="color:var(--link);font-weight:600">📘 How to Use This App</a></p>
+    <p class="muted" style="margin:8px 0"><a href="javascript:void(0)" onclick="openHowTo()" style="color:var(--link);font-weight:600">📘 How to Use This App</a></p>
     <input id="loginName" placeholder="Your name" autocomplete="off">
     <input type="password" id="loginPass" placeholder="Password" autocomplete="off">
     <button class="btn" style="width:100%" onclick="login()">Sign In</button>
     <p class="muted" id="loginMsg" style="margin-top:8px"></p>
     <p class="muted" style="margin-top:10px;font-size:12px">Your name is your login. Capitalization doesn't matter, but keep the same spelling each time so your progress stays on one account.</p>
+  </div>
+</div>
+
+<!-- HOW TO USE OVERLAY -->
+<div id="howToOverlay">
+  <div class="howto-box">
+    <h2>📘 How to Use the CNN Study App <button class="howto-close" onclick="closeHowTo()">Close</button></h2>
+    <h3>1. Getting started</h3>
+    <p>Open the app on your phone or computer, sign in with your name and a password, and your progress saves automatically so you can pick up on any device.</p>
+    <h3>2. Quiz</h3>
+    <p>Practice questions. Pick a topic or All, then Start Quiz. Every question shows an explanation, and questions shuffle each time. Use the <strong>Weak-Topic Drill</strong> to auto-build 15 questions from your lowest-accuracy topics.</p>
+    <h3>3. Lessons &amp; Strategies</h3>
+    <p><strong>Lessons</strong> teach key concepts in plain language. <strong>Strategies</strong> are quick study tips you can skim between shifts.</p>
+    <h3>4. Practice Test</h3>
+    <p>Three full 150-question simulations weighted to the official CNN blueprint, with a 3-hour timer. Turn on exam-day mode to practice with no feedback until the end.</p>
+    <h3>5. Flashcards</h3>
+    <p>Spaced-repetition cards. Cards you miss come back sooner so you master them faster.</p>
+    <h3>6. Trackers</h3>
+    <p>See your accuracy, study days, streak, and progress toward the 80-hour goal. Use <strong>AI Evaluate</strong> for a personalized read on your weak topics, and log study time you did outside the app.</p>
+    <h3>7. How to log hours</h3>
+    <p>On the Trackers tab, scroll to the <strong>Log Study Hours</strong> card, enter the hours (decimals allowed, e.g. 1.5 = 1 hr 30 min), pick a category, and tap Add.</p>
+    <div style="text-align:right;margin-top:14px"><button class="howto-close" onclick="closeHowTo()">Got it</button></div>
   </div>
 </div>
 
@@ -366,7 +399,7 @@
       </div>
       <div class="card" style="border-left:4px solid var(--cyan)">
         <h2>Log Study Hours</h2>
-        <p class="muted" style="margin-bottom:8px">Add study time you did outside the app (self-study, renal core, review course, etc.). <a href="CNN_App_How_To_Use.pdf" target="_blank" style="color:var(--link);font-weight:600">How to log hours</a></p>
+        <p class="muted" style="margin-bottom:8px">Add study time you did outside the app (self-study, renal core, review course, etc.). <a href="javascript:void(0)" onclick="openHowTo()" style="color:var(--link);font-weight:600">How to log hours</a></p>
         <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
           <input type="number" id="logHours" min="0" step="0.5" placeholder="Hours" style="width:90px;flex:0 0 auto">
           <select id="logType" style="flex:1;min-width:150px">
@@ -540,6 +573,19 @@ function initTheme(){
 // iPhone Safari uses back-forward cache: on restore (pageshow), force light
 // again so a previously-toggled dark state can't stick across navigation.
 window.addEventListener('pageshow', function(){ try{ initTheme(); }catch(e){} });
+
+/* ============ HOW TO USE OVERLAY ============ */
+function openHowTo(){
+  const el = document.getElementById('howToOverlay');
+  el.classList.add('show');
+  document.body.style.overflow = 'hidden';   // stop background scroll while open
+}
+function closeHowTo(){
+  const el = document.getElementById('howToOverlay');
+  el.classList.remove('show');
+  document.body.style.overflow = '';
+}
+document.addEventListener('keydown', function(e){ if(e && e.key === 'Escape') closeHowTo(); });
 
 /* ============ LOGIN ============ */
 // Client-side SHA-256 (Web Crypto) so we never store/compare plaintext passwords.
