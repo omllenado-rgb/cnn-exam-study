@@ -185,6 +185,7 @@
           <div class="btn-row" style="justify-content:center">
             <button class="btn" onclick="startQuiz()">Take Again</button>
             <button class="btn secondary" onclick="showScreen('cards')">Study Cards</button>
+            <button class="btn secondary" onclick="backToQuizSetup()">Back to Practice</button>
           </div>
         </div>
       </div>
@@ -965,6 +966,13 @@ function finishQuiz(){
   document.getElementById('resBar').style.width=pct+'%';
 }
 function quitQuiz(){ finishQuiz(); }
+function backToQuizSetup(){
+  // Return to the Practice Quiz setup screen (topic/objective filters + Start/Draw buttons)
+  document.getElementById('quizRun').style.display='none';
+  document.getElementById('quizResult').style.display='none';
+  document.getElementById('quizSetup').style.display='block';
+  window.scrollTo(0,0);
+}
 function startWrongReview(){
   const wrong = window.userProgress.wrong||{};
   const pool = QUESTIONS.filter(q=>wrong[q.q]);
