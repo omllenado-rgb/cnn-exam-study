@@ -311,6 +311,9 @@
                   <option value="2">2x</option>
                 </select>
               </label>
+              <label id="voiceLabel" style="font-size:12px;color:var(--gray);display:none">Voice
+                <select id="speechVoice" style="width:auto;max-width:190px;padding:6px;font-size:12px;margin:0" onchange="setSpeechVoice()"></select>
+              </label>
             </div>
           </div>
         </div>
@@ -598,6 +601,40 @@ function makeSalt(){ // random per-user salt (hex)
   return [...a].map(b=>b.toString(16).padStart(2,'0')).join('');
 }
 async function hashPass(salt, pass){ return await sha256(salt + '::' + pass); }
+
+/* ============ SERVER-SIDE CREDENTIAL CHECK ============
+   Calls the functions in supabase-auth-hardening.sql. Both return null when
+   those functions are not deployed yet, which makes login() fall back to the
+   original client-side path. That is deliberate: sign-in keeps working whether
+   or not the SQL has been run. */
+async function serverLogin(rawName, pass){
+  try{
+    const {data, error} = await sbClient.rpc('login_check', {p_user: rawName, p_pass: pass});
+    if(error || !data || !data.status) return null;
+    return data;
+  }catch(e){ return null; }
+}
+async function serverCreateAccount(name, pass){
+  try{
+    const {data, error} = await sbClient.rpc('create_account', {p_user: name, p_pass: pass});
+    if(error || !data || !data.status) return null;
+    return data;
+  }catch(e){ return null; }
+}
+// Shared post-sign-in entry, extracted from login() so the server path and the
+// legacy path cannot drift apart.
+function enterApp(name){
+  currentUser = name;
+  saveLocal(window.userProgress);
+  document.getElementById('whoami').textContent = 'Studying as: ' + name;
+  document.getElementById('loginScreen').classList.remove('active');
+  document.getElementById('appScreen').classList.add('active');
+  cardState.list = FLASHCARDS.slice();
+  cardState.idx = 0; cardState.flipped = false;
+  renderQuizFilter(); renderObjFilter(); renderCardFilter(); renderExamSelect(); showScreen('quiz');
+  startStudyTimer();
+  document.getElementById('loginMsg').textContent = '';
+}
 async function login(){
   // Normalize the entered name to a canonical key (trim + lowercase) so
   // 'DS', 'ds', 'Ds' all reach the same account, preventing duplicate rows.
@@ -608,6 +645,33 @@ async function login(){
   if(!name || !pass){ msg.textContent = 'Enter your name and password.'; return; }
   msg.textContent = 'Signing in...';
   try {
+    /* ---- Preferred path: verify in the database ----
+       No password material reaches the browser. If the SQL is not deployed,
+       both calls resolve to null and we fall through to the legacy path. */
+    const srv = await serverLogin(rawName, pass);
+    if(srv){
+      if(srv.status === 'bad_password'){ msg.textContent = 'Incorrect password.'; return; }
+      if(srv.status === 'ok' && srv.profile){
+        window.userProgress = srv.profile;
+        enterApp(srv.profile.user_name);
+        return;
+      }
+      if(srv.status === 'no_user'){
+        const cr = await serverCreateAccount(name, pass);
+        if(cr && cr.status === 'exists'){ msg.textContent = 'Incorrect password.'; return; }
+        if(cr && cr.status === 'ok'){
+          // Credentials are already stored server-side, so the profile row is
+          // created without any password material in it.
+          const newUser = {user_name:name, answered:0, correct:0, known:0, sessions:0, streak:0, last_study:null, answers:{}, wrong:{}, known_cards:{}, topic_stats:{}, study_seconds:0, study_days:0, today_seconds:0, today_date:null, first_started:new Date().toISOString(), last_active:new Date().toISOString()};
+          const {error:insErr} = await sbClient.from('progress').insert(newUser);
+          if(insErr){ msg.textContent = 'Could not create account. Try again.'; return; }
+          window.userProgress = newUser;
+          enterApp(name);
+          return;
+        }
+      }
+    }
+    /* ---- Legacy path: unchanged, used until the SQL is deployed ---- */
     // Case-insensitive lookup: build a map of lowercase -> actual stored name
     // so 'DS'/'ds'/'Ds' all find the same account, without breaking existing
     // accounts that store a different casing.
@@ -642,16 +706,7 @@ async function login(){
       if(insErr){ msg.textContent = 'Could not create account. Try again.'; return; }
       window.userProgress = newUser;
     }
-    currentUser = name;
-    saveLocal(window.userProgress);
-    document.getElementById('whoami').textContent = 'Studying as: ' + name;
-    document.getElementById('loginScreen').classList.remove('active');
-    document.getElementById('appScreen').classList.add('active');
-    cardState.list = FLASHCARDS.slice();
-    cardState.idx = 0; cardState.flipped = false;
-    renderQuizFilter(); renderObjFilter(); renderCardFilter(); renderExamSelect(); showScreen('quiz');
-    startStudyTimer();
-    msg.textContent = '';
+    enterApp(name);
   } catch(e){ msg.textContent = 'Could not sign in. Check your connection.'; }
 }
 function logout(){
@@ -1324,23 +1379,130 @@ function renderCard(){
 function flipCard(){ cardState.flipped=!cardState.flipped; renderCard(); }
 /* ============ READ-ALOUD (Web Speech API) ============ */
 let speechRate = 1;
+let voiceList = [];         // every voice on this device
+let chosenVoiceURI = null;  // the narrator the user picked, remembered per device
+try{ chosenVoiceURI = localStorage.getItem('cnn_voice') || null; }catch(e){}
 function setSpeechRate(){ speechRate = parseFloat(document.getElementById('speechRate').value)||1; }
+
+/* Voices load ASYNCHRONOUSLY — getVoices() returns [] the first time it is called
+   and the real list arrives later via 'voiceschanged'. The old code read it once,
+   inline, so on Chrome/Android the preference below silently never applied and the
+   voice could even differ between taps. Cache the list instead. */
+function loadVoices(){
+  if(!('speechSynthesis' in window)) return;
+  const v = speechSynthesis.getVoices();
+  if(v && v.length){ voiceList = v; fillVoicePicker(); }
+}
+if('speechSynthesis' in window){
+  loadVoices();
+  if(typeof speechSynthesis.addEventListener === 'function') speechSynthesis.addEventListener('voiceschanged', loadVoices);
+  speechSynthesis.onvoiceschanged = loadVoices;   // Safari exposes the property form
+}
+
+/* Score a voice for narration: -1 = not English (ignore), higher = better.
+   Replaces "first regex match wins", which let an arbitrary match beat a good voice. */
+function voiceScore(v){
+  const n = (v.name||'').toLowerCase(), lang = (v.lang||'').toLowerCase();
+  if(lang.indexOf('en') !== 0) return -1;
+  let s = lang.indexOf('en-us') === 0 ? 40 : 20;
+  if(/enhanced|premium|neural|natural/.test(n)) s += 60;
+  if(/google us english/.test(n)) s += 45;
+  if(/samantha|ava|allison|susan|zoe|nicky|aaron|tom|serena|daniel|karen|moira|tessa/.test(n)) s += 30;
+  if(/siri/.test(n)) s += 25;
+  if(/alex|zira|aria|jenny|guy|mia|microsoft/.test(n)) s += 20;
+  if(/compact|eloquence|espeak|festival|pico/.test(n)) s -= 60;   // low-quality synths
+  if(/whisper|bells|boing|bubbles|cellos|deranged|good news|bad news|jester|organ|superstar|trinoids|wobble|zarvox|bahh|albert|fred|junior|ralph|kathy|princess|hysterical|agnes/.test(n)) s -= 200;   // novelty voices
+  return s;
+}
+function pickVoice(){
+  if(chosenVoiceURI){
+    const c = voiceList.find(v=>v.voiceURI===chosenVoiceURI);
+    if(c) return c;
+  }
+  let best = null, bestScore = 0;
+  voiceList.forEach(v=>{ const s = voiceScore(v); if(s > bestScore){ bestScore = s; best = v; } });
+  return best;   // null -> whatever the device uses by default
+}
+function fillVoicePicker(){
+  const sel = document.getElementById('speechVoice');
+  if(!sel || !sel.parentNode) return;
+  const en = voiceList.filter(v=>voiceScore(v) > -1)
+    .sort((a,b)=>voiceScore(b)-voiceScore(a) || String(a.name).localeCompare(String(b.name)));
+  if(!en.length){ sel.parentNode.style.display = 'none'; return; }
+  sel.innerHTML = '<option value="">Auto — best available</option>' + en.map(v=>
+    `<option value="${esc(v.voiceURI)}">${esc(v.name)} (${esc(v.lang)})</option>`).join('');
+  sel.value = (chosenVoiceURI && en.some(v=>v.voiceURI===chosenVoiceURI)) ? chosenVoiceURI : '';
+  sel.parentNode.style.display = '';
+}
+function setSpeechVoice(){
+  const sel = document.getElementById('speechVoice');
+  if(!sel) return;
+  chosenVoiceURI = sel.value || null;
+  try{ localStorage.setItem('cnn_voice', chosenVoiceURI||''); }catch(e){}
+}
+
+/* Chrome stalls or garbles very long utterances, and a median lesson runs ~2,000
+   characters, so split into sentence-sized chunks and let the engine queue them. */
+const SPEECH_CHUNK_MAX = 220;
+function speechChunks(text){
+  const clean = String(text==null?'':text).replace(/\s+/g,' ').trim();
+  if(!clean) return [];
+  if(clean.length <= SPEECH_CHUNK_MAX) return [clean];
+  const chunks = []; let buf = '';
+  (clean.match(/[^.!?]+[.!?]*\s*/g) || [clean]).forEach(part=>{
+    if(buf && (buf+part).length > SPEECH_CHUNK_MAX){ chunks.push(buf.trim()); buf = part; }
+    else buf += part;
+    while(buf.length > SPEECH_CHUNK_MAX){          // one runaway sentence
+      const cut = buf.lastIndexOf(' ', SPEECH_CHUNK_MAX);
+      const at = cut > 60 ? cut : SPEECH_CHUNK_MAX;
+      chunks.push(buf.slice(0,at).trim());
+      buf = buf.slice(at);
+    }
+  });
+  if(buf.trim()) chunks.push(buf.trim());
+  return chunks.filter(Boolean);
+}
+
+/* Terms the speech engine mispronounces. Applied to speech only — the words on
+   screen are never altered. */
+function speechPronounce(t){
+  return String(t==null?'':t)
+    .replace(/\bKt\/V\b/g,'K T over V')
+    .replace(/\bmEq\/L\b/g,'milliequivalents per liter')
+    .replace(/\bmg\/dL\b/g,'milligrams per deciliter')
+    .replace(/\bmmol\/L\b/g,'millimoles per liter')
+    .replace(/\bmL\/min\b/g,'milliliters per minute')
+    .replace(/\bmmHg\b/g,'millimeters of mercury')
+    .replace(/\bESRD\b/g,'end-stage renal disease')
+    .replace(/\bEPO\b/g,'erythropoietin')
+    .replace(/\bUF\b/g,'ultrafiltration')
+    .replace(/\bCRRT\b/g,'C R R T')
+    .replace(/\bCKD\b/g,'C K D')
+    .replace(/\bAKI\b/g,'A K I')
+    .replace(/\bPTH\b/g,'P T H')
+    .replace(/\beGFR\b/g,'E G F R')
+    .replace(/\bBUN\b/g,'B U N')
+    .replace(/\bARB\b/g,'A R B')
+    .replace(/\bACEi\b/g,'ace inhibitor')
+    .replace(/\bIV\b/g,'I V')
+    .replace(/\bPD\b/g,'P D')
+    .replace(/\bHD\b/g,'H D')
+    .replace(/≥/g,' greater than or equal to ')
+    .replace(/≤/g,' less than or equal to ');
+}
+
 function speak(text){
   if(!('speechSynthesis' in window)){ alert('Audio not supported on this device.'); return; }
+  if(!voiceList.length) loadVoices();   // in case 'voiceschanged' never fired
   stopSpeech();
-  const u = new SpeechSynthesisUtterance(text);
-  u.rate = speechRate;
-  u.pitch = 1;
-  // Prefer the best-sounding natural English voice available on this device.
-  // Priority: enhanced/natural voices > Samantha/Google US > any US English > any English.
-  const voices = speechSynthesis.getVoices();
-  const name = v=>v.name.toLowerCase();
-  const pick = (re) => voices.find(v=>re.test(name(v)));
-  const en = pick(/enhanced|natural|premium|neural|google us english|samantha|zira|aria|jenny|siri/i)
-    || pick(/en[-_]us/i)
-    || pick(/^en/i);
-  if(en) u.voice = en;
-  speechSynthesis.speak(u);
+  const v = pickVoice();
+  speechChunks(speechPronounce(text)).forEach(chunk=>{
+    const u = new SpeechSynthesisUtterance(chunk);
+    u.rate = speechRate;
+    u.pitch = 1;
+    if(v) u.voice = v;
+    speechSynthesis.speak(u);   // the engine queues these in order
+  });
 }
 function stopSpeech(){ if('speechSynthesis' in window) speechSynthesis.cancel(); }
 function speakLesson(){
