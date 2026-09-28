@@ -57,6 +57,8 @@
   body.dark .howto-close{color:var(--aggie-gold);}
   .btn:disabled{opacity:.5;cursor:not-allowed;}
   .explain{background:var(--light);border-left:4px solid var(--blue);padding:12px;border-radius:8px;margin-top:12px;font-size:14px;color:var(--ink);}
+  .wrong-note{margin-top:10px;padding:10px 12px;background:rgba(220,53,69,.08);border-left:4px solid #dc3545;border-radius:6px;font-size:13.5px;line-height:1.5;}
+  .wrong-note strong{color:#b02a37;}
   .tag{display:inline-block;background:var(--light);color:var(--aggie-blue);font-size:11px;font-weight:600;padding:3px 9px;border-radius:20px;margin-bottom:8px;}
   body.dark .tag{color:var(--aggie-gold);}
   .fcard{background:var(--card);border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.1);margin:12px 0;cursor:pointer;user-select:none;min-height:200px;display:flex;align-items:center;justify-content:center;text-align:center;border:2px solid var(--aggie-blue);}
@@ -553,6 +555,83 @@ if (typeof ORIG_QUESTIONS !== 'undefined') QUESTIONS.push(...ORIG_QUESTIONS);
 if (typeof ORIG_FLASHCARDS !== 'undefined') FLASHCARDS.push(...ORIG_FLASHCARDS);
 if (typeof ORIG_LESSONS !== 'undefined') LESSONS.push(...ORIG_LESSONS);
 
+/* ============ ABBREVIATION EXPANSION ============
+   On display, expand common nephrology abbreviations to their full wording
+   the first time each appears, so learners see "hepatorenal syndrome (HRS)"
+   instead of a bare "HRS". We never mutate the raw question/explanation
+   strings (q.q is used as a tracking key), only the rendered text. */
+const ABBREVIATIONS = {
+  "KDIGO":"Kidney Disease: Improving Global Outcomes",
+  "AAMI":"Association for the Advancement of Medical Instrumentation",
+  "ISPD":"International Society for Peritoneal Dialysis",
+  "HELLP":"hemolysis, elevated liver enzymes, low platelets",
+  "KDPI":"Kidney Donor Profile Index",
+  "ESRD":"end-stage renal disease","ESKD":"end-stage kidney disease",
+  "CRRT":"continuous renal replacement therapy",
+  "CCPD":"continuous cycling peritoneal dialysis",
+  "CAPD":"continuous ambulatory peritoneal dialysis",
+  "CVVHD":"continuous venovenous hemodialysis",
+  "CVVH":"continuous venovenous hemofiltration",
+  "SLED":"sustained low-efficiency dialysis",
+  "SCUF":"slow continuous ultrafiltration",
+  "HHD":"home hemodialysis","HD":"hemodialysis",
+  "PD":"peritoneal dialysis","RRT":"renal replacement therapy",
+  "PTLD":"post-transplant lymphoproliferative disorder",
+  "HRS":"hepatorenal syndrome",
+  "DDS":"dialysis disequilibrium syndrome",
+  "EPS":"encapsulating peritoneal sclerosis",
+  "PJP":"Pneumocystis jirovecii pneumonia",
+  "ATN":"acute tubular necrosis",
+  "AIN":"acute interstitial nephritis",
+  "AKI":"acute kidney injury","CKD":"chronic kidney disease",
+  "DKD":"diabetic kidney disease","MBD":"mineral and bone disorder",
+  "PET":"peritoneal equilibration test",
+  "UF":"ultrafiltration","UFR":"ultrafiltration rate",
+  "TMP":"transmembrane pressure",
+  "AVF":"arteriovenous fistula","AVG":"arteriovenous graft",
+  "PTH":"parathyroid hormone","ESA":"erythropoiesis-stimulating agent",
+  "GFR":"glomerular filtration rate","BUN":"blood urea nitrogen",
+  "HIT":"heparin-induced thrombocytopenia",
+  "ARB":"angiotensin receptor blocker",
+  "ACE":"angiotensin-converting enzyme",
+  "MAP":"mean arterial pressure","BP":"blood pressure",
+  "CMV":"cytomegalovirus","EBV":"Epstein-Barr virus","BK":"BK virus",
+  "WBC":"white blood cell","RBC":"red blood cell",
+  "IV":"intravenous","BMI":"body mass index","EKG":"electrocardiogram",
+  "GI":"gastrointestinal","PRA":"panel reactive antibody",
+  "IP":"intraperitoneal","RO":"reverse osmosis","DI":"deionization"
+};
+function expandAbbreviations(text){
+  if(!text) return text;
+  let out = text;
+  // Longest first so e.g. CVVHD isn't partially handled before CVVH.
+  const entries = Object.entries(ABBREVIATIONS).sort((a,b)=>b[0].length-a[0].length);
+  for(const [abbr, full] of entries){
+    // If the full wording already appears, don't double-expand ("…(HRS)" is fine as-is).
+    if(out.toLowerCase().includes(full.toLowerCase())) continue;
+    const m = out.match(new RegExp('\\b'+abbr+'\\b'));
+    if(m){
+      out = out.slice(0,m.index) + full + ' (' + abbr + ')' + out.slice(m.index + abbr.length);
+    }
+  }
+  return out;
+}
+// Build the explanation block shown after answering. On an incorrect answer we
+// expand abbreviations AND spell out exactly what the user chose vs. the correct
+// answer, so the "why" is clearer than the bare one-liner.
+function explanationHTML(q, isCorrect, chosenIdx){
+  const expl = expandAbbreviations(q.expl||'');
+  let html = (isCorrect ? 'Correct! ' : 'Incorrect. ') + esc(expl);
+  if(!isCorrect){
+    const chosen = (chosenIdx!=null && q.opts[chosenIdx]) ? q.opts[chosenIdx] : null;
+    const correct = q.opts[q.ans];
+    html += '<div class="wrong-note">';
+    if(chosen) html += '<strong>Your answer:</strong> ' + esc(expandAbbreviations(chosen)) + '<br>';
+    html += '<strong>Correct answer:</strong> ' + esc(expandAbbreviations(correct)) + '</div>';
+  }
+  return html;
+}
+
 /* ============ STATE ============ */
 const topics = [...new Set(QUESTIONS.map(q=>q.topic))];
 let currentUser = null;
@@ -957,8 +1036,8 @@ function renderQuestion(){
   quizState.shuffledOpts=opts; // store shuffled order for answer matching
   document.getElementById('qTopic').textContent=q.topic;
   document.getElementById('qCounter').textContent=`Question ${quizState.idx+1} of ${quizState.list.length}`;
-  document.getElementById('qQuestion').textContent=q.q;
-  document.getElementById('qOptions').innerHTML=opts.map((o,i)=>`<button class="option" data-i="${i}" data-orig="${o.idx}" onclick="selectAnswer(${i})">${String.fromCharCode(65+i)}. ${o.text}</button>`).join('');
+  document.getElementById('qQuestion').innerHTML=esc(expandAbbreviations(q.q));
+  document.getElementById('qOptions').innerHTML=opts.map((o,i)=>`<button class="option" data-i="${i}" data-orig="${o.idx}" onclick="selectAnswer(${i})">${String.fromCharCode(65+i)}. ${esc(expandAbbreviations(o.text))}</button>`).join('');
   document.getElementById('qExplain').style.display='none';
   document.getElementById('qNext').style.display='none';
 }
@@ -974,7 +1053,7 @@ function selectAnswer(i){
   recordAnswer(q, quizState.shuffledOpts[i].idx===q.ans);
   const exp=document.getElementById('qExplain');
   exp.style.display='block';
-  exp.innerHTML=(quizState.shuffledOpts[i].idx===q.ans?'Correct! ':'Incorrect. ')+q.expl;
+  exp.innerHTML=explanationHTML(q, quizState.shuffledOpts[i].idx===q.ans, quizState.shuffledOpts[i].idx);
   document.getElementById('qNext').style.display='block';
 }
 function nextQuestion(){ quizState.idx++; if(quizState.idx<quizState.list.length) renderQuestion(); else finishQuiz(); }
@@ -1187,8 +1266,8 @@ function renderTestQuestion(){
   shuffle(opts);
   testState.shuffledOpts=opts;
   document.getElementById('testCounter').textContent=`Question ${testState.idx+1} of ${testState.list.length}`;
-  document.getElementById('testQuestion').textContent=q.q;
-  document.getElementById('testOptions').innerHTML=opts.map((o,i)=>`<button class="option" data-i="${i}" data-orig="${o.idx}" onclick="selectTestAnswer(${i})">${String.fromCharCode(65+i)}. ${o.text}</button>`).join('');
+  document.getElementById('testQuestion').innerHTML=esc(expandAbbreviations(q.q));
+  document.getElementById('testOptions').innerHTML=opts.map((o,i)=>`<button class="option" data-i="${i}" data-orig="${o.idx}" onclick="selectTestAnswer(${i})">${String.fromCharCode(65+i)}. ${esc(expandAbbreviations(o.text))}</button>`).join('');
   document.getElementById('testNext').style.display='none';
   document.getElementById('testExplain').style.display='none';
 }
@@ -1220,7 +1299,7 @@ function selectTestAnswer(i){
     });
     const exp=document.getElementById('testExplain');
     exp.style.display='block';
-    exp.innerHTML=(isCorrect?'Correct! ':'Incorrect. ')+q.expl;
+    exp.innerHTML=explanationHTML(q, isCorrect, testState.shuffledOpts[i].idx);
   }
   document.getElementById('testNext').style.display='block';
 }
