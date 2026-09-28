@@ -59,6 +59,11 @@
   .explain{background:var(--light);border-left:4px solid var(--blue);padding:12px;border-radius:8px;margin-top:12px;font-size:14px;color:var(--ink);}
   .wrong-note{margin-top:10px;padding:10px 12px;background:rgba(220,53,69,.08);border-left:4px solid #dc3545;border-radius:6px;font-size:13.5px;line-height:1.5;}
   .wrong-note strong{color:#b02a37;}
+  .why-note{margin-top:8px;padding:9px 11px;background:rgba(46,125,50,.09);border-left:4px solid #2e7d32;border-radius:6px;font-size:13.5px;line-height:1.5;}
+  .why-others{margin-top:10px;padding:10px 12px;background:var(--light);border-left:4px solid var(--gray);border-radius:6px;font-size:13.5px;line-height:1.5;}
+  .why-others-h{font-weight:700;margin-bottom:4px;color:var(--aggie-blue);}
+  body.dark .why-others-h{color:var(--aggie-gold);}
+  .why-other{margin-top:6px;}
   .tag{display:inline-block;background:var(--light);color:var(--aggie-blue);font-size:11px;font-weight:600;padding:3px 9px;border-radius:20px;margin-bottom:8px;}
   body.dark .tag{color:var(--aggie-gold);}
   .fcard{background:var(--card);border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.1);margin:12px 0;cursor:pointer;user-select:none;min-height:200px;display:flex;align-items:center;justify-content:center;text-align:center;border:2px solid var(--aggie-blue);}
@@ -630,15 +635,49 @@ function expandAbbreviations(text){
 // Build the explanation block shown after answering. On an incorrect answer we
 // expand abbreviations AND spell out exactly what the user chose vs. the correct
 // answer, so the "why" is clearer than the bare one-liner.
+//
+// OPTIONAL PER-OPTION RATIONALES (q.why)
+//   q.why is an array index-aligned with q.opts -- the same index space q.ans uses --
+//   so it survives the option shuffle (both callers pass the ORIGINAL option index,
+//   not the displayed one). q.why[i] answers "why is option i not the right choice?".
+//   The slot at q.ans is optional: when present it is shown as a supplement to q.expl,
+//   which remains the primary explanation of the correct answer.
+//   When q.why is absent, empty, or not an array of strings the output below is
+//   byte-for-byte identical to the version without rationales, so this rendering can
+//   ship ahead of the content that fills it -- and a malformed entry can never
+//   corrupt a question that carries no rationales.
 function explanationHTML(q, isCorrect, chosenIdx){
   const expl = expandAbbreviations(q.expl||'');
   let html = (isCorrect ? 'Correct! ' : 'Incorrect. ') + esc(expl);
+  const why = Array.isArray(q.why) ? q.why : null;
+  const rat = function(i){
+    if(!why) return null;
+    const r = why[i];
+    return (typeof r === 'string' && r.trim()) ? r.trim() : null;
+  };
+  // Optional supplement to the correct-answer explanation.
+  const ansNote = rat(q.ans);
+  if(ansNote) html += '<div class="why-note">' + esc(expandAbbreviations(ansNote)) + '</div>';
   if(!isCorrect){
     const chosen = (chosenIdx!=null && q.opts[chosenIdx]) ? q.opts[chosenIdx] : null;
     const correct = q.opts[q.ans];
     html += '<div class="wrong-note">';
     if(chosen) html += '<strong>Your answer:</strong> ' + esc(expandAbbreviations(chosen)) + '<br>';
+    const chosenWhy = (chosen && chosenIdx!==q.ans) ? rat(chosenIdx) : null;
+    if(chosenWhy) html += '<strong>Why this is wrong:</strong> ' + esc(expandAbbreviations(chosenWhy)) + '<br>';
     html += '<strong>Correct answer:</strong> ' + esc(expandAbbreviations(correct)) + '</div>';
+  }
+  // Rationales for the remaining choices. Each is labelled with the option's own
+  // text rather than a letter, because the letters are reshuffled on every attempt.
+  if(why){
+    const others = [];
+    for(let i=0;i<q.opts.length;i++){
+      if(i===q.ans) continue;                     // q.expl already explains the right answer
+      if(!isCorrect && i===chosenIdx) continue;   // already shown inline above
+      const r = rat(i);
+      if(r) others.push('<div class="why-other"><strong>' + esc(expandAbbreviations(q.opts[i])) + '</strong> &mdash; ' + esc(expandAbbreviations(r)) + '</div>');
+    }
+    if(others.length) html += '<div class="why-others"><div class="why-others-h">Why the other options do not fit</div>' + others.join('') + '</div>';
   }
   return html;
 }
