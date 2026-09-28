@@ -606,13 +606,24 @@ function expandAbbreviations(text){
   let out = text;
   // Longest first so e.g. CVVHD isn't partially handled before CVVH.
   const entries = Object.entries(ABBREVIATIONS).sort((a,b)=>b[0].length-a[0].length);
+  // Staging labels: "Grade IV" is a Roman numeral, not "intravenous".
+  const LABEL = new RegExp('(?:^|\\s)(?:Stage|Type|Class|Grade|Category|Phase|Level|No\\.)\\s*$','i');
   for(const [abbr, full] of entries){
     // If the full wording already appears, don't double-expand ("…(HRS)" is fine as-is).
     if(out.toLowerCase().includes(full.toLowerCase())) continue;
     const m = out.match(new RegExp('\\b'+abbr+'\\b'));
-    if(m){
-      out = out.slice(0,m.index) + full + ' (' + abbr + ')' + out.slice(m.index + abbr.length);
-    }
+    if(!m) continue;
+    // Never expand inside a parenthetical -- the author already explained it there
+    // ('(UF failure)', '(donor CMV-positive)'). Expanding inside the gloss nested the
+    // parentheses in 28 places: 'PD (CCPD)' became
+    // 'PD (continuous cycling peritoneal dialysis (CCPD))'.
+    const prefix = out.slice(0, m.index);
+    if(prefix.split('(').length > prefix.split(')').length) continue;
+    // A staging label means a Roman numeral: 'Grade IV' is not 'intravenous'.
+    if(LABEL.test(prefix)) continue;
+    // 'PD (CCPD)' needs no expansion -- the parenthetical is already its gloss.
+    if(/^\s*\(\s*[A-Z0-9][A-Z0-9\/-]{1,7}\s*\)/.test(out.slice(m.index + abbr.length))) continue;
+    out = out.slice(0,m.index) + full + ' (' + abbr + ')' + out.slice(m.index + abbr.length);
   }
   return out;
 }
