@@ -77,6 +77,9 @@
   body.dark .flip-btn button{color:var(--aggie-gold);border-color:var(--aggie-gold);}
   .flip-btn button.primary{background:var(--aggie-blue);color:#fff;}
   .count{text-align:center;color:var(--gray);font-size:13px;margin:8px 0;}
+.score-live{color:var(--ink);margin-top:-2px;}
+  .score-live strong{font-weight:700;color:var(--aggie-blue);}
+  body.dark .score-live strong{color:var(--aggie-gold);}
   .filter{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;}
   .filter button{border:1.5px solid var(--input-border);background:var(--card);border-radius:20px;padding:7px 13px;font-size:13px;cursor:pointer;color:var(--gray);}
   .filter button.active{border-color:var(--aggie-blue);color:var(--aggie-blue);background:var(--light);font-weight:600;}
@@ -208,6 +211,7 @@
         <div class="card">
           <div class="tag" id="qTopic"></div>
           <div class="count" id="qCounter"></div>
+          <div class="count score-live" id="qScore" style="display:none"></div>
           <h2 id="qQuestion" style="font-size:17px;line-height:1.4;"></h2>
           <div id="qOptions"></div>
           <div class="explain" id="qExplain" style="display:none"></div>
@@ -1090,11 +1094,16 @@ function renderQuestion(){
   document.getElementById('qOptions').innerHTML=opts.map((o,i)=>`<button class="option" data-i="${i}" data-orig="${o.idx}" onclick="selectAnswer(${i})">${String.fromCharCode(65+i)}. ${esc(expandAbbreviations(o.text))}</button>`).join('');
   document.getElementById('qExplain').style.display='none';
   document.getElementById('qNext').style.display='none';
+  renderQuizScore();
 }
 function selectAnswer(i){
   if(quizState.selected) return;
   const q=quizState.list[quizState.idx];
   quizState.selected=true;
+  // Session-local tally. Deliberately NOT inside recordAnswer(), which the practice
+  // test also calls -- incrementing there would let a test inflate the quiz counter.
+  quizState.answered=(quizState.answered||0)+1;
+  if(quizState.shuffledOpts[i].idx===q.ans) quizState.correct=(quizState.correct||0)+1;
   document.querySelectorAll('#qOptions .option').forEach(b=>{
     b.disabled=true; const origIdx=parseInt(b.dataset.orig);
     if(origIdx===q.ans) b.classList.add('correct');
@@ -1105,6 +1114,7 @@ function selectAnswer(i){
   exp.style.display='block';
   exp.innerHTML=explanationHTML(q, quizState.shuffledOpts[i].idx===q.ans, quizState.shuffledOpts[i].idx);
   document.getElementById('qNext').style.display='block';
+  renderQuizScore();
 }
 function nextQuestion(){ quizState.idx++; if(quizState.idx<quizState.list.length) renderQuestion(); else finishQuiz(); }
 
@@ -1185,9 +1195,32 @@ async function aiEvaluate(){
     btn.disabled=false;
   }
 }
+// The tier word needs a few answers behind it before it means anything -- at 1/1 the
+// line would read "100% Strong", which is a claim about exam readiness made from one
+// question. Below this many answers the line shows count and percentage only.
+const RATING_MIN_ANSWERS = 5;
+
+function renderQuizScore(){
+  const el=document.getElementById('qScore');
+  if(!el) return;
+  const answered=quizState.answered||0;
+  const correct=quizState.correct||0;
+  if(answered===0){ el.style.display='none'; el.textContent=''; return; }
+  const pct=Math.round(correct/answered*100);
+  let html='<strong>'+correct+'/'+answered+'</strong> · '+pct+'%';
+  if(answered>=RATING_MIN_ANSWERS){
+    const t=scoreTier(pct);
+    html=t.emoji+' '+html+' · '+t.short;
+  }
+  el.innerHTML=html;
+  el.style.display='block';
+}
 function finishQuiz(){
   const total=quizState.list.length;
-  const correct=quizState.list.filter(q=>window.userProgress.answers[q.q]).length;
+  // Count THIS session only. The previous version read userProgress.answers, which
+  // persists across sessions, so on an early quit every question previously answered
+  // correctly still counted here and inflated the score.
+  const correct=quizState.correct||0;
   quizState.active=false;
   document.getElementById('quizRun').style.display='none';
   document.getElementById('quizResult').style.display='block';
@@ -1413,19 +1446,24 @@ function drillWeakAreas(){
   showScreen('quiz');
   renderQuestion();
 }
+// One definition of the score tiers, so the live quiz counter and the practice-test
+// readiness gauge cannot drift apart. Each tier carries the full sentence used by the
+// readiness gauge plus the short name the quiz line has room for.
+function scoreTier(pct){
+  if(pct>=85) return {color:'var(--green)', emoji:'🏆', short:'Strong', label:'🏆 Strong — you are ready for the exam.'};
+  if(pct>=70) return {color:'var(--green)', emoji:'✅', short:'On track', label:'✅ On track — keep reinforcing weak areas.'};
+  if(pct>=50) return {color:'var(--gold)', emoji:'📈', short:'Building', label:'📈 Building — focus on your weak objectives below.'};
+  /* else */ return {color:'var(--red)', emoji:'📚', short:'Early stage', label:'📚 Early stage — keep studying and retake soon.'};
+}
 function renderReadiness(pct){
   const el=document.getElementById('readinessPct');
   const bar=document.getElementById('readinessBar');
   const lbl=document.getElementById('readinessLabel');
   el.textContent=pct+'%';
   bar.style.width=pct+'%';
-  let color, label;
-  if(pct>=85){ color='var(--green)'; label='🏆 Strong — you are ready for the exam.'; }
-  else if(pct>=70){ color='var(--green)'; label='✅ On track — keep reinforcing weak areas.'; }
-  else if(pct>=50){ color='var(--gold)'; label='📈 Building — focus on your weak objectives below.'; }
-  else { color='var(--red)'; label='📚 Early stage — keep studying and retake soon.'; }
-  bar.style.background=color;
-  lbl.textContent=label;
+  const t=scoreTier(pct);
+  bar.style.background=t.color;
+  lbl.textContent=t.label;
 }
 function renderTestBreakdown(){
   const objNames = {1:'Pathologic processes',2:'Interventions',3:'KRT principles',4:'Teaching/learning',5:'Medications',6:'Infection control',7:'Collaboration/QI'};
