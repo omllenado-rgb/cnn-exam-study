@@ -106,13 +106,6 @@
   th,td{padding:9px 8px;text-align:left;border-bottom:1px solid var(--border);}
   th{background:var(--light);color:var(--aggie-blue);font-weight:600;}
   body.dark th{color:var(--aggie-gold);}
-  /* Compact admin table so all columns fit without horizontal scroll */
-  #adminTable{font-size:11px;table-layout:auto;}
-  #adminTable th,#adminTable td{padding:6px 5px;white-space:nowrap;}
-  #adminTable th{font-size:10px;letter-spacing:.2px;}
-  #adminTable td:first-child{white-space:normal;min-width:90px;}
-  .admin-note{background:#fff8e1;border:1px solid #ffe082;border-radius:8px;padding:10px;font-size:12px;margin-bottom:12px;}
-  body.dark .admin-note{background:#2c2a1a;border-color:#665f33;color:#e6d9a8;}
   /* ===== MOBILE OPTIMIZATIONS ===== */
   @media(max-width:480px){
     .topbar{padding:14px 14px;}
@@ -214,8 +207,6 @@
     <button id="navStrategies" onclick="showScreen('strategies')">Strategies</button>
     <button id="navCards" onclick="showScreen('cards')">Flashcards</button>
     <button id="navTrack" onclick="showScreen('track')">Trackers</button>
-    <button id="navAdd" onclick="showScreen('add')">Add Content</button>
-    <button id="navAdmin" onclick="showScreen('admin')">Admin</button>
   </nav>
   <main>
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
@@ -480,98 +471,6 @@
         <h2>Wrong-Answer Review</h2>
         <p class="muted" id="wrongCount"></p>
         <button class="btn" onclick="startWrongReview()">Review Missed Questions</button>
-      </div>
-    </div>
-
-    <!-- ADD CONTENT -->
-    <div id="screen-add" class="screen">
-      <!-- Password gate -->
-      <div id="addLogin" class="card" style="max-width:400px;margin:20px auto;text-align:center">
-        <h2>Add Content</h2>
-        <p class="muted">Enter the admin password to add questions and flashcards.</p>
-        <input type="password" id="addPass" placeholder="Admin password" style="text-align:center">
-        <button class="btn" style="width:100%" onclick="addLogin()">Unlock</button>
-      </div>
-      <!-- Add content panel (hidden until unlocked) -->
-      <div id="addPanel" style="display:none">
-        <div class="btn-row" style="margin-bottom:12px">
-          <button class="btn secondary" onclick="addLogout()">Lock</button>
-        </div>
-        <div class="card" style="border-left:4px solid var(--aggie-gold)">
-          <h2>Request New Content</h2>
-          <p class="muted" style="margin-bottom:8px">Have a PDF or study material you want turned into quiz questions, flashcards, and lessons? Send it to your admin and they will process it for free.</p>
-          <div style="background:var(--light);border-radius:8px;padding:12px;font-size:13px;line-height:1.6">
-            <strong>How it works:</strong>
-            <ol style="margin:6px 0 0 18px;padding:0">
-              <li>Send your PDF or material to the admin (Oliver) via email or message.</li>
-              <li>The admin extracts the content and turns it into quiz questions, flashcards, and lessons.</li>
-              <li>New content is added to the app and goes live for everyone.</li>
-            </ol>
-          </div>
-          <p class="muted" style="margin-top:8px">Tip: You can also add individual questions and flashcards below without waiting.</p>
-        </div>
-        <div class="card">
-          <h2>Add a Question</h2>
-          <label>Topic</label>
-          <select id="addTopic"></select>
-          <label>Question</label>
-          <textarea id="addQ" rows="2" placeholder="Enter the question"></textarea>
-          <label>Option A</label><input id="addA" placeholder="Correct or incorrect option">
-          <label>Option B</label><input id="addB" placeholder="Option B">
-          <label>Option C</label><input id="addC" placeholder="Option C">
-          <label>Option D</label><input id="addD" placeholder="Option D">
-          <label>Correct answer (A, B, C, or D)</label>
-          <select id="addAns"><option value="0">A</option><option value="1">B</option><option value="2">C</option><option value="3">D</option></select>
-          <label>Explanation</label>
-          <textarea id="addExpl" rows="2" placeholder="Why is this correct?"></textarea>
-          <button class="btn" onclick="addQuestion()">Add Question</button>
-        </div>
-        <div class="card">
-          <h2>Add a Flashcard</h2>
-          <label>Topic</label>
-          <select id="addCardTopic"></select>
-          <label>Front (prompt)</label>
-          <input id="addFront" placeholder="e.g. Three categories of AKI">
-          <label>Back (answer)</label>
-          <textarea id="addBack" rows="2" placeholder="e.g. Prerenal, intrarenal, postrenal"></textarea>
-          <button class="btn" onclick="addFlashcard()">Add Flashcard</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- ADMIN -->
-    <div id="screen-admin" class="screen">
-      <!-- Password gate -->
-      <div id="adminLogin" class="card" style="max-width:400px;margin:20px auto;text-align:center">
-        <h2>Admin Access</h2>
-        <p class="muted">Enter the admin password to manage users and export the spreadsheet.</p>
-        <input type="password" id="adminPass" placeholder="Admin password" style="text-align:center">
-        <button class="btn" style="width:100%" onclick="adminLogin()">Unlock Admin</button>
-      </div>
-      <!-- Admin panel (hidden until unlocked) -->
-      <div id="adminPanel" style="display:none">
-        <div class="admin-note">Admin view: manage users and export the spreadsheet.</div>
-        <div class="btn-row" style="margin-bottom:12px">
-          <button class="btn" onclick="loadAdmin()">Refresh</button>
-          <button class="btn secondary" onclick="exportCSV()">Export CSV</button>
-          <button class="btn secondary" onclick="exportXLSX()">Export Excel</button>
-          <button class="btn secondary" onclick="toggleDeleted()">Restore Deleted</button>
-          <button class="btn secondary" onclick="adminLogout()">Lock Admin</button>
-        </div>
-        <div class="stat-grid" id="adminStats">
-          <div class="stat"><div class="num" id="statTotalUsers">0</div><div class="lbl">Total Users</div></div>
-          <div class="stat"><div class="num" id="statActiveUsers">0</div><div class="lbl">Active (7d)</div></div>
-          <div class="stat"><div class="num" id="statStudyHours">0</div><div class="lbl">Total Study Hours</div></div>
-          <div class="stat"><div class="num" id="statAnswered">0</div><div class="lbl">Answered Questions</div></div>
-        </div>
-        <div class="card">
-          <h2>All Users</h2>
-          <div class="table-wrap"><table id="adminTable"></table></div>
-        </div>
-        <div class="card" id="deletedPanel" style="display:none">
-          <h2>♻ Restore Deleted Users</h2>
-          <div class="table-wrap"><table id="deletedList"></table></div>
-        </div>
       </div>
     </div>
   </main>
@@ -977,7 +876,7 @@ function showScreen(s){
   }
   document.querySelectorAll('#appScreen .screen').forEach(el=>el.classList.remove('active'));
   document.getElementById('screen-'+s).classList.add('active');
-  ['quiz','test','lessons','strategies','cards','track','add','admin'].forEach(x=>{
+  ['quiz','test','lessons','strategies','cards','track'].forEach(x=>{
     document.getElementById('nav'+x.charAt(0).toUpperCase()+x.slice(1)).classList.toggle('active',x===s);
   });
   trackSection(s);
@@ -985,22 +884,6 @@ function showScreen(s){
   if(s==='strategies') renderStrategies();
   if(s==='cards') renderCard();
   if(s==='track') renderTrackers();
-  if(s==='add'){
-    renderAddTopics();
-    // Reset the add-content gate each time the screen is opened.
-    addUnlocked = false;
-    document.getElementById('addPanel').style.display='none';
-    document.getElementById('addLogin').style.display='block';
-    document.getElementById('addPass').value='';
-  }
-  if(s==='admin'){
-    // Reset the admin gate each time the screen is opened.
-    adminUnlocked = false;
-    document.getElementById('adminPanel').style.display='none';
-    document.getElementById('adminLogin').style.display='block';
-    document.getElementById('adminPass').value='';
-    loadAdmin();
-  }
 }
 
 /* ============ SUPABASE HELPERS (resilient - never blocks the app) ============ */
@@ -2057,37 +1940,6 @@ function stopStudyTimer(){
   if(studyTimer){ flushStudyWindow(); clearInterval(studyTimer); studyTimer=null; }
 }
 
-/* ============ ADD CONTENT ============ */
-function renderAddTopics(){
-  const sel=document.getElementById('addTopic');
-  const sel2=document.getElementById('addCardTopic');
-  const opts=topics.map(t=>`<option>${esc(t)}</option>`).join('');
-  sel.innerHTML=opts; sel2.innerHTML=opts;
-}
-function addQuestion(){
-  const topic=document.getElementById('addTopic').value;
-  const q=document.getElementById('addQ').value.trim();
-  const opts=[document.getElementById('addA').value.trim(),document.getElementById('addB').value.trim(),document.getElementById('addC').value.trim(),document.getElementById('addD').value.trim()];
-  const ans=parseInt(document.getElementById('addAns').value);
-  const expl=document.getElementById('addExpl').value.trim();
-  if(!q||opts.some(o=>!o)){ alert('Fill in the question and all 4 options.'); return; }
-  QUESTIONS.push({topic,q,opts,ans,expl});
-  // update topics
-  if(!topics.includes(topic)){ topics.push(topic); renderQuizFilter(); renderCardFilter(); renderAddTopics(); }
-  alert('Question added! It will appear in quizzes now.');
-  ['addQ','addA','addB','addC','addD','addExpl'].forEach(id=>document.getElementById(id).value='');
-}
-function addFlashcard(){
-  const topic=document.getElementById('addCardTopic').value;
-  const front=document.getElementById('addFront').value.trim();
-  const back=document.getElementById('addBack').value.trim();
-  if(!front||!back){ alert('Fill in both sides.'); return; }
-  FLASHCARDS.push({topic,front,back});
-  if(!topics.includes(topic)){ topics.push(topic); renderQuizFilter(); renderCardFilter(); renderAddTopics(); }
-  alert('Flashcard added!');
-  document.getElementById('addFront').value=''; document.getElementById('addBack').value='';
-}
-
 /* ============ LESSONS ============ */
 let lessonFilter = "all";
 function renderLessonFilter(){
@@ -2264,304 +2116,12 @@ function backToStrategies(){
   document.getElementById('strategyList').style.display='block';
 }
 
-/* ============ ADMIN (password-protected) ============ */
-let adminUnlocked = false;
-
-async function adminLogin(){
-  const pass = document.getElementById('adminPass').value.trim();
-  if(!pass){ alert('Enter the admin password.'); return; }
-  try {
-    const {data,error} = await sbClient.from('app_settings').select('value').eq('key','admin_password').single();
-    if(error || !data){ alert('Admin password not set up. Run the app_settings SQL in Supabase.'); return; }
-    // Support hashed admin password (value = "salt::hash") with legacy plaintext fallback
-    let ok = false;
-    if(data.value && data.value.includes('::')){
-      const [salt, hash] = data.value.split('::');
-      ok = (await hashPass(salt, pass)) === hash;
-    } else {
-      ok = (pass === data.value);
-    }
-    if(ok){
-      adminUnlocked = true;
-      document.getElementById('adminLogin').style.display='none';
-      document.getElementById('adminPanel').style.display='block';
-      document.getElementById('adminPass').value='';
-      loadAdmin();
-    } else {
-      alert('Incorrect password.');
-    }
-  } catch(e){ alert('Could not verify password. Check backend connection.'); }
-}
-function adminLogout(){
-  adminUnlocked = false;
-  document.getElementById('adminPanel').style.display='none';
-  document.getElementById('adminLogin').style.display='block';
-}
-/* ============ ADD CONTENT (password-protected) ============ */
-let addUnlocked = false;
-async function addLogin(){
-  const pass = document.getElementById('addPass').value.trim();
-  if(!pass){ alert('Enter the admin password.'); return; }
-  try {
-    const {data,error} = await sbClient.from('app_settings').select('value').eq('key','admin_password').single();
-    if(error || !data){ alert('Admin password not set up. Run the app_settings SQL in Supabase.'); return; }
-    let ok = false;
-    if(data.value && data.value.includes('::')){
-      const [salt, hash] = data.value.split('::');
-      ok = (await hashPass(salt, pass)) === hash;
-    } else {
-      ok = (pass === data.value);
-    }
-    if(ok){
-      addUnlocked = true;
-      document.getElementById('addLogin').style.display='none';
-      document.getElementById('addPanel').style.display='block';
-      document.getElementById('addPass').value='';
-      renderAddTopics();
-    } else {
-      alert('Incorrect password.');
-    }
-  } catch(e){ alert('Could not verify password. Check backend connection.'); }
-}
-function addLogout(){
-  addUnlocked = false;
-  document.getElementById('addPanel').style.display='none';
-  document.getElementById('addLogin').style.display='block';
-}
-// (The single showScreen definition lives in the NAV section above — it stops
-// the practice-test timer on navigation AND handles the add/admin gates.)
-
-/* Shared helpers for the admin time split and safe output of user-controlled names */
-function appSplit(u){
-  const mh=u.manual_hours||{};
-  const manualHrs=Object.keys(mh).reduce((s,k)=>s+mh[k],0);
-  const inAppSec=Math.max(0,(u.study_seconds||0)-manualHrs*3600);
-  return { inAppMin:Math.round(inAppSec/60), manualHrs:manualHrs.toFixed(1), totalMin:Math.round((u.study_seconds||0)/60) };
-}
+/* ============ SHARED HELPERS (used by lessons/strategies) ============ */
 function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 // Safe string argument for inline onclick handlers: JSON-encode (so quotes and
 // backslashes become JS-safe escapes) then HTML-escape the wrapper quotes so
 // nothing can break out of the attribute.
 function jsStr(s){ return esc(JSON.stringify(s==null?'':s)); }
-function csvCell(s){ s=String(s==null?'':s); if(/^[=+\-@]/.test(s)) s="'"+s; return (/[",\n]/.test(s)) ? '"'+s.replace(/"/g,'""')+'"' : s; }
-async function loadAdmin(){
-  if(!adminUnlocked) return;
-  try {
-    const {data,error}=await sbClient.from('progress').select('*').order('user_name');
-    if(error){ document.getElementById('adminTable').innerHTML=`<tr><td>Backend not ready: ${error.message}.</td></tr>`; return; }
-    let html='<tr><th>User</th><th>First Started</th><th>In-App Min</th><th>Manual Hrs</th><th>Study Days</th><th>Min/Day</th><th>Last Active</th><th>Weakest Topic</th><th>Answered</th><th>Correct</th><th>Accuracy</th><th>Cards Known</th><th>Sessions</th><th>Streak</th><th>Actions</th></tr>';
-    // Compute summary stats
-    const now = Date.now();
-    const sevenDays = 7*86400000;
-    let totalUsers = (data||[]).length;
-    let activeUsers = 0;
-    let totalStudySec = 0;
-    let totalAnswered = 0;
-    (data||[]).forEach(u=>{
-      if(u.last_active && (now - new Date(u.last_active).getTime()) <= sevenDays) activeUsers++;
-      totalStudySec += (u.study_seconds||0);
-      totalAnswered += (u.answered||0);
-    });
-    document.getElementById('statTotalUsers').textContent = totalUsers;
-    document.getElementById('statActiveUsers').textContent = activeUsers;
-    document.getElementById('statStudyHours').textContent = (totalStudySec/3600).toFixed(1);
-    document.getElementById('statAnswered').textContent = totalAnswered;
-    (data||[]).forEach(u=>{
-      const acc=u.answered?Math.round(u.correct/u.answered*100)+'%':'0%';
-      // in-app time = study_seconds minus manual hours (logStudyHours adds manual to study_seconds)
-      const sp=appSplit(u);
-      const manualHrs=sp.manualHrs, inAppMin=sp.inAppMin, totalMin=sp.totalMin;
-      const studyDays = u.study_days||0;
-      const minPerDay = studyDays>0 ? Math.round(totalMin/studyDays) : 0;
-      const firstDate = u.first_started ? new Date(u.first_started).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'2-digit'}) : '—';
-      const lastActive = u.last_active ? daysAgo(u.last_active) : '—';
-      const weakest = computeWeakestTopic(u.topic_stats||{});
-      html+=`<tr>
-        <td><a href="javascript:void(0)" onclick="viewUser(${jsStr(u.user_name)})" style="color:var(--link);font-weight:600">${esc(u.user_name)}</a></td>
-        <td>${firstDate}</td>
-        <td>${inAppMin}</td>
-        <td>${manualHrs}</td>
-        <td>${studyDays}</td>
-        <td>${minPerDay}</td>
-        <td>${lastActive}</td>
-        <td>${weakest}</td>
-        <td>${u.answered||0}</td>
-        <td>${u.correct||0}</td>
-        <td>${acc}</td>
-        <td>${u.known||0}</td>
-        <td>${u.sessions||0}</td>
-        <td>${u.streak||0}</td>
-        <td>
-          <button onclick="resetPassword(${jsStr(u.user_name)})" style="font-size:11px;padding:4px 8px;margin:2px;background:var(--light);color:var(--ink);border:1px solid var(--border);border-radius:6px">Reset PW</button>
-          <button onclick="resetUser(${jsStr(u.user_name)})" style="font-size:11px;padding:4px 8px;margin:2px;background:var(--light);color:var(--ink);border:1px solid var(--border);border-radius:6px">Reset</button>
-          <button onclick="deleteUser(${jsStr(u.user_name)})" style="font-size:11px;padding:4px 8px;margin:2px;background:var(--aggie-red);color:#fff;border:none;border-radius:6px">Delete</button>
-        </td>
-      </tr>`;
-    });
-    if(!data||data.length===0) html+='<tr><td colspan="15">No users yet.</td></tr>';
-    document.getElementById('adminTable').innerHTML=html;
-  } catch(e){ document.getElementById('adminTable').innerHTML='<tr><td>Backend not ready.</td></tr>'; }
-}
-function daysAgo(iso){
-  const d = new Date(iso);
-  const days = Math.floor((Date.now() - d.getTime())/86400000);
-  if(days<=0) return 'Today';
-  if(days===1) return '1d ago';
-  if(days<7) return days+'d ago';
-  if(days<30) return Math.round(days/7)+'w ago';
-  return Math.round(days/30)+'mo ago';
-}
-function computeWeakestTopic(ts){
-  let weakest=null, lowestPct=101, lowestAnswered=0;
-  Object.keys(ts).forEach(t=>{
-    const s=ts[t]||{answered:0,correct:0};
-    if(s.answered>0){
-      const pct=s.correct/s.answered;
-      if(pct<lowestPct){ lowestPct=pct; weakest=t; }
-    }
-  });
-  return weakest || '—';
-}
-function exportCSV(){
-  if(!adminUnlocked) return;
-  let csv='User,First Started,In-App Minutes,Manual Hours,Study Days,Min/Day,Last Active,Weakest Topic,Answered,Correct,Accuracy,Cards Known,Sessions,Streak\n';
-  sbClient.from('progress').select('*').order('user_name').then(({data,error})=>{
-    if(error){ alert('Backend not ready: '+error.message); return; }
-    (data||[]).forEach(u=>{
-      const acc=u.answered?Math.round(u.correct/u.answered*100)+'%':'0%';
-      const sp=appSplit(u);
-      const manualHrs=sp.manualHrs, inAppMin=sp.inAppMin, totalMin=sp.totalMin;
-      const sd = u.study_days||0;
-      const mpd = sd>0?Math.round(totalMin/sd):0;
-      const fd = u.first_started ? new Date(u.first_started).toLocaleDateString('en-US') : '';
-      const la = u.last_active ? daysAgo(u.last_active) : '';
-      const wt = computeWeakestTopic(u.topic_stats||{}) || '';
-      csv+=`${csvCell(u.user_name)},"${fd}",${inAppMin},${manualHrs},${sd},${mpd},"${la}","${wt}",${u.answered||0},${u.correct||0},${acc},${u.known||0},${u.sessions||0},${u.streak||0}\n`;
-    });
-    const blob=new Blob([csv],{type:'text/csv'});
-    const a=document.createElement('a');
-    a.href=URL.createObjectURL(blob); a.download='cnn_study_progress.csv'; a.click();
-  }).catch(e=>alert('Backend not ready.'));
-}
-function exportXLSX(){
-  if(!adminUnlocked) return;
-  sbClient.from('progress').select('*').order('user_name').then(({data,error})=>{
-    if(error){ alert('Backend error'); return; }
-    let rows = [['User','First Started','In-App Minutes','Manual Hours','Study Days','Min/Day','Last Active','Weakest Topic','Answered','Correct','Accuracy','Cards Known','Sessions','Streak']];
-    (data||[]).forEach(u=>{
-      const acc=u.answered?Math.round(u.correct/u.answered*100)+'%':'0%';
-      const sp=appSplit(u); const manualHrs=sp.manualHrs, inAppMin=sp.inAppMin, totalMin=sp.totalMin; const sd=u.study_days||0; const mpd=sd>0?Math.round(totalMin/sd):0;
-      const fd=u.first_started?new Date(u.first_started).toLocaleDateString('en-US'):'';
-      const la=u.last_active?daysAgo(u.last_active):''; const wt=computeWeakestTopic(u.topic_stats||{})||'';
-      rows.push([esc(u.user_name),fd,inAppMin,manualHrs,sd,mpd,la,wt,u.answered||0,u.correct||0,acc,u.known||0,u.sessions||0,u.streak||0]);
-    });
-    let table = '<table border="1"><thead><tr>';
-    rows[0].forEach(h=>table += '<th style="background:#7c3aed;color:#fff">'+h+'</th>');
-    table += '</tr></thead><tbody>';
-    for(let i=1;i<rows.length;i++){ table += '<tr>' + rows[i].map(c=>'<td>'+c+'</td>').join('') + '</tr>'; }
-    table += '</tbody></table>';
-    const blob = new Blob(['<html><head><meta charset="utf-8"></head><body>'+table+'</body></html>'],{type:'application/vnd.ms-excel'});
-    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'cnn_study_progress.xls'; a.click();
-  });
-}
-function toggleDeleted(){
-  const panel = document.getElementById('deletedPanel');
-  const show = panel.style.display === 'none';
-  panel.style.display = show ? 'block' : 'none';
-  if(show) loadDeletedUsers();
-}
-async function loadDeletedUsers(){
-  if(!adminUnlocked) return;
-  try {
-    const {data,error} = await sbClient.from('deleted_users').select('user_name,deleted_at,id').order('deleted_at',{ascending:false});
-    if(error){ document.getElementById('deletedList').innerHTML='<tr><td colspan="3" class="empty">Could not load deleted users.</td></tr>'; return; }
-    let html='<tr><th>User</th><th>Deleted</th><th>Action</th></tr>';
-    (data||[]).forEach(u=>{
-      const d = u.deleted_at ? new Date(u.deleted_at).toLocaleString() : '';
-      html+=`<tr><td>${esc(u.user_name)}</td><td>${d}</td><td><button class="btn secondary" style="padding:4px 8px;font-size:12px" onclick="restoreUser(${jsStr(u.id)},${jsStr(u.user_name)})">Restore</button></td></tr>`;
-    });
-    if((data||[]).length===0) html+='<tr><td colspan="3" class="empty">No deleted users.</td></tr>';
-    document.getElementById('deletedList').innerHTML=html;
-  } catch(e){ document.getElementById('deletedList').innerHTML='<tr><td colspan="3" class="empty">Backend error.</td></tr>'; }
-}
-async function restoreUser(id, name){
-  if(!adminUnlocked) return; if(!confirm('Restore user "'+name+'" and all their progress?')) return;
-  try {
-    const {data,error} = await sbClient.from('deleted_users').select('*').eq('id',id).single();
-    if(error || !data){ alert('Could not find deleted user.'); return; }
-    const userData = data.data;
-    const {user_name, id, created_at, ...rest} = userData;
-    await sbClient.from('progress').upsert({user_name:user_name, ...rest});
-    await sbClient.from('deleted_users').delete().eq('id',id);
-    alert('User "'+name+'" restored.'); loadAdmin(); loadDeletedUsers();
-  } catch(e){ alert('Could not restore user: '+e.message); }
-}
-async function resetUser(name){
-  if(!adminUnlocked) return;
-  if(!confirm('Reset all progress for "'+name+'"?')) return;
-  try {
-    await sbClient.from('progress').update({
-      answered:0, correct:0, known:0, sessions:0, streak:0, last_study:null,
-      answers:{}, wrong:{}, known_cards:{}, topic_stats:{}, section_seconds:{}, manual_hours:{}, card_reps:{},
-      study_seconds:0, study_days:0, today_seconds:0, today_date:null
-    }).eq('user_name',name);
-    alert('User "'+name+'" reset.');
-    loadAdmin();
-  } catch(e){ alert('Could not reset user.'); }
-}
-async function deleteUser(name){
-  if(!adminUnlocked) return;
-  if(!confirm('Delete user "'+name+'" and all their progress? This cannot be undone, but the user CAN be restored.')) return;
-  try {
-    // Snapshot the user into deleted_users BEFORE deleting (for potential restore)
-    const {data} = await sbClient.from('progress').select('*').eq('user_name',name).single();
-    if(data){ await sbClient.from('deleted_users').insert({user_name:data.user_name, data:data}); }
-    await sbClient.from('progress').delete().eq('user_name',name);
-    alert('User "'+name+'" deleted. It can be restored via the admin dashboard.');
-    loadAdmin();
-  } catch(e){ alert('Could not delete user: '+e.message); }
-}
-async function resetPassword(name){
-  if(!adminUnlocked) return;
-  const newPass = prompt('Enter a new password for "'+name+'":');
-  if(!newPass) return;
-  try {
-    const salt = makeSalt();
-    const pass_hash = await hashPass(salt, newPass);
-    await sbClient.from('progress').update({pass_salt:salt, pass_hash:pass_hash, password:null}).eq('user_name',name);
-    alert('Password for "'+name+'" reset.');
-  } catch(e){ alert('Could not reset password.'); }
-}
-function viewUser(name){
-  if(!adminUnlocked) return;
-  // Show a detail view for the user
-  sbClient.from('progress').select('*').eq('user_name',name).single().then(({data,error})=>{
-    if(error || !data){ alert('Could not load user.'); return; }
-    const u = data;
-    const acc = u.answered?Math.round(u.correct/u.answered*100)+'%':'0%';
-    const studyTime = fmtHours(u.study_seconds||0);
-    // Build topic breakdown
-    let topicsHtml = '';
-    Object.keys(u.topic_stats||{}).forEach(t=>{
-      const ts = u.topic_stats[t];
-      const pct = ts.answered?Math.round(ts.correct/ts.answered*100):0;
-      topicsHtml += `<div style="margin:6px 0"><span>${t}:</span> <strong>${ts.correct}/${ts.answered} (${pct}%)</strong></div>`;
-    });
-    if(!topicsHtml) topicsHtml = '<p class="muted">No topic data yet.</p>';
-    const wrongCount = Object.keys(u.wrong||{}).length;
-    alert(
-      'User: '+u.user_name+
-      '\nAnswered: '+u.answered+' | Correct: '+u.correct+' | Accuracy: '+acc+
-      '\nCards Known: '+u.known+' | Sessions: '+u.sessions+' | Streak: '+u.streak+
-      '\nStudy Time: '+studyTime+' | Study Days: '+(u.study_days||0)+
-      '\nWrong Answers: '+wrongCount+
-      '\n\nTopic Breakdown:\n'+Object.keys(u.topic_stats||{}).map(t=>{
-        const ts=u.topic_stats[t]; const pct=ts.answered?Math.round(ts.correct/ts.answered*100):0;
-        return '  '+t+': '+ts.correct+'/'+ts.answered+' ('+pct+'%)';
-      }).join('\n')
-    );
-  });
-}
 
 /* ============ INIT ============ */
 initTheme();
