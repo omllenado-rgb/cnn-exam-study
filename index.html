@@ -54,6 +54,11 @@
   .howto-box p,.howto-box li{font-size:14px;line-height:1.55;color:var(--ink);}
   .howto-box ul{margin:4px 0 0 18px;}
   .howto-close{background:var(--light);color:var(--aggie-blue);border:1px solid var(--input-border);border-radius:8px;padding:7px 12px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;}
+  /* ===== Profile / affiliation modal (reuses howto box) ===== */
+  #profileOverlay{display:none;position:fixed;inset:0;z-index:1000;background:rgba(10,8,18,.55);backdrop-filter:blur(3px);align-items:center;justify-content:center;padding:16px;}
+  #profileOverlay.show{display:flex;}
+  .field-label{display:block;font-size:13px;font-weight:600;color:var(--aggie-blue);margin:12px 0 0;}
+  body.dark .field-label{color:var(--aggie-gold);}
   body.dark .howto-close{color:var(--aggie-gold);}
   .btn:disabled{opacity:.5;cursor:not-allowed;}
   .explain{background:var(--light);border-left:4px solid var(--blue);padding:12px;border-radius:8px;margin-top:12px;font-size:14px;color:var(--ink);}
@@ -173,6 +178,30 @@
     <h3>7. How to log hours</h3>
     <p>On the Trackers tab, scroll to the <strong>Log Study Hours</strong> card, enter the hours (decimals allowed, e.g. 1.5 = 1 hr 30 min), pick a category, and tap Add.</p>
     <div style="text-align:right;margin-top:14px"><button class="howto-close" onclick="closeHowTo()">Got it</button></div>
+  </div>
+</div>
+
+<!-- PROFILE / AFFILIATION MODAL -->
+<div id="profileOverlay">
+  <div class="howto-box">
+    <h2>👋 Welcome aboard</h2>
+    <p>Help us tailor the study group to your setting. Where do you work or study?</p>
+    <label class="field-label" for="profileStatus">Employment status</label>
+    <select id="profileStatus">
+      <option value="">— Select —</option>
+      <option value="Hospital">Hospital</option>
+      <option value="Dialysis clinic">Dialysis clinic</option>
+      <option value="Student">Student</option>
+      <option value="Unemployed">Unemployed</option>
+      <option value="Other">Other</option>
+      <option value="Retired">Retired</option>
+    </select>
+    <label class="field-label" for="profileInstitution">Where do you work or study? <span class="muted">(optional)</span></label>
+    <input id="profileInstitution" placeholder="e.g. UC Davis Medical Center, Fresenius — Lodi" autocomplete="off">
+    <div class="btn-row" style="margin-top:14px">
+      <button class="btn" onclick="saveProfile()">Save</button>
+      <button class="btn secondary" onclick="skipProfile()">Skip for now</button>
+    </div>
   </div>
 </div>
 
@@ -723,6 +752,36 @@ function closeHowTo(){
 }
 document.addEventListener('keydown', function(e){ if(e && e.key === 'Escape') closeHowTo(); });
 
+/* ============ PROFILE / AFFILIATION MODAL ============ */
+function openProfile(){
+  const el = document.getElementById('profileOverlay');
+  el.classList.add('show');
+  document.body.style.overflow = 'hidden';
+}
+function closeProfile(){
+  const el = document.getElementById('profileOverlay');
+  el.classList.remove('show');
+  document.body.style.overflow = '';
+}
+function saveProfile(){
+  const status = document.getElementById('profileStatus').value;
+  const inst = document.getElementById('profileInstitution').value.trim();
+  if(!status){ alert('Please choose your employment status.'); return; }
+  const p = window.userProgress || {};
+  p.employment_status = status;
+  p.institution = inst || null;
+  saveProgress();   // persists to Supabase + localStorage (same upsert path)
+  closeProfile();
+}
+function skipProfile(){
+  closeProfile();
+}
+// Show the modal on entry if the record is missing employment_status.
+function maybePromptProfile(){
+  const p = window.userProgress || {};
+  if(!p.employment_status){ openProfile(); }
+}
+
 /* ============ LOGIN ============ */
 // Client-side SHA-256 (Web Crypto) so we never store/compare plaintext passwords.
 async function sha256(str){
@@ -767,6 +826,7 @@ function enterApp(name){
   renderQuizFilter(); renderObjFilter(); renderCardFilter(); renderExamSelect(); showScreen('quiz');
   startStudyTimer();
   document.getElementById('loginMsg').textContent = '';
+  maybePromptProfile();
 }
 async function login(){
   // Normalize the entered name to a canonical key (trim + lowercase) so
@@ -998,7 +1058,9 @@ async function saveProgress(){
       first_started: p.first_started||null, last_active: p.last_active||null,
       manual_hours: p.manual_hours||{},
       section_seconds: p.section_seconds||{},
-      card_reps: p.card_reps||{}
+      card_reps: p.card_reps||{},
+      employment_status: p.employment_status||null,
+      institution: p.institution||null
     }, { onConflict: 'user_name' });
   } catch(e){ /* backend unavailable - local save is enough for now */ }
 }
