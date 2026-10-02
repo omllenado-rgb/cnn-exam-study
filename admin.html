@@ -1,127 +1,297 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>CNN Study — Admin Dashboard</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="robots" content="noindex,nofollow">
+<title>CNN Admin Dashboard</title>
 <style>
-  :root{--navy:#7c3aed;--navy-2:#c026d3;--gold:#ff5e3a;--cyan:#c026d3;--ink:#13111d;--muted:#5b6472;--bg:#f6f4fb;--card:#fff;--border:#ece7f5;--green:#2e7d32;--red:#c62828;
-    --grad:linear-gradient(135deg,#7c3aed 0%,#c026d3 55%,#ff5e3a 100%);}
-  *{box-sizing:border-box;margin:0;padding:0;}
-  body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--ink);}
-  .login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;background:var(--grad);}
-  .login-card{background:#fff;border-radius:16px;padding:36px;width:100%;max-width:420px;box-shadow:0 20px 50px rgba(0,0,0,.3);}
-  .login-card h1{color:var(--navy);font-size:24px;margin-bottom:6px;text-align:center;}
-  .login-card .sub{color:var(--muted);font-size:14px;text-align:center;margin-bottom:24px;}
-  .login-card input{width:100%;padding:13px;border:1.5px solid var(--border);border-radius:10px;font-size:15px;margin-bottom:12px;}
-  .login-card input:focus{outline:none;border-color:var(--navy);}
-  .login-card button{width:100%;padding:13px;background:var(--navy);color:#fff;border:none;border-radius:10px;font-size:16px;font-weight:600;cursor:pointer;}
-  .login-card button:hover{background:var(--navy-2);}
-  .login-card .err{color:var(--red);font-size:13px;text-align:center;margin-top:10px;min-height:18px;}
-  .login-card .two-col{display:flex;gap:10px;}
-  .login-card .two-col input{flex:1;}
+  :root{
+    --navy:#7c3aed; --navy-2:#c026d3; --gold:#ff5e3a; --cyan:#0891b2;
+    --ink:#1c1a24; --muted:#6b6580; --bg:#f6f4fb; --card:#fff;
+    --border:#ece7f5; --green:#2e7d32; --red:#c62828;
+    --grad:linear-gradient(135deg,#7c3aed,#c026d3);
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--ink);}
+  h1,h2,h3{margin:0;}
+  button{font-family:inherit;cursor:pointer;}
 
-  /* Dashboard */
-  .dash{max-width:1200px;margin:0 auto;padding:20px;}
-  .topbar{background:var(--navy);color:#fff;border-radius:12px;padding:18px 24px;display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;}
-  .topbar h1{font-size:20px;font-weight:700;}
-  .topbar h1 span{color:var(--gold);}
-  .topbar .actions{display:flex;gap:10px;}
-  .topbar button{background:rgba(255,255,255,.15);color:#fff;border:none;padding:9px 16px;border-radius:8px;font-weight:600;cursor:pointer;font-size:14px;}
-  .topbar button:hover{background:rgba(255,255,255,.25);}
-  .topbar .export-btn{background:var(--gold);color:var(--navy);}
-  .topbar .export-btn:hover{background:#ffd24d;}
+  /* ---------- login ---------- */
+  .login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;
+    background:linear-gradient(135deg,#2b1a4d,#7c3aed 55%,#c026d3);}
+  .login-card{background:#fff;border-radius:18px;padding:38px 32px;max-width:400px;width:100%;
+    box-shadow:0 24px 60px rgba(0,0,0,.3);text-align:center;}
+  .login-card h1{font-size:24px;color:var(--navy);margin-bottom:6px;}
+  .login-card .sub{color:var(--muted);font-size:14px;margin:0 0 24px;}
+  .login-card input{width:100%;padding:14px 16px;border:2px solid var(--border);border-radius:10px;
+    font-size:16px;margin-bottom:12px;outline:none;transition:border-color .15s;}
+  .login-card input:focus{border-color:var(--navy);}
+  .login-card button{width:100%;padding:15px;border:none;border-radius:10px;background:var(--grad);
+    color:#fff;font-size:16px;font-weight:700;transition:transform .1s;}
+  .login-card button:active{transform:scale(.98);}
+  .err{color:var(--red);font-size:13.5px;margin-top:14px;min-height:18px;line-height:1.4;}
 
-  .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;margin-bottom:20px;}
-  .stat{background:var(--card);border-radius:12px;padding:18px;text-align:center;border:1px solid var(--border);}
-  .stat .num{font-size:30px;font-weight:800;color:var(--navy);}
-  .stat .lbl{font-size:13px;color:var(--muted);}
+  /* ---------- shell ---------- */
+  .dash{max-width:1500px;margin:0 auto;padding:20px 20px 60px;}
+  .topbar{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;margin-bottom:20px;}
+  .topbar h1{font-size:22px;color:var(--navy);}
+  .topbar h1 span{color:var(--navy-2);font-weight:400;}
+  .topbar .actions{display:flex;gap:8px;flex-wrap:wrap;}
+  .topbar button{border:1px solid var(--border);background:#fff;color:var(--ink);padding:9px 14px;
+    border-radius:9px;font-size:13.5px;font-weight:600;}
+  .topbar button:hover{border-color:var(--navy);color:var(--navy);}
+  .topbar button.export-btn{background:var(--navy);border-color:var(--navy);color:#fff;}
+  .topbar button.export-btn:hover{background:var(--navy-2);border-color:var(--navy-2);color:#fff;}
 
-  .card{background:var(--card);border-radius:12px;border:1px solid var(--border);padding:20px;margin-bottom:20px;overflow:hidden;}
-  .card h2{color:var(--navy);font-size:17px;margin-bottom:14px;}
-  .table-wrap{overflow-x:auto;}
-  table{width:100%;border-collapse:collapse;font-size:12.5px;}
-  th,td{padding:8px 8px;text-align:left;border-bottom:1px solid var(--border);white-space:nowrap;}
-  th{background:var(--bg);color:var(--navy);font-weight:600;font-size:11.5px;letter-spacing:.3px;}
-  td:first-child{font-weight:600;color:var(--navy);}
-  .btn-sm{font-size:11px;padding:5px 10px;margin:2px;border-radius:6px;border:1px solid var(--border);background:var(--bg);cursor:pointer;}
-  .btn-sm:hover{background:#e3e8ee;}
-  .btn-danger{background:var(--red);color:#fff;border-color:var(--red);}
-  .btn-danger:hover{background:#b71c1c;}
-  .empty{color:var(--muted);font-style:italic;}
+  /* ---------- nav ---------- */
+  .nav{display:flex;gap:6px;flex-wrap:wrap;border-bottom:2px solid var(--border);margin-bottom:22px;}
+  .nav button{border:none;background:none;padding:11px 16px;font-size:14px;font-weight:600;
+    color:var(--muted);border-bottom:3px solid transparent;margin-bottom:-2px;}
+  .nav button.active{color:var(--navy);border-bottom-color:var(--navy);}
+  .nav button:hover{color:var(--navy);}
+  .view{display:none;}
+  .view.active{display:block;}
 
-  /* summary bar */
-  .summary{background:#f3edf9;border-left:4px solid var(--gold);border-radius:8px;padding:14px 18px;margin-bottom:20px;font-size:14px;color:var(--navy);}
+  /* ---------- cards / stats ---------- */
+  .card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px;margin-bottom:20px;}
+  .card h2{font-size:16px;color:var(--navy);margin-bottom:14px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+  .card h2 .hint{font-weight:400;color:var(--muted);font-size:13px;}
+  .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;margin-bottom:20px;}
+  .stat{background:#fff;border:1px solid var(--border);border-radius:12px;padding:18px;text-align:center;}
+  .stat .num{font-size:26px;font-weight:800;color:var(--navy);line-height:1.1;}
+  .stat .lbl{font-size:12px;color:var(--muted);margin-top:5px;text-transform:uppercase;letter-spacing:.5px;}
+  .summary{background:#f3edf9;border-left:4px solid var(--gold);border-radius:8px;padding:14px 18px;
+    margin-bottom:20px;font-size:14px;color:var(--navy);}
   .summary strong{color:var(--navy);}
 
-  /* reset code modal */
-  .reset-overlay{position:fixed;inset:0;z-index:2000;background:rgba(19,17,29,.6);backdrop-filter:blur(3px);display:flex;align-items:center;justify-content:center;padding:16px;}
-  .reset-box{background:#fff;border-radius:16px;max-width:420px;width:100%;padding:26px;box-shadow:0 20px 60px rgba(0,0,0,.35);text-align:center;}
+  /* ---------- table ---------- */
+  .table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+  table{border-collapse:collapse;width:100%;font-size:13.5px;}
+  th{background:var(--navy);color:#fff;padding:10px 11px;text-align:left;font-weight:600;
+    white-space:nowrap;position:sticky;top:0;}
+  th.sortable{cursor:pointer;user-select:none;}
+  th.sortable:hover{background:var(--navy-2);}
+  th .arrow{opacity:.45;font-size:11px;}
+  th.sorted .arrow{opacity:1;}
+  td{padding:9px 11px;border-bottom:1px solid var(--border);white-space:nowrap;}
+  tbody tr:hover{background:#faf8fd;}
+  .empty{text-align:center;color:var(--muted);padding:24px;}
+  .btn-sm{border:1px solid var(--border);background:#fff;border-radius:7px;padding:5px 10px;
+    font-size:12.5px;font-weight:600;margin-right:4px;}
+  .btn-sm:hover{border-color:var(--navy);color:var(--navy);}
+  .btn-danger{color:var(--red);border-color:#f2d5d5;}
+  .btn-danger:hover{background:#fdf0f0;border-color:var(--red);color:var(--red);}
+  .namelink{color:var(--navy);font-weight:600;cursor:pointer;text-decoration:underline;
+    text-decoration-style:dotted;text-underline-offset:3px;}
+  .namelink:hover{color:var(--navy-2);}
+
+  /* ---------- toolbar ---------- */
+  .toolbar{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:16px;}
+  .toolbar input[type=search],.toolbar select,.toolbar input[type=text]{
+    padding:9px 12px;border:1px solid var(--border);border-radius:9px;font-size:14px;outline:none;}
+  .toolbar input[type=search]{flex:1;min-width:180px;}
+  .toolbar input:focus,.toolbar select:focus{border-color:var(--navy);}
+  .toolbar .count{color:var(--muted);font-size:13px;margin-left:auto;}
+
+  /* ---------- pill ---------- */
+  .pill{display:inline-block;padding:2px 8px;border-radius:20px;font-size:11.5px;font-weight:700;}
+  .pill.ok{background:#e7f5e8;color:var(--green);}
+  .pill.warn{background:#fdf0e6;color:#b45309;}
+  .pill.bad{background:#fdeaea;color:var(--red);}
+  .pill.info{background:#e8f1fd;color:#1d4ed8;}
+  .pill.mute{background:#f0eef5;color:var(--muted);}
+
+  /* ---------- drill-down overlay ---------- */
+  .overlay{position:fixed;inset:0;z-index:2000;background:rgba(19,17,29,.6);backdrop-filter:blur(3px);
+    display:flex;align-items:flex-start;justify-content:center;padding:20px;overflow-y:auto;}
+  .sheet{background:#fff;border-radius:16px;max-width:940px;width:100%;padding:26px;
+    box-shadow:0 20px 60px rgba(0,0,0,.35);margin:auto;}
+  .sheet-head{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;margin-bottom:18px;flex-wrap:wrap;}
+  .sheet-head h2{font-size:20px;color:var(--navy);margin:0 0 4px;}
+  .sheet-head .meta{color:var(--muted);font-size:13.5px;}
+  .sheet-close{border:1px solid var(--border);background:#fff;border-radius:9px;padding:8px 14px;
+    font-size:13.5px;font-weight:600;}
+  .sheet-close:hover{border-color:var(--navy);color:var(--navy);}
+  .sheet h3{font-size:14px;color:var(--navy);margin:22px 0 10px;text-transform:uppercase;
+    letter-spacing:.6px;}
+  .kv{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:12px;}
+  .kv .box{background:#faf8fd;border:1px solid var(--border);border-radius:10px;padding:12px;}
+  .kv .box .v{font-size:19px;font-weight:800;color:var(--navy);}
+  .kv .box .k{font-size:11.5px;color:var(--muted);margin-top:3px;text-transform:uppercase;letter-spacing:.4px;}
+  .bar{height:8px;border-radius:6px;background:#ece7f5;overflow:hidden;margin-top:6px;}
+  .bar > i{display:block;height:100%;border-radius:6px;background:var(--grad);}
+  .note{color:var(--muted);font-size:13px;line-height:1.55;}
+  .warnbox{background:#fff8ed;border-left:4px solid var(--gold);border-radius:8px;padding:13px 16px;
+    font-size:13.5px;color:#7c4a03;line-height:1.55;margin-bottom:16px;}
+  .okbox{background:#eef8ee;border-left:4px solid var(--green);border-radius:8px;padding:13px 16px;
+    font-size:13.5px;color:#22571f;line-height:1.55;margin-bottom:16px;}
+
+  /* ---------- reset modal ---------- */
+  .reset-overlay{position:fixed;inset:0;z-index:2000;background:rgba(19,17,29,.6);backdrop-filter:blur(3px);
+    display:flex;align-items:center;justify-content:center;padding:16px;}
+  .reset-box{background:#fff;border-radius:16px;max-width:420px;width:100%;padding:26px;
+    box-shadow:0 20px 60px rgba(0,0,0,.35);text-align:center;}
   .reset-box h2{color:var(--navy);font-size:20px;margin:0 0 4px;}
-  .reset-code{font-size:34px;font-weight:800;letter-spacing:6px;color:#fff;background:linear-gradient(135deg,#7c3aed,#c026d3);border-radius:12px;padding:18px 10px;margin:14px 0;font-family:monospace;}
+  .reset-code{font-size:34px;font-weight:800;letter-spacing:6px;color:#fff;background:var(--grad);
+    border-radius:12px;padding:18px 10px;margin:14px 0;font-family:monospace;}
   .reset-help{color:var(--muted);font-size:13px;line-height:1.5;margin:0 0 16px;}
   .reset-actions{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;}
-  .reset-btn{border:none;border-radius:10px;padding:12px 18px;font-size:15px;font-weight:700;cursor:pointer;background:#f0eaf9;color:var(--navy);}
-  .reset-btn-primary{background:linear-gradient(135deg,#7c3aed,#c026d3);color:#fff;}
+  .reset-btn{border:none;border-radius:10px;padding:12px 18px;font-size:15px;font-weight:700;
+    cursor:pointer;background:#f0eaf9;color:var(--navy);}
+  .reset-btn-primary{background:var(--grad);color:#fff;}
   .reset-btn:active{transform:scale(.97);}
-  .reset-close{background:none;border:none;color:var(--muted);font-size:13px;margin-top:16px;cursor:pointer;text-decoration:underline;}
+  .reset-close{background:none;border:none;color:var(--muted);font-size:13px;margin-top:16px;
+    cursor:pointer;text-decoration:underline;}
+
+  @media (max-width:640px){
+    .dash{padding:14px 12px 50px;}
+    .topbar h1{font-size:18px;}
+    .sheet{padding:18px;}
+    .stats{grid-template-columns:repeat(auto-fit,minmax(120px,1fr));}
+  }
 </style>
 </head>
 <body>
 
-<!-- LOGIN -->
+<!-- ============================ LOGIN ============================ -->
 <div class="login-wrap" id="loginWrap">
   <div class="login-card">
     <h1>🔐 CNN Admin</h1>
     <p class="sub">Certified Nephrology Nurse Study Dashboard</p>
-    <div class="two-col">
-      <input type="password" id="adminCode" placeholder="Access code" autocomplete="off">
-    </div>
-    <input type="password" id="adminPass" placeholder="Admin password" autocomplete="off">
+    <input type="password" id="adminPass" placeholder="Admin password" autocomplete="current-password">
     <button onclick="doLogin()">Unlock Dashboard</button>
     <div class="err" id="err"></div>
   </div>
 </div>
 
-<!-- DASHBOARD -->
+<!-- ========================== DASHBOARD ========================== -->
 <div class="dash" id="dash" style="display:none">
   <div class="topbar">
     <h1>CNN <span>Admin Dashboard</span></h1>
     <div class="actions">
-      <button class="export-btn" onclick="exportCSV()">⬇ Download CSV</button>
-      <button class="export-btn" onclick="exportXLSX()">📊 Export Excel</button>
-      <button onclick="toggleDeleted()">♻ Restore Deleted</button>
+      <button onclick="refreshAll()">⟳ Refresh</button>
+      <button class="export-btn" onclick="exportCSV()">⬇ CSV</button>
+      <button class="export-btn" onclick="exportXLSX()">📊 Excel</button>
+      <button onclick="openPasswordModal()">🔑 Change Password</button>
       <button onclick="logout()">Log Out</button>
     </div>
   </div>
 
-  <div class="summary" id="summary"></div>
+  <!-- Shown only when supabase-admin.sql has not been run yet. See legacyMode. -->
+  <div class="warnbox" id="legacyBar" style="display:none">
+    <strong>Limited mode.</strong> <code>supabase-admin.sql</code> has not been run on this project,
+    so the dashboard is using the old password gate. The tables, exports, per-user drill-down,
+    cohort readiness and content health all work. Reset-code listing, the announcement banner,
+    the audit log and “Change Password” need the SQL.<br><br>
+    Run it to finish the job — it also closes a known hole where anyone with the public app key
+    can reset any learner's password without the dashboard. See
+    <code>~/Documents/cnn-audio-work/admin-dashboard-2026-10-02/README.md</code>.
+  </div>
 
+  <div class="nav" id="nav">
+    <button data-view="users"     class="active" onclick="showView('users')">Users</button>
+    <button data-view="readiness"               onclick="showView('readiness')">Cohort Readiness</button>
+    <button data-view="content"                 onclick="showView('content')">Content Health</button>
+    <button data-view="codes"                   onclick="showView('codes')">Reset Codes</button>
+    <button data-view="announce"                onclick="showView('announce')">Announcement</button>
+    <button data-view="audit"                   onclick="showView('audit')">Audit Log</button>
+  </div>
+
+  <div class="summary" id="summary"></div>
   <div class="stats" id="stats"></div>
 
-  <div class="card">
-    <h2>All Users</h2>
-    <div class="table-wrap">
-      <table id="adminTable"></table>
+  <!-- ---------------------------- USERS ---------------------------- -->
+  <div class="view active" id="view-users">
+    <div class="card">
+      <h2>All Users <span class="hint">Click a name for the full breakdown</span></h2>
+      <div class="toolbar">
+        <input type="search" id="userSearch" placeholder="Search name, institution or employment…" oninput="renderTable()">
+        <select id="userEmpFilter" onchange="renderTable()"><option value="">All employment</option></select>
+        <select id="userStatusFilter" onchange="renderTable()">
+          <option value="">All activity</option>
+          <option value="active">Active (7d)</option>
+          <option value="dormant">Dormant (30d+)</option>
+          <option value="never">Never studied</option>
+        </select>
+        <span class="count" id="userCount"></span>
+      </div>
+      <div class="table-wrap"><table id="adminTable"></table></div>
+    </div>
+
+    <div class="card" id="deletedPanel" style="display:none">
+      <h2>♻ Snapshots <span class="hint">Deleted users, and pre-reset backups you can roll back to</span></h2>
+      <div class="table-wrap"><table id="deletedList"></table></div>
     </div>
   </div>
 
-  <div class="card" id="deletedPanel" style="display:none">
-    <h2>♻ Restore Deleted Users</h2>
-    <div class="table-wrap">
-      <table id="deletedList"></table>
+  <!-- -------------------------- READINESS -------------------------- -->
+  <div class="view" id="view-readiness">
+    <div id="readinessBody"><p class="note">Loading…</p></div>
+  </div>
+
+  <!-- --------------------------- CONTENT --------------------------- -->
+  <div class="view" id="view-content">
+    <div class="card">
+      <h2>Content Health</h2>
+      <p class="note" style="margin-bottom:14px">
+        Loads the live <code>content.js</code> and <code>original-content.js</code> (~830 KB) from this
+        site and checks the question bank against the exam blueprint. Blueprint needs are mirrored from
+        <code>TEST_WEIGHTS</code> in <code>index.html</code> — if that constant changes, this panel must
+        change with it.
+      </p>
+      <button class="btn-sm" onclick="loadContentHealth()" id="contentBtn">Run check</button>
+      <div id="contentBody" style="margin-top:16px"></div>
+    </div>
+  </div>
+
+  <!-- ---------------------------- CODES ---------------------------- -->
+  <div class="view" id="view-codes">
+    <div class="card">
+      <h2>Outstanding Reset Codes <span class="hint">Codes expire 30 minutes after issue</span></h2>
+      <div id="codesBody"><p class="note">Loading…</p></div>
+    </div>
+  </div>
+
+  <!-- -------------------------- ANNOUNCE --------------------------- -->
+  <div class="view" id="view-announce">
+    <div class="card">
+      <h2>Announcement Banner</h2>
+      <p class="note" style="margin-bottom:14px">
+        Shown to every learner at the top of the app. Leave empty and save to clear it.
+      </p>
+      <div class="toolbar">
+        <input type="text" id="announceText" maxlength="500" style="flex:1;min-width:240px"
+               placeholder="e.g. New practice questions added for Teaching/Learning.">
+        <button class="btn-sm" onclick="saveAnnouncement()">Save</button>
+        <button class="btn-sm" onclick="saveAnnouncement(true)">Clear</button>
+      </div>
+      <div id="announceMsg" class="note"></div>
+    </div>
+  </div>
+
+  <!-- ---------------------------- AUDIT ---------------------------- -->
+  <div class="view" id="view-audit">
+    <div class="card">
+      <h2>Audit Log <span class="hint">Written server-side by the privileged functions</span></h2>
+      <div id="auditBody"><p class="note">Loading…</p></div>
     </div>
   </div>
 </div>
 
-<!-- RESET CODE MODAL -->
+<!-- ======================= USER DRILL-DOWN ======================= -->
+<div class="overlay" id="userOverlay" style="display:none">
+  <div class="sheet" id="userSheet"></div>
+</div>
+
+<!-- ========================= RESET CODE ========================= -->
 <div class="reset-overlay" id="resetOverlay" style="display:none">
   <div class="reset-box">
     <h2>🔑 Reset code</h2>
     <p id="resetName" style="font-weight:700;margin:0 0 12px"></p>
     <div class="reset-code" id="resetCodeDisplay">--------</div>
-    <p class="reset-help">Share this code with the nurse. They tap "Forgot password?" in the app, enter their name + this code + a new password.</p>
+    <p class="reset-help">Share this code with the nurse. They tap "Forgot password?" in the app, enter
+      their name + this code + a new password. It expires in <strong>30 minutes</strong>.</p>
     <div class="reset-actions">
       <button class="reset-btn reset-btn-primary" onclick="shareResetCode()">📤 Send to user</button>
       <button class="reset-btn" onclick="copyResetCode()">📋 Copy</button>
@@ -130,208 +300,634 @@
   </div>
 </div>
 
+<!-- ====================== CHANGE PASSWORD ======================= -->
+<div class="reset-overlay" id="pwOverlay" style="display:none">
+  <div class="reset-box" style="text-align:left">
+    <h2 style="text-align:center">🔑 Change admin password</h2>
+    <p class="reset-help" style="text-align:center">Minimum 12 characters. Changing it signs out every
+      other admin session.</p>
+    <input type="password" id="pwOld" placeholder="Current password" autocomplete="current-password"
+           style="width:100%;padding:12px;border:2px solid var(--border);border-radius:10px;margin-bottom:10px;font-size:15px">
+    <input type="password" id="pwNew" placeholder="New password" autocomplete="new-password"
+           style="width:100%;padding:12px;border:2px solid var(--border);border-radius:10px;margin-bottom:10px;font-size:15px">
+    <input type="password" id="pwNew2" placeholder="Repeat new password" autocomplete="new-password"
+           style="width:100%;padding:12px;border:2px solid var(--border);border-radius:10px;margin-bottom:14px;font-size:15px">
+    <div class="reset-actions">
+      <button class="reset-btn reset-btn-primary" onclick="submitPasswordChange()">Change password</button>
+      <button class="reset-btn" onclick="closePasswordModal()">Cancel</button>
+    </div>
+    <div class="err" id="pwErr" style="text-align:center"></div>
+  </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-/* ==== CONFIG ==== */
-const SUPABASE_URL = "https://ymvaslldugwzgjeaxabz.supabase.co";
-const SUPABASE_ANON_KEY = "sb_publishable_EpbSQ2PEnEzOxAPkzkCe1g__Y0ozzi9";
-const ACCESS_CODE = "renal-admin-2027"; // extra gate beyond the admin password
-const sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-let unlocked = false;
-let currentResetCode = null;   // the code currently shown in the modal
-let currentResetName = null;   // the user it belongs to
+/* ==========================================================================
+   CNN Admin Dashboard
+   --------------------------------------------------------------------------
+   The anon key below is PUBLIC — it ships in index.html too, by design. It is
+   not a secret and grants this page nothing that a stranger does not have.
 
-/* ==== HASHING (matches app) ==== */
+   The only thing protecting this dashboard is the admin token issued by the
+   admin_login() RPC and verified server-side on every privileged call. So:
+   never log the token, and never put it in a URL.
+   ========================================================================== */
+const SUPABASE_URL      = "https://ymvaslldugwzgjeaxabz.supabase.co";
+const SUPABASE_ANON_KEY = "sb_publishable_EpbSQ2PEnEzOxAPkzkCe1g__Y0ozzi9";
+const sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// The single admin account name. The server keys admin_secrets by this.
+const ADMIN_USER = 'admin';
+
+// Mirrors TEST_WEIGHTS in index.html (~line 1289). Used only for the Content
+// health coverage maths and for recognising a completed exam attempt.
+// NOT read from index.html at runtime — keep the two in sync by hand.
+const TEST_WEIGHTS = [
+  {label:'Pathologic processes & complications', pct:20, count:30, obj:1},
+  {label:'Interventions',                        pct:21, count:31, obj:2},
+  {label:'KRT principles',                       pct:11, count:17, obj:3},
+  {label:'Teaching/learning',                    pct:15, count:22, obj:4},
+  {label:'Medications',                          pct:12, count:18, obj:5},
+  {label:'Infection control',                    pct:8,  count:12, obj:6},
+  {label:'Collaboration & QI',                   pct:13, count:20, obj:7}
+];
+const OBJ_LABEL = {};
+TEST_WEIGHTS.forEach(w=>{ OBJ_LABEL[String(w.obj)] = w.label; });
+
+const SECTION_LABELS = {quiz:'Quiz', lessons:'Lessons', strategies:'Strategies',
+                        cards:'Flashcards', track:'Track', test:'Practice Test'};
+
+/* Columns the list view needs. Deliberately NOT select('*') — the old code
+   pulled pass_hash / pass_salt / the legacy plaintext password and every large
+   JSON blob into the browser on every load, none of it displayed.
+
+   This is hygiene, not a fix: the anon key can still read those columns by
+   calling the REST API directly, because the learner app's login fallback reads
+   all rows (index.html:832). Only moving them out of `progress` closes that. */
+const LIST_COLS = ['user_name','employment_status','institution','first_started','last_active',
+                   'answered','correct','known','sessions','streak','study_days','study_seconds',
+                   'manual_hours','topic_stats','section_seconds'].join(',');
+
+// Extra blobs, fetched only when a single learner is opened.
+const DETAIL_COLS = LIST_COLS + ',answers,wrong,known_cards,card_reps,today_seconds,today_date';
+
+/* Every column of the users table, defined once. The table header, the table
+   body, and both exports are all driven from this — previously the same mapping
+   was written out three times plus two header literals, so adding a column was
+   a five-place edit that silently drifted. */
+const COLS = [
+  {key:'name',         label:'User',         get:m=>m.name,        export:true},
+  {key:'emp',          label:'Employment',   get:m=>m.emp,         export:true},
+  {key:'inst',         label:'Institution',  get:m=>m.inst,        export:true},
+  {key:'first',        label:'First',        get:m=>m.first,       export:true},
+  {key:'inAppMin',     label:'In-App(Min)',  get:m=>m.inAppMin,    export:true},
+  {key:'manualHrs',    label:'Manual(Hrs)',  get:m=>m.manualHrs,   export:true},
+  {key:'studyDays',    label:'Study Days',   get:m=>m.studyDays,   export:true},
+  {key:'minPerDay',    label:'Min/Day',      get:m=>m.minPerDay,   export:true},
+  {key:'lastActiveRaw',label:'Last Active',  get:m=>m.lastActiveRaw, render:m=>m.lastActive, export:true},
+  {key:'weakest',      label:'Weak Topic',   get:m=>m.weakest,     export:true},
+  {key:'answered',     label:'Answered',     get:m=>m.answered,    export:true},
+  {key:'accNum',       label:'Acc',          get:m=>m.accNum,      render:m=>accPill(m.accNum), export:true},
+  {key:'cards',        label:'Cards',        get:m=>m.cards,       export:true},
+  {key:'streak',       label:'Streak',       get:m=>m.streak,      export:true}
+];
+
+/* ------------------------------------------------------------------ state */
+let adminToken   = null;   // HMAC token from admin_login(); the real credential
+let tokenExpiry  = 0;      // epoch seconds
+let expiryTimer  = null;
+/* LEGACY MODE — temporary, and it removes itself.
+   If admin_login() does not exist yet (supabase-admin.sql STAGE 1 has not been
+   run), this page falls back to the OLD gate so the dashboard keeps working
+   instead of locking you out. In this mode the token-gated tools are disabled
+   and only the table / analytics features work — those are plain reads.
+
+   This exists so the page can be deployed BEFORE the SQL without breaking the
+   admin tool. Once STAGE 1 has run this path never fires again, and once STAGE 3
+   deletes the app_settings row it cannot fire even in principle. At that point
+   this whole block, plus sha256/hashPass below, can be deleted. */
+let legacyMode   = false;
+let allUsers     = [];     // raw rows from `progress`
+let mapped       = [];     // allUsers through mapUser()
+let sortKey      = 'name';
+let sortDir      = 1;
+let currentResetCode = null;
+let currentResetName = null;
+let contentLoaded    = false;
+
+/* ================================================================== auth */
+
+// Called on load and after login. A token in sessionStorage (not localStorage —
+// a token at rest there would outlive the browser session) is only a hint; the
+// server is asked whether it is still good.
+async function initAuth(){
+  let saved = null;
+  try { saved = JSON.parse(sessionStorage.getItem('cnn_admin_token') || 'null'); } catch(e){ saved = null; }
+  if(!saved || !saved.token) return showLogin('');
+
+  adminToken  = saved.token;
+  tokenExpiry = saved.exp || 0;
+  if(tokenExpiry && Date.now()/1000 > tokenExpiry) return showLogin('Session expired. Sign in again.');
+
+  const st = await pingToken();
+  if(st === 'ok'){ enterDashboard(); }
+  else { clearToken(); showLogin('Session expired. Sign in again.'); }
+}
+
+// Cheap validity probe, so a refresh does not log the admin out.
+async function pingToken(){
+  try{
+    const {data,error} = await sbClient.rpc('admin_list_audit', {p_token: adminToken, p_limit: 1});
+    if(error) return isMissingFunction(error) ? 'nofn' : 'bad';
+    if(!data || data.status === 'unauthorized') return 'bad';
+    return 'ok';
+  }catch(e){ return 'bad'; }
+}
+
+function isMissingFunction(error){
+  const m = String((error && error.message) || '');
+  return /could not find the function|does not exist|schema cache/i.test(m);
+}
+
+async function doLogin(){
+  const pass = document.getElementById('adminPass').value;
+  const err  = document.getElementById('err');
+  err.textContent = '';
+  if(!pass){ err.textContent = 'Enter the admin password.'; return; }
+
+  try{
+    const {data,error} = await sbClient.rpc('admin_login', {p_admin: ADMIN_USER, p_pass: pass});
+    if(error){
+      // Not set up yet -> fall back to the legacy gate rather than locking the
+      // admin out. See the legacyMode note above.
+      if(isMissingFunction(error)){ await legacyLogin(pass); return; }
+      err.textContent = 'Could not verify. Check your connection.';
+      return;
+    }
+    if(!data){ err.textContent = 'Unexpected response from the server.'; return; }
+
+    if(data.status === 'throttled'){
+      const mins = Math.max(1, Math.round((data.retry_after_seconds||900)/60));
+      err.textContent = 'Too many failed attempts. Try again in about ' + mins + ' minutes.';
+      return;
+    }
+    if(data.status !== 'ok' || !data.token){
+      err.textContent = 'Incorrect password.';
+      return;
+    }
+
+    legacyMode  = false;
+    adminToken  = data.token;
+    tokenExpiry = data.expires_at ? Math.floor(new Date(data.expires_at).getTime()/1000) : 0;
+    try { sessionStorage.setItem('cnn_admin_token', JSON.stringify({token:adminToken, exp:tokenExpiry})); } catch(e){}
+    document.getElementById('adminPass').value = '';
+    enterDashboard();
+  }catch(e){
+    err.textContent = 'Could not verify. Check your connection.';
+  }
+}
+
+/* ==================================================== legacy fallback ====
+   Everything in this block is temporary scaffolding for the window between
+   deploying this page and running supabase-admin.sql. Delete it once STAGE 3
+   has been run.                                                                 */
+
+/* ==== HASHING (matches the app) — legacy path only ==== */
 async function sha256(str){
   const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
   return [...new Uint8Array(buf)].map(b=>b.toString(16).padStart(2,'0')).join('');
 }
 async function hashPass(salt, pass){ return await sha256(salt + '::' + pass); }
-function makeSalt(){ const a=new Uint8Array(16); crypto.getRandomValues(a); return [...a].map(b=>b.toString(16).padStart(2,'0')).join(''); }
 
-/* ==== LOGIN ==== */
-async function doLogin(){
-  const code = document.getElementById('adminCode').value.trim();
-  const pass = document.getElementById('adminPass').value.trim();
+// The pre-2026-10-02 gate: the verifier is a world-readable app_settings row.
+// Kept only so the page is deployable ahead of the SQL. Not persisted across a
+// reload, exactly like the old page, which also lost its unlock on refresh.
+async function legacyLogin(pass){
   const err = document.getElementById('err');
-  err.textContent = '';
-  if(code !== ACCESS_CODE){ err.textContent = 'Invalid access code.'; return; }
-  if(!pass){ err.textContent = 'Enter the admin password.'; return; }
-  try {
-    const {data,error} = await sbClient.from('app_settings').select('value').eq('key','admin_password').single();
-    if(error || !data){ err.textContent = 'Admin password not configured.'; return; }
+  try{
+    const {data,error} = await sbClient.from('app_settings').select('value').eq('key','admin_password').maybeSingle();
+    if(error){ err.textContent = 'Could not verify. Check your connection.'; return; }
+    if(!data || !data.value){ err.textContent = 'Admin password not configured.'; return; }
+
     let ok = false;
-    if(data.value && data.value.includes('::')){
-      const [salt, hash] = data.value.split('::');
-      ok = (await hashPass(salt, pass)) === hash;
+    // .trim() mirrors the old page's doLogin() exactly. It hashed a trimmed
+    // password, so an untrimmed compare here would reject a password that
+    // unlocked yesterday — the one failure this fallback exists to prevent.
+    const attempt = String(pass).trim();
+    if(String(data.value).includes('::')){
+      const [salt, hash] = String(data.value).split('::');
+      ok = (await hashPass(salt, attempt)) === hash;
     } else {
-      ok = (pass === data.value);
+      ok = (attempt === String(data.value));
     }
-    if(ok){
-      unlocked = true;
-      document.getElementById('loginWrap').style.display='none';
-      document.getElementById('dash').style.display='block';
-      loadAdmin();
-    } else {
-      err.textContent = 'Incorrect password.';
-    }
-  } catch(e){ err.textContent = 'Could not verify. Check connection.'; }
-}
-function logout(){
-  unlocked = false;
-  document.getElementById('dash').style.display='none';
-  document.getElementById('loginWrap').style.display='flex';
-  document.getElementById('adminPass').value='';
-  document.getElementById('adminCode').value='';
+    if(!ok){ err.textContent = 'Incorrect password.'; return; }
+
+    legacyMode = true;
+    adminToken = null;
+    document.getElementById('adminPass').value = '';
+    enterDashboard();
+  }catch(e){
+    err.textContent = 'Could not verify. Check your connection.';
+  }
 }
 
-/* ==== HELPERS ==== */
+function clearToken(){
+  adminToken = null; tokenExpiry = 0;
+  if(expiryTimer){ clearTimeout(expiryTimer); expiryTimer = null; }
+  try { sessionStorage.removeItem('cnn_admin_token'); } catch(e){}
+}
+
+function showLogin(message){
+  const lw = document.getElementById('loginWrap');
+  const d  = document.getElementById('dash');
+  if(lw) lw.style.display = 'flex';
+  if(d)  d.style.display  = 'none';
+  const err = document.getElementById('err');
+  if(err && message) err.textContent = message;
+}
+
+function enterDashboard(){
+  document.getElementById('loginWrap').style.display = 'none';
+  document.getElementById('dash').style.display = 'block';
+  const lb = document.getElementById('legacyBar');
+  if(lb) lb.style.display = legacyMode ? 'block' : 'none';
+  if(tokenExpiry){
+    const ms = tokenExpiry*1000 - Date.now();
+    if(expiryTimer) clearTimeout(expiryTimer);
+    if(ms > 0) expiryTimer = setTimeout(()=>forceReauth(), ms);
+    else { forceReauth(); return; }
+  }
+  refreshAll();
+}
+
+// The server refused our token: drop everything and ask for the password again.
+// Called from every privileged response, so a tampered `adminToken` global or a
+// replayed-but-expired token gets the same treatment.
+function forceReauth(){
+  clearToken();
+  document.getElementById('userOverlay').style.display = 'none';
+  document.getElementById('resetOverlay').style.display = 'none';
+  document.getElementById('pwOverlay').style.display = 'none';
+  showLogin('Session expired. Sign in again.');
+}
+
+function logout(){
+  clearToken();
+  legacyMode = false;
+  document.getElementById('dash').style.display = 'none';
+  document.getElementById('loginWrap').style.display = 'flex';
+  document.getElementById('adminPass').value = '';
+  document.getElementById('err').textContent = '';
+}
+
+/* ================================================================== rpc */
+
+// Every privileged call goes through here. Two jobs: inject the token, and
+// treat a refusal as a session problem rather than a generic error.
+async function rpc(name, params){
+  // Legacy mode: the privileged functions do not exist yet. Signal "not set up"
+  // so each panel shows its own explanation instead of bouncing the admin back
+  // to the login screen it just came from.
+  if(legacyMode) throw new Error('NOT_SET_UP');
+  if(!adminToken){ forceReauth(); return null; }
+  let res;
+  try{
+    res = await sbClient.rpc(name, Object.assign({p_token: adminToken}, params||{}));
+  }catch(e){ throw e; }
+  if(res.error){
+    if(isMissingFunction(res.error)) throw new Error('NOT_SET_UP');
+    throw res.error;
+  }
+  const data = res.data;
+  if(data && data.status === 'unauthorized'){ forceReauth(); return null; }
+  return data;
+}
+
+/* ============================================================== helpers */
 function daysAgo(iso){
-  const d=new Date(iso); const days=Math.floor((Date.now()-d.getTime())/86400000);
-  if(days<=0) return 'Today'; if(days===1) return '1d ago';
-  if(days<7) return days+'d ago'; if(days<30) return Math.round(days/7)+'w ago'; return Math.round(days/30)+'mo ago';
+  if(!iso) return '—';
+  const d = new Date(iso); const days = Math.floor((Date.now()-d.getTime())/86400000);
+  if(days <= 0) return 'Today'; if(days === 1) return '1d ago';
+  if(days < 7) return days+'d ago'; if(days < 30) return Math.round(days/7)+'w ago';
+  return Math.round(days/30)+'mo ago';
+}
+function daysSince(iso){
+  if(!iso) return Infinity;
+  return (Date.now() - new Date(iso).getTime())/86400000;
 }
 function computeWeakestTopic(ts){
-  let weakest=null,lowest=101;
-  Object.keys(ts||{}).forEach(t=>{ const s=ts[t]||{answered:0,correct:0}; if(s.answered>0){ const pct=s.correct/s.answered; if(pct<lowest){lowest=pct;weakest=t;} } });
+  let weakest=null, lowest=101;
+  Object.keys(ts||{}).forEach(t=>{
+    const s = ts[t]||{answered:0,correct:0};
+    if(s.answered>0){ const pct = s.correct/s.answered; if(pct < lowest){ lowest=pct; weakest=t; } }
+  });
   return weakest || '—';
 }
-
-/* Shared helpers for the admin time split and safe output of user-controlled names */
+// study_seconds includes manual hours, so subtract them for the in-app figure.
 function appSplit(u){
-  const mh=u.manual_hours||{};
-  const manualHrs=Object.keys(mh).reduce((s,k)=>s+mh[k],0);
-  const inAppSec=Math.max(0,(u.study_seconds||0)-manualHrs*3600);
-  return { inAppMin:Math.round(inAppSec/60), manualHrs:manualHrs.toFixed(1), totalMin:Math.round((u.study_seconds||0)/60) };
+  const mh = u.manual_hours||{};
+  const manualHrs = Object.keys(mh).reduce((s,k)=>s+mh[k],0);
+  const inAppSec = Math.max(0, (u.study_seconds||0) - manualHrs*3600);
+  return { inAppMin: Math.round(inAppSec/60), manualHrs: manualHrs.toFixed(1),
+           totalMin: Math.round((u.study_seconds||0)/60) };
 }
-function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function esc(s){
+  return String(s==null?'':s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
 // Safe string argument for inline onclick handlers (JSON-encode then HTML-escape).
 function jsStr(s){ return esc(JSON.stringify(s==null?'':s)); }
-function csvCell(s){ s=String(s==null?'':s); if(/^[=+\-@]/.test(s)) s="'"+s; return (/[",\n]/.test(s)) ? '"'+s.replace(/"/g,'""')+'"' : s; }
+// Formula-injection guard for spreadsheet cells, then RFC-4180 quoting.
+function csvCell(s){
+  s = String(s==null?'':s);
+  if(/^[=+\-@]/.test(s)) s = "'" + s;
+  return (/[",\n]/.test(s)) ? '"' + s.replace(/"/g,'""') + '"' : s;
+}
+function fmtDate(iso){
+  return iso ? new Date(iso).toLocaleDateString('en-US') : '';
+}
+function fmtDateTime(iso){
+  return iso ? new Date(iso).toLocaleString('en-US') : '';
+}
+function pct(n){ return Math.round(n)+'%'; }
+function accPill(p){
+  const cls = p >= 80 ? 'ok' : (p >= 60 ? 'warn' : 'bad');
+  return '<span class="pill '+cls+'">'+pct(p)+'</span>';
+}
 
-/* ==== LOAD ADMIN ==== */
+/* ======================================================== row mapping */
+
+// One canonical shape for a `progress` row. Everything else — the table, the
+// exports, the drill-down — reads from this.
+function mapUser(u){
+  const sp   = appSplit(u);
+  const sd   = u.study_days||0;
+  const ansd = u.answered||0;
+  return {
+    raw:      u,
+    name:     u.user_name,
+    emp:      u.employment_status || '—',
+    inst:     u.institution || '—',
+    first:    u.first_started ? new Date(u.first_started).toLocaleDateString('en-US',{month:'short',day:'numeric'}) : '—',
+    inAppMin: sp.inAppMin,
+    manualHrs: parseFloat(sp.manualHrs),
+    totalMin: sp.totalMin,
+    studyDays: sd,
+    minPerDay: sd > 0 ? Math.round(sp.totalMin/sd) : 0,
+    lastActive:    daysAgo(u.last_active),
+    lastActiveRaw: u.last_active ? new Date(u.last_active).getTime() : 0,
+    weakest:  computeWeakestTopic(u.topic_stats),
+    answered: ansd,
+    correct:  u.correct||0,
+    accNum:   ansd ? Math.round((u.correct||0)/ansd*100) : 0,
+    acc:      ansd ? pct((u.correct||0)/ansd*100) : '0%',
+    cards:    u.known||0,
+    sessions: u.sessions||0,
+    streak:   u.streak||0,
+    sections: u.section_seconds||{},
+    topics:   u.topic_stats||{}
+  };
+}
+
+/* ============================================================ loading */
+
+async function refreshAll(){
+  await loadAdmin();
+  const v = currentView();
+  if(v === 'readiness') loadReadiness();
+  if(v === 'codes')     loadResetCodes();
+  if(v === 'audit')     loadAudit();
+}
+
 async function loadAdmin(){
-  if(!unlocked) return;
-  try {
-    const {data,error}=await sbClient.from('progress').select('*').order('user_name');
-    if(error){ document.getElementById('adminTable').innerHTML='<tr><td class="empty">Backend error: '+error.message+'</td></tr>'; return; }
-    const users = data||[];
-    // Summary + stats
-    const totalUsers=users.length;
-    const active = users.filter(u=>u.last_active && new Date(u.last_active)>Date.now()-7*86400000).length;
-    let totalMin=0, totalAnswered=0;
-    users.forEach(u=>{ totalMin += appSplit(u).totalMin; totalAnswered += u.answered||0; });
-    document.getElementById('summary').innerHTML = '<strong>'+totalUsers+'</strong> user(s) · <strong>'+Math.round(totalMin/60)+'h</strong> total study · <strong>'+totalAnswered+'</strong> questions answered. Use Download CSV for a full spreadsheet.';
-    document.getElementById('stats').innerHTML =
-      '<div class="stat"><div class="num">'+totalUsers+'</div><div class="lbl">Total Users</div></div>'+
-      '<div class="stat"><div class="num">'+active+'</div><div class="lbl">Active (7d)</div></div>'+
-      '<div class="stat"><div class="num">'+Math.round(totalMin/60)+'h</div><div class="lbl">Total Study</div></div>'+
-      '<div class="stat"><div class="num">'+totalAnswered+'</div><div class="lbl">Answered</div></div>';
-    let html='<tr><th>User</th><th>Employment</th><th>Institution</th><th>First</th><th>In-App(Min)</th><th>Manual(Hrs)</th><th>Study Days</th><th>Min/Day</th><th>Last Active</th><th>Weak Topic</th><th>Answered</th><th>Acc</th><th>Cards</th><th>Streak</th><th>Actions</th></tr>';
-    (users).forEach(u=>{
-      const acc=u.answered?Math.round(u.correct/u.answered*100)+'%':'0%';
-      const sp=appSplit(u);
-      const manualHrs=sp.manualHrs, inAppMin=sp.inAppMin, totalMin=sp.totalMin;
-      const studyDays=u.study_days||0; const minPerDay=studyDays>0?Math.round(totalMin/studyDays):0;
-      const firstDate=u.first_started?new Date(u.first_started).toLocaleDateString('en-US',{month:'short',day:'numeric'}):'—';
-      const lastActive=u.last_active?daysAgo(u.last_active):'—';
-      const weakest=computeWeakestTopic(u.topic_stats);
-      const emp=esc(u.employment_status||'—');
-      const inst=esc(u.institution||'—');
-      html+=`<tr>
-        <td>${esc(u.user_name)}</td><td>${emp}</td><td>${inst}</td><td>${firstDate}</td><td>${inAppMin}</td><td>${manualHrs}</td><td>${studyDays}</td><td>${minPerDay}</td><td>${lastActive}</td><td>${weakest}</td><td>${u.answered||0}</td><td>${acc}</td><td>${u.known||0}</td><td>${u.streak||0}</td>
-        <td>
-          <button class="btn-sm" onclick="resetPassword(${jsStr(u.user_name)})">Reset PW</button>
-          <button class="btn-sm" onclick="resetUser(${jsStr(u.user_name)})">Reset</button>
-          <button class="btn-sm btn-danger" onclick="deleteUser(${jsStr(u.user_name)})">Delete</button>
-        </td></tr>`;
-    });
-    if(users.length===0) html+='<tr><td colspan="15" class="empty">No users yet.</td></tr>';
-    document.getElementById('adminTable').innerHTML=html;
-  } catch(e){ document.getElementById('adminTable').innerHTML='<tr><td class="empty">Backend error.</td></tr>'; }
+  if(!adminToken && !legacyMode) return;
+  const table = document.getElementById('adminTable');
+  try{
+    const {data,error} = await sbClient.from('progress').select(LIST_COLS).order('user_name');
+    if(error){
+      table.innerHTML = '<tr><td class="empty">Backend error: '+esc(error.message)+'</td></tr>';
+      return;
+    }
+    allUsers = data||[];
+    mapped   = allUsers.map(mapUser);
+    renderSummary();
+    populateEmpFilter();
+    renderTable();
+  }catch(e){
+    table.innerHTML = '<tr><td class="empty">Backend error.</td></tr>';
+  }
 }
 
-/* ==== ACTIONS ==== */
-function exportCSV(){
-  if(!unlocked) return;
-  let csv='User,Employment,Institution,First Started,In-App Minutes,Manual Hours,Study Days,Min/Day,Last Active,Weakest Topic,Answered,Correct,Accuracy,Cards Known,Sessions,Streak\n';
-  sbClient.from('progress').select('*').order('user_name').then(({data,error})=>{
-    if(error){ alert('Backend error'); return; }
-    (data||[]).forEach(u=>{
-      const acc=u.answered?Math.round(u.correct/u.answered*100)+'%':'0%';
-      const sp=appSplit(u);
-      const manualHrs=sp.manualHrs, inAppMin=sp.inAppMin, totalMin=sp.totalMin;
-      const sd=u.study_days||0; const mpd=sd>0?Math.round(totalMin/sd):0;
-      const fd=u.first_started?new Date(u.first_started).toLocaleDateString('en-US'):'';
-      const la=u.last_active?daysAgo(u.last_active):''; const wt=computeWeakestTopic(u.topic_stats)||'';
-      const emp=csvCell(u.employment_status||''); const inst=csvCell(u.institution||'');
-      csv+=`${csvCell(u.user_name)},${emp},${inst},"${fd}",${inAppMin},${manualHrs},${sd},${mpd},"${la}","${wt}",${u.answered||0},${u.correct||0},${acc},${u.known||0},${u.sessions||0},${u.streak||0}\n`;
+function populateEmpFilter(){
+  const sel = document.getElementById('userEmpFilter');
+  const cur = sel.value;
+  const emps = [...new Set(mapped.map(m=>m.emp).filter(e=>e && e !== '—'))].sort();
+  sel.innerHTML = '<option value="">All employment</option>' +
+    emps.map(e=>'<option value="'+esc(e)+'">'+esc(e)+'</option>').join('') +
+    '<option value="—">Not given</option>';
+  sel.value = cur;
+}
+
+function renderSummary(){
+  const totalUsers = mapped.length;
+  const active  = mapped.filter(m=>m.lastActiveRaw && m.lastActiveRaw > Date.now()-7*86400000).length;
+  const dormant = mapped.filter(m=>m.lastActiveRaw && daysSince(new Date(m.lastActiveRaw).toISOString()) >= 30).length;
+  const totalMin = mapped.reduce((s,m)=>s+m.totalMin,0);
+  const totalAns = mapped.reduce((s,m)=>s+m.answered,0);
+
+  document.getElementById('summary').innerHTML =
+    '<strong>'+totalUsers+'</strong> learner(s) · <strong>'+Math.round(totalMin/60)+'h</strong> total study · '+
+    '<strong>'+totalAns+'</strong> questions answered · <strong>'+active+'</strong> active in the last 7 days. '+
+    'Every privileged action here is recorded in the Audit Log.';
+
+  document.getElementById('stats').innerHTML =
+    '<div class="stat"><div class="num">'+totalUsers+'</div><div class="lbl">Total Users</div></div>'+
+    '<div class="stat"><div class="num">'+active+'</div><div class="lbl">Active (7d)</div></div>'+
+    '<div class="stat"><div class="num">'+dormant+'</div><div class="lbl">Dormant (30d+)</div></div>'+
+    '<div class="stat"><div class="num">'+Math.round(totalMin/60)+'h</div><div class="lbl">Total Study</div></div>'+
+    '<div class="stat"><div class="num">'+totalAns+'</div><div class="lbl">Answered</div></div>';
+}
+
+function filteredUsers(){
+  const q   = (document.getElementById('userSearch').value||'').trim().toLowerCase();
+  const emp = document.getElementById('userEmpFilter').value;
+  const st  = document.getElementById('userStatusFilter').value;
+
+  let rows = mapped;
+  if(q)   rows = rows.filter(m=>(m.name+' '+m.inst+' '+m.emp).toLowerCase().includes(q));
+  if(emp) rows = rows.filter(m=>m.emp === emp);
+  if(st === 'active')  rows = rows.filter(m=>m.lastActiveRaw && m.lastActiveRaw > Date.now()-7*86400000);
+  if(st === 'dormant') rows = rows.filter(m=>m.lastActiveRaw && daysSince(new Date(m.lastActiveRaw).toISOString()) >= 30);
+  if(st === 'never')   rows = rows.filter(m=>!m.answered);
+
+  const col = COLS.find(c=>c.key===sortKey);
+  if(col){
+    rows = rows.slice().sort((a,b)=>{
+      const x = col.get(a), y = col.get(b);
+      if(typeof x === 'number' && typeof y === 'number') return (x-y)*sortDir;
+      return String(x).localeCompare(String(y))*sortDir;
     });
-    const blob=new Blob([csv],{type:'text/csv'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='cnn_study_progress.csv'; a.click();
+  }
+  return rows;
+}
+
+function renderTable(){
+  const rows = filteredUsers();
+  let html = '<tr>';
+  COLS.forEach(c=>{
+    const sorted = c.key === sortKey;
+    html += '<th class="sortable'+(sorted?' sorted':'')+'" onclick="setSort('+jsStr(c.key)+')">'+
+            esc(c.label)+' <span class="arrow">'+(sorted ? (sortDir>0?'▲':'▼') : '⇅')+'</span></th>';
   });
-}
-async function resetUser(name){
-  if(!unlocked) return; if(!confirm('Reset all progress for "'+name+'"?')) return;
-  try { await sbClient.from('progress').update({answered:0,correct:0,known:0,sessions:0,streak:0,last_study:null,answers:{},wrong:{},known_cards:{},topic_stats:{},section_seconds:{},manual_hours:{},card_reps:{},study_seconds:0,study_days:0,today_seconds:0,today_date:null}).eq('user_name',name); alert('User "'+name+'" reset.'); loadAdmin(); } catch(e){ alert('Could not reset user.'); }
-}
-async function deleteUser(name){
-  if(!unlocked) return; if(!confirm('Delete user "'+name+'" and ALL their progress? This cannot be undone, but the user CAN be restored afterwards.')) return;
-  try {
-    // Snapshot the full user row into deleted_users BEFORE deleting
-    const {data,error} = await sbClient.from('progress').select('*').eq('user_name',name).single();
-    if(!error && data){
-      await sbClient.from('deleted_users').insert({user_name:data.user_name, data:data});
-    }
-    await sbClient.from('progress').delete().eq('user_name',name);
-    alert('User "'+name+'" deleted. It can be restored via "Restore Deleted Users".'); 
-    loadAdmin(); 
-  } catch(e){ alert('Could not delete user: '+e.message); }
-}
-async function restoreUser(id, name){
-  if(!unlocked) return; if(!confirm('Restore user "'+name+'" and all their progress?')) return;
-  try {
-    const {data,error} = await sbClient.from('deleted_users').select('*').eq('id',id).single();
-    if(error || !data){ alert('Could not find deleted user.'); return; }
-    // Re-insert the snapshot back into progress
-    const userData = data.data;
-    // Remove id and created_at so it re-inserts cleanly; upsert by user_name
-    const {user_name, id, created_at, ...rest} = userData;
-    await sbClient.from('progress').upsert({user_name:user_name, ...rest});
-    // Remove from deleted_users now that it's restored
-    await sbClient.from('deleted_users').delete().eq('id',id);
-    alert('User "'+name+'" restored.'); 
-    loadAdmin(); 
-  } catch(e){ alert('Could not restore user: '+e.message); }
-}
-async function loadDeletedUsers(){
-  if(!unlocked) return;
-  try {
-    const {data,error} = await sbClient.from('deleted_users').select('user_name,deleted_at,id').order('deleted_at',{ascending:false});
-    if(error){ document.getElementById('deletedList').innerHTML='<tr><td colspan="3" class="empty">Could not load deleted users.</td></tr>'; return; }
-    let html='<tr><th>User</th><th>Deleted</th><th>Action</th></tr>';
-    (data||[]).forEach(u=>{
-      const d = u.deleted_at ? new Date(u.deleted_at).toLocaleString() : '';
-      html+=`<tr><td>${esc(u.user_name)}</td><td>${d}</td><td><button class="btn-sm" onclick="restoreUser(${jsStr(u.id)},${jsStr(u.user_name)})">Restore</button></td></tr>`;
+  html += '<th>Actions</th></tr>';
+
+  rows.forEach(m=>{
+    html += '<tr>';
+    COLS.forEach(c=>{
+      const val = c.render ? c.render(m) : c.get(m);
+      if(c.key === 'name'){
+        html += '<td><span class="namelink" onclick="openUser('+jsStr(m.name)+')">'+esc(val)+'</span></td>';
+      } else if(c.key === 'emp' || c.key === 'inst' || c.key === 'weakest'){
+        html += '<td>'+esc(val)+'</td>';
+      } else if(c.key === 'lastActiveRaw'){
+        html += '<td>'+esc(val)+'</td>';
+      } else {
+        html += '<td>'+(c.key==='accNum' ? val : esc(val))+'</td>';
+      }
     });
-    if((data||[]).length===0) html+='<tr><td colspan="3" class="empty">No deleted users.</td></tr>';
-    document.getElementById('deletedList').innerHTML=html;
-  } catch(e){ document.getElementById('deletedList').innerHTML='<tr><td colspan="3" class="empty">Backend error.</td></tr>'; }
+    html += '<td>'+
+      '<button class="btn-sm" onclick="resetPassword('+jsStr(m.name)+')">Reset PW</button>'+
+      '<button class="btn-sm" onclick="openUser('+jsStr(m.name)+')">Details</button>'+
+      '<button class="btn-sm" onclick="resetUser('+jsStr(m.name)+')">Reset</button>'+
+      '<button class="btn-sm btn-danger" onclick="deleteUser('+jsStr(m.name)+')">Delete</button>'+
+    '</td></tr>';
+  });
+
+  if(rows.length === 0){
+    html += '<tr><td colspan="'+(COLS.length+1)+'" class="empty">'+
+            (mapped.length === 0 ? 'No users yet.' : 'No users match those filters.')+'</td></tr>';
+  }
+  document.getElementById('adminTable').innerHTML = html;
+  document.getElementById('userCount').textContent =
+    rows.length === mapped.length ? (mapped.length + ' learner(s)')
+                                  : (rows.length + ' of ' + mapped.length + ' shown');
 }
+
+function setSort(key){
+  if(sortKey === key) sortDir = -sortDir;
+  else { sortKey = key; sortDir = 1; }
+  renderTable();
+}
+
+/* ======================================================== user actions */
+
+async function resetUser(name){
+  if(!adminToken && !legacyMode) return;
+  if(!confirm('Reset all progress for "'+name+'"?\n\nA backup snapshot is saved first, so this can be '
+             +'rolled back from the Snapshots panel.')) return;
+  try{
+    // Snapshot BEFORE the reset. Previously this action had no backup at all,
+    // unlike delete, so an accidental reset was unrecoverable.
+    const {data:row, error:sErr} = await sbClient.from('progress').select('*').eq('user_name',name).single();
+    if(sErr || !row){ alert('Could not read the user first, so nothing was changed.\n\n'+(sErr?sErr.message:'')); return; }
+
+    const {error:insErr} = await sbClient.from('deleted_users').insert({user_name:row.user_name, data:row, reason:'reset'});
+    if(insErr){ alert('Could not save the backup snapshot, so nothing was changed.\n\n'+insErr.message); return; }
+
+    const {error:updErr} = await sbClient.from('progress').update({
+      answered:0, correct:0, known:0, sessions:0, streak:0, last_study:null,
+      answers:{}, wrong:{}, known_cards:{}, topic_stats:{}, section_seconds:{},
+      manual_hours:{}, card_reps:{}, study_seconds:0, study_days:0,
+      today_seconds:0, today_date:null
+    }).eq('user_name',name);
+
+    if(updErr){ alert('Backup saved, but the reset failed: '+updErr.message+'\n\nYou can restore from the Snapshots panel.'); return; }
+
+    logAction('reset_user', name, {study_seconds: row.study_seconds||0, answered: row.answered||0});
+    alert('User "'+name+'" reset. A backup is available in Snapshots.');
+    await loadAdmin();
+  }catch(e){ alert('Could not reset user: '+e.message); }
+}
+
+async function deleteUser(name){
+  if(!adminToken && !legacyMode) return;
+  if(!confirm('Delete user "'+name+'" and ALL their progress?\n\nThis cannot be undone directly, but a '
+             +'snapshot is saved and the user CAN be restored afterwards.')) return;
+  try{
+    const {data:row, error:rErr} = await sbClient.from('progress').select('*').eq('user_name',name).single();
+    if(rErr || !row){ alert('Could not read the user first, so nothing was deleted.\n\n'+(rErr?rErr.message:'')); return; }
+
+    const {error:insErr} = await sbClient.from('deleted_users').insert({user_name:row.user_name, data:row, reason:'delete'});
+    // ABORT if the snapshot failed. The old code deleted anyway, which meant a
+    // failed backup silently destroyed the row with no way back.
+    if(insErr){ alert('Could not save the backup snapshot, so nothing was deleted.\n\n'+insErr.message); return; }
+
+    const {error:delErr} = await sbClient.from('progress').delete().eq('user_name',name);
+    if(delErr){ alert('Snapshot saved, but the delete failed: '+delErr.message); return; }
+
+    logAction('delete_user', name, {study_seconds: row.study_seconds||0, answered: row.answered||0});
+    alert('User "'+name+'" deleted. Restore it from the Snapshots panel if needed.');
+    await loadAdmin();
+    loadDeletedUsers();
+  }catch(e){ alert('Could not delete user: '+e.message); }
+}
+
+async function restoreUser(id, name){
+  if(!adminToken && !legacyMode) return;
+  if(!confirm('Restore "'+name+'" from this snapshot?\n\nThis overwrites their current progress row with the snapshot.')) return;
+  try{
+    const {data,error} = await sbClient.from('deleted_users').select('*').eq('id',id).single();
+    if(error || !data){ alert('Could not find that snapshot.'); return; }
+
+    const u = data.data;
+    const {user_name, id:_id, created_at:_ca, reason:_r, ...rest} = u;
+    const {error:upErr} = await sbClient.from('progress').upsert({user_name:user_name, ...rest});
+    if(upErr){ alert('Restore failed: '+upErr.message+'\n\nThe snapshot has been kept.'); return; }
+
+    await sbClient.from('deleted_users').delete().eq('id',id);
+    logAction('restore_user', name, {snapshot_id:id});
+    alert('User "'+name+'" restored.');
+    await loadAdmin();
+    loadDeletedUsers();
+  }catch(e){ alert('Could not restore user: '+e.message); }
+}
+
 async function resetPassword(name){
-  if(!unlocked) return;
+  if(!adminToken && !legacyMode) return;
   if(!confirm('Generate a one-time password reset code for "'+name+'"?')) return;
-  try {
-    const {data,error} = await sbClient.rpc('request_reset', {p_user: name});
-    if(error) throw error;
-    if(!data || data.status === 'no_user'){ alert('No account found for "'+name+'".'); return; }
+  try{
+    // Legacy mode calls the old 1-argument function, which still exists (and is
+    // still the account-takeover hole) until STAGE 3 of supabase-admin.sql runs.
+    // Same response shape, so the modal below needs no change.
+    const data = legacyMode
+      ? (await sbClient.rpc('request_reset', {p_user: name})).data
+      : await rpc('request_reset', {p_user: name});
+    if(!data) return;
+    if(data.status === 'no_user'){ alert('No account found for "'+name+'".'); return; }
     if(data.status === 'ok' && data.code){
       currentResetCode = data.code;
       currentResetName = name;
       document.getElementById('resetName').textContent = name;
       document.getElementById('resetCodeDisplay').textContent = data.code;
       document.getElementById('resetOverlay').style.display = 'flex';
+      loadResetCodes();
+    } else {
+      alert('Could not generate a reset code.');
     }
-  } catch(e){ alert('Could not generate reset code: '+e.message); }
+  }catch(e){
+    alert(e.message === 'NOT_SET_UP'
+      ? 'This tool needs supabase-admin.sql to be run first.'
+      : 'Could not generate reset code: '+e.message);
+  }
+}
+
+// Best-effort audit for actions that are still direct table writes. The server
+// stamps the admin name; if this call fails the action still happened, so we
+// never block on it.
+function logAction(action, target, details){
+  // No audit table without the SQL, and no token to authenticate the call with.
+  if(!adminToken || legacyMode) return;
+  sbClient.rpc('admin_log_action', {p_token:adminToken, p_action:action, p_target:target,
+                                    p_details:details||{}}).then(()=>{}, ()=>{});
 }
 
 function closeReset(){
@@ -339,18 +935,19 @@ function closeReset(){
   currentResetCode = null;
   currentResetName = null;
 }
-
 function resetShareText(){
+  const expiry = legacyMode
+    ? 'This code does not expire until it is used, so keep it private.'
+    : 'The code expires in 30 minutes.';
   return 'Reset code for your CNN study app: ' + currentResetCode +
-         '\n\nOpen the app, tap "Forgot password?", and enter your name + this code + a new password.';
+         '\n\nOpen the app, tap "Forgot password?", and enter your name + this code + a new password.' +
+         '\n\n' + expiry;
 }
-
 async function copyResetCode(){
-  try {
+  try{
     await navigator.clipboard.writeText(resetShareText());
     alert('Copied! Paste it into a message.');
-  } catch(e){
-    // Fallback for browsers without clipboard API
+  }catch(e){
     const t = document.createElement('textarea');
     t.value = resetShareText(); document.body.appendChild(t); t.select();
     try { document.execCommand('copy'); alert('Copied! Paste it into a message.'); }
@@ -358,51 +955,629 @@ async function copyResetCode(){
     document.body.removeChild(t);
   }
 }
-
 async function shareResetCode(){
-  // Native share sheet (iPhone/Android). Falls back to copy if unavailable.
   if(navigator.share){
-    try {
-      await navigator.share({ title: 'CNN study app — password reset', text: resetShareText() });
-      return;
-    } catch(e){
-      if(e && e.name === 'AbortError') return; // user cancelled the share sheet
-    }
+    try{ await navigator.share({title:'CNN study app — password reset', text: resetShareText()}); return; }
+    catch(e){ if(e && e.name === 'AbortError') return; }
   }
-  // Fallback: copy + hint
   await copyResetCode();
 }
+
+/* ========================================================== snapshots */
+
 function toggleDeleted(){
   const panel = document.getElementById('deletedPanel');
   const show = panel.style.display === 'none';
   panel.style.display = show ? 'block' : 'none';
   if(show) loadDeletedUsers();
 }
-function exportXLSX(){
-  if(!unlocked) return;
-  sbClient.from('progress').select('*').order('user_name').then(({data,error})=>{
-    if(error){ alert('Backend error'); return; }
-    // Build HTML table for Excel export (openpyxl-free approach that works in browser)
-    let rows = [['User','Employment','Institution','First Started','In-App Minutes','Manual Hours','Study Days','Min/Day','Last Active','Weakest Topic','Answered','Correct','Accuracy','Cards Known','Sessions','Streak']];
+
+async function loadDeletedUsers(){
+  if(!adminToken && !legacyMode) return;
+  const el = document.getElementById('deletedList');
+  try{
+    const {data,error} = await sbClient.from('deleted_users')
+      .select('user_name,deleted_at,id,reason').order('deleted_at',{ascending:false});
+    if(error){ el.innerHTML = '<tr><td colspan="4" class="empty">Could not load snapshots.</td></tr>'; return; }
+
+    let html = '<tr><th>User</th><th>Reason</th><th>Taken</th><th>Action</th></tr>';
     (data||[]).forEach(u=>{
-      const acc=u.answered?Math.round(u.correct/u.answered*100)+'%':'0%';
-      const sp=appSplit(u); const manualHrs=sp.manualHrs, inAppMin=sp.inAppMin, totalMin=sp.totalMin; const sd=u.study_days||0; const mpd=sd>0?Math.round(totalMin/sd):0;
-      const fd=u.first_started?new Date(u.first_started).toLocaleDateString('en-US'):'';
-      const la=u.last_active?daysAgo(u.last_active):''; const wt=computeWeakestTopic(u.topic_stats)||'';
-      rows.push([esc(u.user_name),esc(u.employment_status||''),esc(u.institution||''),fd,inAppMin,manualHrs,sd,mpd,la,wt,u.answered||0,u.correct||0,acc,u.known||0,u.sessions||0,u.streak||0]);
+      const why = (u.reason === 'reset')
+        ? '<span class="pill info">before reset</span>'
+        : '<span class="pill mute">before delete</span>';
+      html += '<tr><td>'+esc(u.user_name)+'</td><td>'+why+'</td>'+
+              '<td>'+esc(fmtDateTime(u.deleted_at))+'</td>'+
+              '<td><button class="btn-sm" onclick="restoreUser('+jsStr(u.id)+','+jsStr(u.user_name)+')">Restore</button></td></tr>';
     });
-    // Build an HTML table with inline styles so Excel renders it
-    let table = '<table border="1"><thead><tr>';
-    rows[0].forEach(h=>table += '<th style="background:#7c3aed;color:#fff">'+h+'</th>');
-    table += '</tr></thead><tbody>';
-    for(let i=1;i<rows.length;i++){
-      table += '<tr>' + rows[i].map(c=>'<td>'+c+'</td>').join('') + '</tr>';
-    }
-    table += '</tbody></table>';
-    const blob = new Blob(['<html><head><meta charset="utf-8"></head><body>'+table+'</body></html>'],{type:'application/vnd.ms-excel'});
-    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'cnn_study_progress.xls'; a.click();
-  });
+    if((data||[]).length === 0) html += '<tr><td colspan="4" class="empty">No snapshots.</td></tr>';
+    el.innerHTML = html;
+  }catch(e){ el.innerHTML = '<tr><td colspan="4" class="empty">Backend error.</td></tr>'; }
 }
+
+/* ======================================================= user detail */
+
+async function openUser(name){
+  if(!adminToken && !legacyMode) return;
+  const overlay = document.getElementById('userOverlay');
+  const sheet   = document.getElementById('userSheet');
+  sheet.innerHTML = '<p class="note">Loading…</p>';
+  overlay.style.display = 'flex';
+
+  try{
+    const {data:row, error} = await sbClient.from('progress').select(DETAIL_COLS).eq('user_name',name).single();
+    if(error || !row){ sheet.innerHTML = '<p class="note">Could not load that learner.</p>'; return; }
+    const m = mapUser(row);
+
+    // Exam history, filtered exactly the way the learner's own trend chart is
+    // (index.html's isCompletedExam): a completed attempt recorded a score for
+    // every blueprint objective; an abandoned one did not.
+    let exams = [], examErr = false;
+    try{
+      const res = await sbClient.from('test_results')
+        .select('created_at,correct,total_questions,objective_scores')
+        .eq('user_name', name).order('created_at',{ascending:true});
+      if(res.error) examErr = true;
+      else exams = (res.data||[]).filter(r=>
+        r && r.total_questions > 0 && r.objective_scores && typeof r.objective_scores === 'object' &&
+        TEST_WEIGHTS.every(w=>Object.prototype.hasOwnProperty.call(r.objective_scores, String(w.obj))));
+    }catch(e){ examErr = true; }
+
+    sheet.innerHTML = renderUserSheet(m, row, exams, examErr);
+  }catch(e){
+    sheet.innerHTML = '<p class="note">Could not load that learner: '+esc(e.message)+'</p>';
+  }
+}
+
+function closeUser(){ document.getElementById('userOverlay').style.display = 'none'; }
+
+function renderUserSheet(m, row, exams, examErr){
+  let h = '<div class="sheet-head"><div>'+
+    '<h2>'+esc(m.name)+'</h2>'+
+    '<div class="meta">'+esc(m.emp)+' · '+esc(m.inst)+' · joined '+esc(fmtDate(row.first_started))+
+    ' · last active '+esc(m.lastActive)+'</div></div>'+
+    '<button class="sheet-close" onclick="closeUser()">✕ Close</button></div>';
+
+  // ---- headline numbers
+  h += '<h3>Study</h3><div class="kv">'+
+    box(Math.round(m.totalMin/60)+'h', 'Total study')+
+    box(m.inAppMin+'m', 'In-app')+
+    box(m.manualHrs.toFixed(1)+'h', 'Logged manually')+
+    box(m.studyDays, 'Study days')+
+    box(m.minPerDay+'m', 'Per study day')+
+    box(m.streak, 'Current streak')+
+    box(m.sessions, 'Sessions')+
+    '</div>';
+
+  h += '<h3>Questions</h3><div class="kv">'+
+    box(m.answered, 'Answered')+
+    box(m.correct, 'Correct')+
+    box(m.acc, 'Accuracy')+
+    box(m.cards, 'Cards known')+
+    box(Object.keys(row.wrong||{}).length, 'In review list')+
+    box(Object.keys(row.card_reps||{}).length, 'Cards reviewed')+
+    '</div>';
+
+  // ---- per-topic accuracy
+  const topics = Object.keys(m.topics).filter(t=>{
+    const s = m.topics[t]||{}; return (s.answered||0) > 0;
+  }).sort((a,b)=>{
+    const pa = m.topics[a].correct/m.topics[a].answered, pb = m.topics[b].correct/m.topics[b].answered;
+    return pa - pb;   // weakest first
+  });
+  h += '<h3>Accuracy by topic <span class="hint" style="font-weight:400;text-transform:none;letter-spacing:0">weakest first</span></h3>';
+  if(topics.length === 0){
+    h += '<p class="note">No quiz answers recorded yet.</p>';
+  } else {
+    h += '<div class="table-wrap"><table><tr><th>Topic</th><th>Answered</th><th>Correct</th><th>Accuracy</th><th></th></tr>';
+    topics.forEach(t=>{
+      const s = m.topics[t], p = Math.round(s.correct/s.answered*100);
+      h += '<tr><td>'+esc(t)+'</td><td>'+s.answered+'</td><td>'+s.correct+'</td>'+
+           '<td>'+accPill(p)+'</td>'+
+           '<td style="min-width:130px"><div class="bar"><i style="width:'+p+'%"></i></div></td></tr>';
+    });
+    h += '</table></div>';
+  }
+
+  // ---- time per screen
+  const secs = Object.keys(m.sections).filter(k=>(m.sections[k]||0) > 0);
+  if(secs.length){
+    const total = secs.reduce((s,k)=>s+m.sections[k],0);
+    h += '<h3>Time by screen</h3><div class="table-wrap"><table><tr><th>Screen</th><th>Time</th><th>Share</th></tr>';
+    secs.sort((a,b)=>m.sections[b]-m.sections[a]).forEach(k=>{
+      const mins = Math.round(m.sections[k]/60);
+      const p = total ? Math.round(m.sections[k]/total*100) : 0;
+      h += '<tr><td>'+esc(SECTION_LABELS[k]||k)+'</td><td>'+mins+' min</td><td>'+p+'%</td></tr>';
+    });
+    h += '</table></div>';
+  }
+
+  // ---- exam history
+  h += '<h3>Practice exam history</h3>';
+  if(examErr){
+    h += '<p class="note">Could not load exam history right now.</p>';
+  } else if(exams.length === 0){
+    h += '<p class="note">No completed practice exams yet. (Abandoned attempts are excluded, the same way the learner\'s own trend chart excludes them.)</p>';
+  } else {
+    h += '<div class="table-wrap"><table><tr><th>Date</th><th>Score</th>'+
+         TEST_WEIGHTS.map(w=>'<th title="'+esc(w.label)+'">'+esc(w.label.split(' ')[0])+'</th>').join('')+
+         '</tr>';
+    exams.forEach(e=>{
+      const p = Math.round(e.correct/e.total_questions*100);
+      h += '<tr><td>'+esc(fmtDate(e.created_at))+'</td><td>'+accPill(p)+' <span class="note">'+
+           e.correct+'/'+e.total_questions+'</span></td>';
+      TEST_WEIGHTS.forEach(w=>{
+        const v = e.objective_scores[String(w.obj)];
+        h += '<td>'+(v==null ? '—' : accPill(v))+'</td>';
+      });
+      h += '</tr>';
+    });
+    h += '</table></div>';
+
+    // Trend: compare the first and most recent completed attempt.
+    if(exams.length >= 2){
+      const first = exams[0], last = exams[exams.length-1];
+      const pf = Math.round(first.correct/first.total_questions*100);
+      const pl = Math.round(last.correct/last.total_questions*100);
+      const d  = pl - pf;
+      const cls = d > 0 ? 'okbox' : 'warnbox';
+      h += '<div class="'+cls+'" style="margin-top:14px">'+
+           '<strong>'+(d>0?'Improving':d<0?'Slipping':'Holding steady')+':</strong> '+
+           pf+'% on '+fmtDate(first.created_at)+' → '+pl+'% on '+fmtDate(last.created_at)+
+           ' ('+(d>=0?'+':'')+d+' points across '+exams.length+' completed exams).</div>';
+    }
+  }
+
+  h += '<div style="margin-top:20px;display:flex;gap:8px;flex-wrap:wrap">'+
+       '<button class="btn-sm" onclick="resetPassword('+jsStr(m.name)+')">Reset PW</button>'+
+       '<button class="btn-sm" onclick="closeUser();resetUser('+jsStr(m.name)+')">Reset progress</button>'+
+       '<button class="btn-sm btn-danger" onclick="closeUser();deleteUser('+jsStr(m.name)+')">Delete user</button>'+
+       '</div>';
+  return h;
+}
+
+function box(v, k){ return '<div class="box"><div class="v">'+esc(v)+'</div><div class="k">'+esc(k)+'</div></div>'; }
+
+/* ==================================================== cohort readiness */
+
+async function loadReadiness(){
+  if(!adminToken && !legacyMode) return;
+  const el = document.getElementById('readinessBody');
+  el.innerHTML = '<p class="note">Loading…</p>';
+
+  let rows = [], err = false;
+  try{
+    const res = await sbClient.from('test_results')
+      .select('user_name,created_at,correct,total_questions,objective_scores')
+      .order('created_at',{ascending:true});
+    if(res.error) err = true; else rows = res.data||[];
+  }catch(e){ err = true; }
+
+  if(err){ el.innerHTML = '<div class="card"><p class="note">Could not load exam results.</p></div>'; return; }
+
+  const exams = rows.filter(r=>
+    r && r.total_questions > 0 && r.objective_scores && typeof r.objective_scores === 'object' &&
+    TEST_WEIGHTS.every(w=>Object.prototype.hasOwnProperty.call(r.objective_scores, String(w.obj))));
+  const abandoned = rows.length - exams.length;
+
+  // Per-learner: their most recent completed exam.
+  const latest = new Map();
+  exams.forEach(e=>latest.set(e.user_name, e));   // rows are ascending, so last wins
+  const takers = [...latest.values()];
+  const avg = takers.length ? Math.round(takers.reduce((s,e)=>s+e.correct/e.total_questions*100,0)/takers.length) : 0;
+  const ready = takers.filter(e=>e.correct/e.total_questions >= 0.8).length;
+
+  let h = '<div class="stats">'+
+    '<div class="stat"><div class="num">'+exams.length+'</div><div class="lbl">Completed exams</div></div>'+
+    '<div class="stat"><div class="num">'+takers.length+'</div><div class="lbl">Learners who took one</div></div>'+
+    '<div class="stat"><div class="num">'+avg+'%</div><div class="lbl">Average score</div></div>'+
+    '<div class="stat"><div class="num">'+ready+'</div><div class="lbl">Scoring 80%+</div></div>'+
+    '</div>';
+
+  if(abandoned > 0){
+    h += '<div class="note" style="margin-bottom:16px">'+abandoned+' abandoned attempt(s) excluded — '+
+         'they did not record a score for every objective.</div>';
+  }
+
+  if(takers.length === 0){
+    h += '<div class="card"><p class="note">No completed practice exams recorded yet.</p></div>';
+    el.innerHTML = h; return;
+  }
+
+  // Per-objective averages across each learner's most recent exam.
+  h += '<div class="card"><h2>Where the group is weakest</h2>'+
+       '<p class="note" style="margin-bottom:12px">Average per objective, across each learner\'s most recent completed exam. '+
+       'Sorted weakest first — the top rows are where to aim teaching time.</p>'+
+       '<div class="table-wrap"><table><tr><th>Objective</th><th>Blueprint</th><th>Group average</th><th></th>'+
+       '<th>Learners below 70%</th></tr>';
+  const objStats = TEST_WEIGHTS.map(w=>{
+    const vals = takers.map(e=>e.objective_scores[String(w.obj)]).filter(v=>typeof v === 'number');
+    const a = vals.length ? Math.round(vals.reduce((s,v)=>s+v,0)/vals.length) : 0;
+    return {w:w, avg:a, below:vals.filter(v=>v < 70).length, n:vals.length};
+  }).sort((a,b)=>a.avg - b.avg);
+  objStats.forEach(o=>{
+    h += '<tr><td>'+esc(o.w.label)+'</td><td>'+o.w.pct+'%</td><td>'+accPill(o.avg)+'</td>'+
+         '<td style="min-width:130px"><div class="bar"><i style="width:'+o.avg+'%"></i></div></td>'+
+         '<td>'+o.below+' of '+o.n+'</td></tr>';
+  });
+  h += '</table></div></div>';
+
+  // Per-learner table, weakest first.
+  h += '<div class="card"><h2>Learners by latest exam score</h2>'+
+       '<div class="table-wrap"><table><tr><th>Learner</th><th>Latest exam</th><th>Score</th><th>Exams taken</th><th>Trend</th></tr>';
+  const perUser = {};
+  exams.forEach(e=>{
+    if(!perUser[e.user_name]) perUser[e.user_name] = [];
+    perUser[e.user_name].push(e);
+  });
+  Object.keys(perUser).map(n=>{
+    const list = perUser[n], l = list[list.length-1];
+    const p = Math.round(l.correct/l.total_questions*100);
+    let trend = '—';
+    if(list.length >= 2){
+      const f = Math.round(list[0].correct/list[0].total_questions*100);
+      const d = p - f;
+      trend = d > 0 ? '<span class="pill ok">▲ +'+d+'</span>'
+            : d < 0 ? '<span class="pill bad">▼ '+d+'</span>'
+                    : '<span class="pill mute">flat</span>';
+    }
+    return {name:n, latest:l, p:p, n:list.length, trend:trend};
+  }).sort((a,b)=>a.p - b.p).forEach(r=>{
+    h += '<tr><td><span class="namelink" onclick="openUser('+jsStr(r.name)+')">'+esc(r.name)+'</span></td>'+
+         '<td>'+esc(fmtDate(r.latest.created_at))+'</td><td>'+accPill(r.p)+'</td>'+
+         '<td>'+r.n+'</td><td>'+r.trend+'</td></tr>';
+  });
+  h += '</table></div></div>';
+
+  el.innerHTML = h;
+}
+
+/* ====================================================== content health */
+
+async function loadContentHealth(){
+  const btn = document.getElementById('contentBtn');
+  const el  = document.getElementById('contentBody');
+  btn.disabled = true; btn.textContent = 'Loading…';
+  el.innerHTML = '<p class="note">Fetching the content files…</p>';
+
+  try{
+    // Fetched from this origin rather than the CDN so a stale CDN copy cannot
+    // make the report disagree with what the app is actually serving. The
+    // ?v= cache-buster the app uses is appended to match.
+    const bust = '?v=' + Date.now();
+    const [a,b] = await Promise.all([
+      fetch('content.js'+bust).then(r=>{ if(!r.ok) throw new Error('content.js: HTTP '+r.status); return r.text(); }),
+      fetch('original-content.js'+bust).then(r=>{ if(!r.ok) throw new Error('original-content.js: HTTP '+r.status); return r.text(); })
+    ]);
+
+    // Both files are plain `const NAME = [...]` declarations. Evaluating them
+    // inside a Function keeps the consts local, so nothing leaks to window.
+    const grab = new Function(a + '\n' + b + '\nreturn {Q:QUESTIONS,F:FLASHCARDS,L:LESSONS,'+
+                              'OQ:(typeof ORIG_QUESTIONS!=="undefined"?ORIG_QUESTIONS:[]),'+
+                              'OF:(typeof ORIG_FLASHCARDS!=="undefined"?ORIG_FLASHCARDS:[]),'+
+                              'OL:(typeof ORIG_LESSONS!=="undefined"?ORIG_LESSONS:[]),'+
+                              'S:(typeof STRATEGIES!=="undefined"?STRATEGIES:[])};');
+    const got = grab();
+
+    const q  = [].concat(got.Q||[], got.OQ||[]);
+    const fl = [].concat(got.F||[], got.OF||[]);
+    const ls = [].concat(got.L||[], got.OL||[]);
+    contentLoaded = true;
+
+    let h = '<div class="stats">'+
+      '<div class="stat"><div class="num">'+q.length+'</div><div class="lbl">Questions</div></div>'+
+      '<div class="stat"><div class="num">'+fl.length+'</div><div class="lbl">Flashcards</div></div>'+
+      '<div class="stat"><div class="num">'+ls.length+'</div><div class="lbl">Lessons</div></div>'+
+      '<div class="stat"><div class="num">'+(got.S||[]).length+'</div><div class="lbl">Strategies</div></div>'+
+      '</div>'+
+      '<p class="note" style="margin-bottom:16px">content.js: '+(got.Q||[]).length+' Q / '+(got.F||[]).length+' F / '+(got.L||[]).length+' L · '+
+      'original-content.js: '+(got.OQ||[]).length+' Q / '+(got.OF||[]).length+' F / '+(got.OL||[]).length+' L</p>';
+
+    // ---- blueprint coverage
+    const counts = {};
+    q.forEach(x=>{ const o = String(x.obj||0); counts[o] = (counts[o]||0)+1; });
+    const untagged = q.filter(x=>!x.obj).length;
+
+    h += '<h3 style="font-size:14px;color:var(--navy);margin:6px 0 10px;text-transform:uppercase;letter-spacing:.6px">Blueprint coverage</h3>'+
+         '<div class="table-wrap"><table><tr><th>Objective</th><th>Need per exam</th><th>In bank</th><th>Surplus</th><th>Status</th></tr>';
+    let starved = 0, thin = 0;
+    TEST_WEIGHTS.forEach(w=>{
+      const have = counts[String(w.obj)]||0;
+      const surplus = have - w.count;
+      let status;
+      if(surplus < 0){ status = '<span class="pill bad">starved</span>'; starved++; }
+      else if(surplus < 5){ status = '<span class="pill warn">thin</span>'; thin++; }
+      else status = '<span class="pill ok">ok</span>';
+      h += '<tr><td>'+esc(w.label)+'</td><td>'+w.count+'</td><td>'+have+'</td><td>'+
+           (surplus>=0?'+':'')+surplus+'</td><td>'+status+'</td></tr>';
+    });
+    h += '</table></div>';
+
+    if(starved || thin){
+      h += '<div class="warnbox" style="margin-top:14px"><strong>'+(starved?starved+' starved':'')+
+           (starved&&thin?', ':'')+(thin?thin+' thin':'')+'</strong> — the exam builder backfills from '+
+           'other objectives when one is short, which silently breaks the blueprint weighting the '+
+           'practice test advertises. A surplus under 5 also means the three exam versions draw '+
+           'nearly the same questions for that objective.</div>';
+    } else {
+      h += '<div class="okbox" style="margin-top:14px">Every objective has enough questions for all three '+
+           'exam versions to draw a full, blueprint-weighted paper with no backfill.</div>';
+    }
+    if(untagged){
+      h += '<div class="warnbox"><strong>'+untagged+'</strong> question(s) have no objective tag, so they '+
+           'are invisible to the exam builder and to weak-area drills.</div>';
+    }
+
+    // ---- duplicate stems
+    const seen = new Map(), dupes = [];
+    q.forEach(x=>{
+      const k = String(x.q||'').trim().toLowerCase().replace(/\s+/g,' ');
+      if(!k) return;
+      if(seen.has(k)) dupes.push(k); else seen.set(k, true);
+    });
+    h += '<h3 style="font-size:14px;color:var(--navy);margin:22px 0 10px;text-transform:uppercase;letter-spacing:.6px">Integrity</h3>';
+    if(dupes.length){
+      h += '<div class="warnbox"><strong>'+dupes.length+' duplicate question stem(s)</strong> — Quiz mode '+
+           'serves every copy, and the counter advertises them as separate questions. First few:</div>'+
+           '<div class="table-wrap"><table><tr><th>Repeated stem</th></tr>'+
+           dupes.slice(0,10).map(d=>'<tr><td>'+esc(d.slice(0,140))+'</td></tr>').join('')+'</table></div>';
+    } else {
+      h += '<div class="okbox">No duplicate question stems.</div>';
+    }
+    const fronts = new Map(); let dupFronts = 0;
+    fl.forEach(x=>{ const k = String(x.front||x.q||'').trim().toLowerCase(); if(!k) return;
+                    if(fronts.has(k)) dupFronts++; else fronts.set(k,true); });
+    h += dupFronts
+      ? '<div class="warnbox"><strong>'+dupFronts+'</strong> duplicate flashcard front(s).</div>'
+      : '<div class="okbox">No duplicate flashcard fronts.</div>';
+
+    // ---- topic spread
+    const byTopic = {};
+    q.forEach(x=>{ const t = x.topic||'(untagged)'; byTopic[t] = (byTopic[t]||0)+1; });
+    h += '<h3 style="font-size:14px;color:var(--navy);margin:22px 0 10px;text-transform:uppercase;letter-spacing:.6px">By topic</h3>'+
+         '<div class="table-wrap"><table><tr><th>Topic</th><th>Questions</th><th></th></tr>';
+    Object.entries(byTopic).sort((a,b)=>b[1]-a[1]).forEach(([t,n])=>{
+      const share = Math.round(n/q.length*100);
+      h += '<tr><td>'+esc(t)+'</td><td>'+n+'</td>'+
+           '<td style="min-width:150px"><div class="bar"><i style="width:'+share+'%"></i></div></td></tr>';
+    });
+    h += '</table></div>';
+
+    el.innerHTML = h;
+    btn.textContent = 'Re-run check'; btn.disabled = false;
+  }catch(e){
+    el.innerHTML = '<div class="warnbox">Could not read the content files: '+esc(e.message)+
+      '<br><br>This panel fetches them from this same site, so it only works when the dashboard is '+
+      'served from the app\'s own origin (not opened as a local file).</div>';
+    btn.textContent = 'Try again'; btn.disabled = false;
+  }
+}
+
+/* ======================================================= reset codes */
+
+async function loadResetCodes(){
+  if(!adminToken && !legacyMode) return;
+  const el = document.getElementById('codesBody');
+  try{
+    const data = await rpc('admin_list_resets', {});
+    if(!data){ el.innerHTML = '<p class="note">Could not load reset codes.</p>'; return; }
+    const codes = data.codes||[];
+    if(codes.length === 0){ el.innerHTML = '<p class="note">No reset codes outstanding.</p>'; return; }
+
+    let h = '<div class="table-wrap"><table><tr><th>Learner</th><th>Issued</th><th>Expires</th>'+
+            '<th>Wrong tries</th><th>Action</th></tr>';
+    codes.forEach(c=>{
+      const status = c.expired ? '<span class="pill bad">expired</span>'
+                               : '<span class="pill ok">live</span>';
+      h += '<tr><td>'+esc(c.user_name)+'</td><td>'+esc(fmtDateTime(c.created_at))+'</td>'+
+           '<td>'+status+' <span class="note">'+esc(fmtDateTime(c.expires_at))+'</span></td>'+
+           '<td>'+(c.attempts||0)+'</td>'+
+           '<td><button class="btn-sm btn-danger" onclick="revokeCode('+jsStr(c.user_name)+')">Revoke</button></td></tr>';
+    });
+    h += '</table></div>';
+    el.innerHTML = h;
+  }catch(e){
+    el.innerHTML = '<p class="note">'+(e.message === 'NOT_SET_UP'
+      ? 'This panel needs supabase-admin.sql to be run first.'
+      : 'Could not load reset codes.')+'</p>';
+  }
+}
+
+async function revokeCode(name){
+  if(!adminToken && !legacyMode) return;
+  if(!confirm('Revoke the reset code for "'+name+'"?\n\nThe learner will need a new one.')) return;
+  try{
+    const data = await rpc('admin_revoke_reset', {p_user: name});
+    if(!data) return;
+    alert(data.status === 'ok' ? 'Code revoked.' : 'Could not revoke that code.');
+    loadResetCodes();
+  }catch(e){ alert('Could not revoke: '+e.message); }
+}
+
+/* ======================================================== announcement */
+
+async function loadAnnouncement(){
+  const el = document.getElementById('announceText');
+  try{
+    const {data,error} = await sbClient.from('app_settings').select('value').eq('key','announcement').maybeSingle();
+    if(!error && data) el.value = data.value || '';
+  }catch(e){ /* nothing stored yet */ }
+}
+
+async function saveAnnouncement(clear){
+  if(!adminToken && !legacyMode) return;
+  const msg = document.getElementById('announceMsg');
+  const text = clear ? '' : document.getElementById('announceText').value;
+  if(clear) document.getElementById('announceText').value = '';
+  try{
+    const data = await rpc('admin_set_announcement', {p_text: text});
+    if(!data) return;
+    msg.textContent = data.status === 'ok'
+      ? (clear ? 'Banner cleared.' : 'Saved. Learners will see it the next time the app loads.')
+      : 'Could not save.';
+  }catch(e){
+    msg.textContent = e.message === 'NOT_SET_UP'
+      ? 'This needs supabase-admin.sql to be run first.'
+      : 'Could not save: '+e.message;
+  }
+}
+
+/* ========================================================= audit log */
+
+async function loadAudit(){
+  if(!adminToken && !legacyMode) return;
+  const el = document.getElementById('auditBody');
+  try{
+    const data = await rpc('admin_list_audit', {p_limit: 300});
+    if(!data){ el.innerHTML = '<p class="note">Could not load the audit log.</p>'; return; }
+    const entries = data.entries||[];
+    if(entries.length === 0){ el.innerHTML = '<p class="note">Nothing recorded yet.</p>'; return; }
+
+    let h = '<div class="table-wrap"><table><tr><th>When</th><th>Admin</th><th>Action</th>'+
+            '<th>Target</th><th>Source</th></tr>';
+    entries.forEach(e=>{
+      h += '<tr><td>'+esc(fmtDateTime(e.at))+'</td><td>'+esc(e.admin)+'</td>'+
+           '<td>'+esc(e.action)+'</td><td>'+esc(e.target||'—')+'</td>'+
+           '<td><span class="pill '+(e.source==='dashboard'?'mute':'info')+'">'+esc(e.source)+'</span></td></tr>';
+    });
+    h += '</table></div>'+
+         '<p class="note" style="margin-top:12px">Rows marked <strong>dashboard</strong> come from '+
+         'reset / delete / restore, which are still direct table writes whose audit call is '+
+         'best-effort. Rows marked <strong>rpc</strong> are written inside the privileged function '+
+         'itself and cannot be skipped.</p>';
+    el.innerHTML = h;
+  }catch(e){
+    el.innerHTML = '<p class="note">'+(e.message === 'NOT_SET_UP'
+      ? 'This panel needs supabase-admin.sql to be run first.'
+      : 'Could not load the audit log.')+'</p>';
+  }
+}
+
+/* ================================================= change password */
+
+function openPasswordModal(){
+  document.getElementById('pwOld').value = '';
+  document.getElementById('pwNew').value = '';
+  document.getElementById('pwNew2').value = '';
+  document.getElementById('pwErr').textContent = '';
+  document.getElementById('pwOverlay').style.display = 'flex';
+}
+function closePasswordModal(){
+  document.getElementById('pwOverlay').style.display = 'none';
+}
+
+async function submitPasswordChange(){
+  const oldP = document.getElementById('pwOld').value;
+  const newP = document.getElementById('pwNew').value;
+  const rep  = document.getElementById('pwNew2').value;
+  const err  = document.getElementById('pwErr');
+  err.textContent = '';
+
+  if(!oldP){ err.textContent = 'Enter the current password.'; return; }
+  if(newP.length < 12){ err.textContent = 'The new password must be at least 12 characters.'; return; }
+  if(newP !== rep){ err.textContent = 'The two new passwords do not match.'; return; }
+
+  try{
+    const data = await rpc('admin_change_password', {p_old: oldP, p_new: newP});
+    if(!data) return;
+    if(data.status === 'weak_password'){ err.textContent = 'The new password must be at least 12 characters.'; return; }
+    if(data.status === 'bad_credentials'){ err.textContent = 'The current password is incorrect.'; return; }
+    if(data.status === 'ok'){
+      closePasswordModal();
+      alert('Password changed. Every session has been signed out — please sign in again with the new password.');
+      forceReauth();
+      return;
+    }
+    err.textContent = 'Could not change the password.';
+  }catch(e){
+    err.textContent = e.message === 'NOT_SET_UP'
+      ? 'This needs supabase-admin.sql to be run first.'
+      : 'Could not change the password: '+e.message;
+  }
+}
+
+/* ============================================================== views */
+
+function currentView(){
+  const btn = document.querySelector('#nav button.active');
+  return btn ? btn.dataset.view : 'users';
+}
+
+function showView(name){
+  document.querySelectorAll('#nav button').forEach(b=>
+    b.classList.toggle('active', b.dataset.view === name));
+  document.querySelectorAll('.view').forEach(v=>
+    v.classList.toggle('active', v.id === 'view-'+name));
+
+  if(name === 'readiness') loadReadiness();
+  if(name === 'codes')     loadResetCodes();
+  if(name === 'audit')     loadAudit();
+  if(name === 'announce')  loadAnnouncement();
+  if(name === 'users')     loadDeletedUsersIfOpen();
+}
+
+function loadDeletedUsersIfOpen(){
+  const p = document.getElementById('deletedPanel');
+  if(p && p.style.display !== 'none') loadDeletedUsers();
+}
+
+/* ============================================================== export */
+
+// Headers and values both come from COLS, so the exports can no longer drift
+// out of step with the table.
+function exportRows(){
+  const headers = COLS.filter(c=>c.export).map(c=>c.label);
+  const rows = mapped.map(m=>COLS.filter(c=>c.export).map(c=>{
+    const v = c.render ? c.render(m) : c.get(m);
+    // The table renders an accuracy pill; the export wants the plain number.
+    if(c.key === 'accNum') return m.acc;
+    if(c.key === 'lastActiveRaw') return m.lastActive;
+    return v;
+  }));
+  return {headers:headers, rows:rows};
+}
+
+function exportCSV(){
+  if(!adminToken && !legacyMode) return;
+  const {headers, rows} = exportRows();
+  let csv = headers.map(csvCell).join(',') + '\n';
+  rows.forEach(r=>{ csv += r.map(csvCell).join(',') + '\n'; });
+  const blob = new Blob([csv], {type:'text/csv'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'cnn_study_progress.csv';
+  a.click();
+  logAction('export_csv', null, {rows: rows.length});
+}
+
+function exportXLSX(){
+  if(!adminToken && !legacyMode) return;
+  const {headers, rows} = exportRows();
+  let table = '<table border="1"><thead><tr>';
+  headers.forEach(h=>{ table += '<th style="background:#7c3aed;color:#fff">'+esc(h)+'</th>'; });
+  table += '</tr></thead><tbody>';
+  rows.forEach(r=>{
+    table += '<tr>' + r.map(c=>'<td>'+esc(c)+'</td>').join('') + '</tr>';
+  });
+  table += '</tbody></table>';
+  const blob = new Blob(['<html><head><meta charset="utf-8"></head><body>'+table+'</body></html>'],
+                        {type:'application/vnd.ms-excel'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'cnn_study_progress.xls';
+  a.click();
+  logAction('export_xlsx', null, {rows: rows.length});
+}
+
+/* =============================================================== boot */
+document.addEventListener('keydown', e=>{
+  if(e.key === 'Escape'){
+    closeUser(); closeReset(); closePasswordModal();
+  }
+});
+document.getElementById('adminPass').addEventListener('keydown', e=>{
+  if(e.key === 'Enter') doLogin();
+});
+initAuth();
 </script>
 </body>
 </html>
