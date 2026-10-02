@@ -57,6 +57,8 @@
   /* ===== Profile / affiliation modal (reuses howto box) ===== */
   #profileOverlay{display:none;position:fixed;inset:0;z-index:1000;background:rgba(10,8,18,.55);backdrop-filter:blur(3px);align-items:center;justify-content:center;padding:16px;}
   #profileOverlay.show{display:flex;}
+  #forgotOverlay{display:none;position:fixed;inset:0;z-index:1001;background:rgba(10,8,18,.55);backdrop-filter:blur(3px);align-items:center;justify-content:center;padding:16px;}
+  #forgotOverlay.show{display:flex;}
   .field-label{display:block;font-size:13px;font-weight:600;color:var(--aggie-blue);margin:12px 0 0;}
   body.dark .field-label{color:var(--aggie-gold);}
   body.dark .howto-close{color:var(--aggie-gold);}
@@ -147,6 +149,7 @@
     <input id="loginName" placeholder="Your name" autocomplete="off">
     <input type="password" id="loginPass" placeholder="Password" autocomplete="off">
     <button class="btn" style="width:100%" onclick="login()">Sign In</button>
+    <p class="muted" style="margin-top:10px"><a href="javascript:void(0)" onclick="showForgot()" style="color:var(--link);font-weight:600">Forgot password?</a></p>
     <p class="muted" id="loginMsg" style="margin-top:8px"></p>
     <p class="muted" style="margin-top:10px;font-size:12px">Your name is your login. Capitalization doesn't matter, but keep the same spelling each time so your progress stays on one account.</p>
   </div>
@@ -194,6 +197,25 @@
     <div class="btn-row" style="margin-top:14px">
       <button class="btn" onclick="saveProfile()">Save</button>
       <button class="btn secondary" onclick="skipProfile()">Skip for now</button>
+    </div>
+  </div>
+</div>
+
+<!-- FORGOT PASSWORD MODAL -->
+<div id="forgotOverlay">
+  <div class="howto-box">
+    <h2>🔑 Reset your password</h2>
+    <p>Enter your name, the reset code your admin gave you, and a new password.</p>
+    <label class="field-label" for="forgotName">Your name</label>
+    <input id="forgotName" placeholder="Your name" autocomplete="off">
+    <label class="field-label" for="forgotCode">Reset code</label>
+    <input id="forgotCode" placeholder="e.g. a3f9c2d1" autocomplete="off">
+    <label class="field-label" for="forgotPass">New password</label>
+    <input type="password" id="forgotPass" placeholder="New password" autocomplete="off">
+    <p class="muted" id="forgotMsg" style="margin-top:8px;min-height:18px"></p>
+    <div class="btn-row" style="margin-top:6px">
+      <button class="btn" onclick="submitForgot()">Reset password</button>
+      <button class="btn secondary" onclick="closeForgot()">Cancel</button>
     </div>
   </div>
 </div>
@@ -679,6 +701,46 @@ function skipProfile(){
 function maybePromptProfile(){
   const p = window.userProgress || {};
   if(!p.employment_status){ openProfile(); }
+}
+
+/* ============ FORGOT PASSWORD ============ */
+function showForgot(){
+  document.getElementById('forgotMsg').textContent = '';
+  document.getElementById('forgotName').value = '';
+  document.getElementById('forgotCode').value = '';
+  document.getElementById('forgotPass').value = '';
+  document.getElementById('forgotOverlay').classList.add('show');
+  document.body.style.overflow = 'hidden';
+}
+function closeForgot(){
+  document.getElementById('forgotOverlay').classList.remove('show');
+  document.body.style.overflow = '';
+}
+async function submitForgot(){
+  const name = document.getElementById('forgotName').value.trim();
+  const code = document.getElementById('forgotCode').value.trim();
+  const pass = document.getElementById('forgotPass').value;
+  const msg = document.getElementById('forgotMsg');
+  msg.textContent = '';
+  if(!name){ msg.textContent = 'Enter your name.'; return; }
+  if(!code){ msg.textContent = 'Enter the reset code.'; return; }
+  if(!pass || pass.length < 4){ msg.textContent = 'Choose a password (at least 4 characters).'; return; }
+  msg.textContent = 'Resetting...';
+  try {
+    const {data, error} = await sbClient.rpc('reset_password', {p_user: name, p_code: code, p_new_pass: pass});
+    if(error){ msg.textContent = 'Could not reach the server. Try again.'; return; }
+    if(!data){ msg.textContent = 'Could not reset. Try again.'; return; }
+    if(data.status === 'no_user'){ msg.textContent = 'No account found for that name.'; return; }
+    if(data.status === 'bad_code'){ msg.textContent = 'That reset code is wrong or already used.'; return; }
+    if(data.status === 'invalid'){ msg.textContent = 'Please choose a password.'; return; }
+    if(data.status === 'ok'){
+      msg.textContent = 'Password reset! Sign in with your new password.';
+      msg.style.color = 'var(--green, #2e7d32)';
+      // pre-fill the login name for convenience
+      document.getElementById('loginName').value = name;
+      setTimeout(closeForgot, 1400);
+    }
+  } catch(e){ msg.textContent = 'Could not reset. Check your connection.'; }
 }
 
 /* ============ LOGIN ============ */

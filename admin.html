@@ -289,8 +289,21 @@ async function loadDeletedUsers(){
   } catch(e){ document.getElementById('deletedList').innerHTML='<tr><td colspan="3" class="empty">Backend error.</td></tr>'; }
 }
 async function resetPassword(name){
-  if(!unlocked) return; const newPass=prompt('Enter a new password for "'+name+'":'); if(!newPass) return;
-  try { const salt=makeSalt(); const pass_hash=await hashPass(salt,newPass); await sbClient.from('progress').update({pass_salt:salt,pass_hash:pass_hash,password:null}).eq('user_name',name); alert('Password for "'+name+'" reset.'); } catch(e){ alert('Could not reset password.'); }
+  if(!unlocked) return;
+  if(!confirm('Generate a one-time password reset code for "'+name+'"?\nShare the code with them so they can reset their own password.')) return;
+  try {
+    const {data,error} = await sbClient.rpc('request_reset', {p_user: name});
+    if(error) throw error;
+    if(!data || data.status === 'no_user'){ alert('No account found for "'+name+'".'); return; }
+    if(data.status === 'ok' && data.code){
+      // Copy-friendly prompt: show the code prominently.
+      const code = data.code;
+      const msg = 'One-time reset code for "'+name+'":\n\n' + code + '\n\nThey open the app, tap "Forgot password?", and enter their name + this code + a new password.';
+      alert(msg);
+      // Also copy to clipboard for easy pasting into a text message
+      try { await navigator.clipboard.writeText(code); } catch(e){}
+    }
+  } catch(e){ alert('Could not generate reset code: '+e.message); }
 }
 function toggleDeleted(){
   const panel = document.getElementById('deletedPanel');
