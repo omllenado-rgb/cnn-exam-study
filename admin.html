@@ -1067,7 +1067,19 @@ async function openUser(name){
         TEST_WEIGHTS.every(w=>Object.prototype.hasOwnProperty.call(r.objective_scores, String(w.obj))));
     }catch(e){ examErr = true; }
 
-    sheet.innerHTML = renderUserSheet(m, row, exams, examErr);
+    // The outstanding private message. Its own try/catch rather than riding on
+    // examErr: this is an rpc() call, not a raw client read, so besides failing it
+    // can throw NOT_SET_UP when STAGE 5 has not been run, and can return null when
+    // the token was refused (in which case rpc() has already re-authed).
+    let msg = null, msgErr = false;
+    try{
+      const r = await rpc('admin_list_messages', {p_user: name});
+      if(r === null) msgErr = true;
+      else if(r && r.status === 'ok') msg = r.message || null;
+      else if(r && r.status !== 'no_user') msgErr = true;
+    }catch(e){ msgErr = true; }
+
+    sheet.innerHTML = renderUserSheet(m, row, exams, examErr, msg, msgErr);
   }catch(e){
     sheet.innerHTML = '<p class="note">Could not load that learner: '+esc(e.message)+'</p>';
   }
@@ -1075,7 +1087,56 @@ async function openUser(name){
 
 function closeUser(){ document.getElementById('userOverlay').style.display = 'none'; }
 
-function renderUserSheet(m, row, exams, examErr){
+/* ------------------------------------------------ private message (STAGE 5) */
+// Both of these go straight through the token-gated RPCs — there is no direct-write
+// fallback, unlike delete/restore. Before STAGE 5 runs, the functions simply do not
+// exist and rpc() throws NOT_SET_UP, which is reported plainly rather than being
+// quietly downgraded into something that looks like success.
+async function sendMessage(name){
+  const box = document.getElementById('msgText');
+  const st  = document.getElementById('msgStatus');
+  const text = box ? box.value.trim() : '';
+  if(!text){ if(st) st.textContent = 'Type a message first.'; return; }
+  if(st) st.textContent = 'Sending…';
+  try{
+    const r = await rpc('admin_send_message', {p_user: name, p_text: text});
+    if(r === null) return;                       // token refused; rpc() already re-authed
+    if(r && r.status === 'ok'){
+      await openUser(name);                     // re-render so it shows as outstanding
+      const s2 = document.getElementById('msgStatus');
+      if(s2) s2.textContent = 'Sent. She will see it the next time she signs in.';
+      return;
+    }
+    if(st) st.textContent = 'Not sent: '+((r && r.status) || 'unknown');
+  }catch(e){
+    if(st) st.textContent = (e && e.message === 'NOT_SET_UP')
+      ? 'Not sent: the messaging SQL (STAGE 5) has not been run yet.'
+      : 'Not sent: '+(e.message || e);
+  }
+}
+async function clearMessage(name){
+  if(!confirm('Clear the outstanding message for "'+name+'"?\n\n'
+             +'She will no longer see it the next time she signs in.')) return;
+  const st = document.getElementById('msgStatus');
+  if(st) st.textContent = 'Clearing…';
+  try{
+    const r = await rpc('admin_clear_message', {p_user: name});
+    if(r === null) return;
+    if(r && r.status === 'ok'){
+      await openUser(name);
+      const s2 = document.getElementById('msgStatus');
+      if(s2) s2.textContent = 'Cleared.';
+      return;
+    }
+    if(st) st.textContent = 'Not cleared: '+((r && r.status) || 'unknown');
+  }catch(e){
+    if(st) st.textContent = (e && e.message === 'NOT_SET_UP')
+      ? 'Not cleared: the messaging SQL (STAGE 5) has not been run yet.'
+      : 'Not cleared: '+(e.message || e);
+  }
+}
+
+function renderUserSheet(m, row, exams, examErr, msg, msgErr){
   let h = '<div class="sheet-head"><div>'+
     '<h2>'+esc(m.name)+'</h2>'+
     '<div class="meta">'+esc(m.emp)+' · '+esc(m.inst)+' · joined '+esc(fmtDate(row.first_started))+
@@ -1170,6 +1231,30 @@ function renderUserSheet(m, row, exams, examErr){
            pf+'% on '+fmtDate(first.created_at)+' → '+pl+'% on '+fmtDate(last.created_at)+
            ' ('+(d>=0?'+':'')+d+' points across '+exams.length+' completed exams).</div>';
     }
+  }
+
+  // ---- private message (STAGE 5). She sees this at her next sign-in, and only
+  // after her password verifies — it is not a broadcast and not readable with the
+  // anon key. Deliberately inline in this sheet rather than a fourth overlay,
+  // which would have to be registered in forceReauth() and the Escape handler.
+  h += '<h3>Private message</h3>';
+  if(msgErr){
+    h += '<p class="note">Could not load this learner\'s message, so sending is disabled here. '+
+         'The rest of the sheet is unaffected.</p>';
+  } else {
+    if(msg){
+      h += '<div class="okbox" style="margin-bottom:10px"><strong>Outstanding:</strong> '+esc(msg.body)+
+           '<div class="note" style="margin:4px 0 0">sent '+esc(fmtDate(msg.created_at))+
+           (msg.created_by ? ' by '+esc(msg.created_by) : '')+'</div></div>'+
+           '<button class="btn-sm" onclick="clearMessage('+jsStr(m.name)+')">Clear message</button>';
+    } else {
+      h += '<p class="note">Nothing waiting. Anything sent here appears the next time she signs in.</p>';
+    }
+    h += '<textarea id="msgText" rows="3" placeholder="A note for '+esc(m.name)+' — she sees it the next time she signs in." '+
+         'style="width:100%;margin-top:8px;padding:8px;border:1px solid #d7dbe3;border-radius:8px;font:inherit;resize:vertical"></textarea>'+
+         '<div style="margin-top:8px;display:flex;gap:8px;align-items:center">'+
+         '<button class="btn-sm" onclick="sendMessage('+jsStr(m.name)+')">Send message</button>'+
+         '<span class="note" id="msgStatus" style="margin:0"></span></div>';
   }
 
   h += '<div style="margin-top:20px;display:flex;gap:8px;flex-wrap:wrap">'+

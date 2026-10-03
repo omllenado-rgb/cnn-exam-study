@@ -23,6 +23,11 @@
   .announce{background:#fff8ed;border-bottom:1px solid #f0dcb8;color:#7c4a03;padding:11px 20px;font-size:14px;line-height:1.5;display:flex;gap:10px;align-items:flex-start;}
   .announce .ic{flex:none;font-size:16px;line-height:1.3;}
   .announce .tx{flex:1;min-width:0;white-space:pre-wrap;overflow-wrap:anywhere;}
+  /* Private message bar — one learner's note, from login_check. Same look as the
+     announcement, but it lives inside #appScreen, so it can only ever show to
+     someone who is signed in. */
+  .announce .x{flex:none;background:none;border:0;color:#a9741f;font-size:15px;line-height:1.3;cursor:pointer;padding:0 2px;margin:0;}
+  .announce .x:hover{color:#7c4a03;}
   .theme-toggle{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.4);color:#fff;border-radius:20px;padding:7px 12px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;}
   nav{display:flex;background:var(--card);border-bottom:1px solid var(--border);overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
   nav::-webkit-scrollbar{display:none;}
@@ -230,6 +235,11 @@
 
 <!-- MAIN APP -->
 <div id="appScreen" class="screen">
+  <!-- A private note from the admin, for this learner only. Deliberately inside
+       #appScreen and without the `screen` class: it is hidden by the screen
+       itself when signed out, and showScreen() only swaps .screen panes, so it
+       persists across quiz/cards/exam. -->
+  <div class="announce" id="msgBar" style="display:none"><span class="ic">&#128172;</span><span class="tx" id="msgText"></span><button class="x" onclick="dismissMessage()" title="Dismiss" aria-label="Dismiss">&#10005;</button></div>
   <nav>
     <button id="navQuiz" class="active" onclick="showScreen('quiz')">Quiz</button>
     <button id="navTest" onclick="showScreen('test')">Practice Test</button>
@@ -647,6 +657,11 @@ function explanationHTML(q, isCorrect, chosenIdx){
 /* ============ STATE ============ */
 const topics = [...new Set(QUESTIONS.map(q=>q.topic))];
 let currentUser = null;
+// The private note login_check handed back for THIS learner, or null. Set only
+// in login()'s server-verified branch, immediately before enterApp(), and
+// cleared on every sign-in attempt and on sign-out — so a new account, the
+// legacy path, or a previous learner on a shared device can never show it.
+let pendingMessages = null;
 let quizState = {active:false,list:[],idx:0,correct:0,selected:false};
 let cardState = {list:[],idx:0,flipped:false,filter:"all"};
 let quizFilter = "all";
@@ -796,6 +811,7 @@ function enterApp(name){
   startStudyTimer();
   document.getElementById('loginMsg').textContent = '';
   maybePromptProfile();
+  renderMessages();
 }
 async function login(){
   // Normalize the entered name to a canonical key (trim + lowercase) so
@@ -806,6 +822,7 @@ async function login(){
   const msg = document.getElementById('loginMsg');
   if(!name || !pass){ msg.textContent = 'Enter your name and password.'; return; }
   msg.textContent = 'Signing in...';
+  pendingMessages = null;   // never carry a previous attempt's note into this one
   try {
     /* ---- Preferred path: verify in the database ----
        No password material reaches the browser. If the SQL is not deployed,
@@ -815,6 +832,9 @@ async function login(){
       if(srv.status === 'bad_password'){ msg.textContent = 'Incorrect password.'; return; }
       if(srv.status === 'ok' && srv.profile){
         window.userProgress = srv.profile;
+        // A sibling of profile, never a key inside it: enterApp hands
+        // window.userProgress to saveLocal(), which would cache it on the device.
+        pendingMessages = srv.messages || null;
         enterApp(srv.profile.user_name);
         return;
       }
@@ -875,6 +895,11 @@ function logout(){
   stopStudyTimer();
   saveProgress(); // persist the final seconds of this session (also flushes section time)
   currentUser = null;
+  pendingMessages = null;
+  const mb = document.getElementById('msgBar');
+  const mt = document.getElementById('msgText');
+  if(mb) mb.style.display = 'none';   // a shared device must not flash the last learner's note
+  if(mt) mt.textContent = '';         // ...nor leave it sitting in the DOM behind the hidden bar
   document.getElementById('appScreen').classList.remove('active');
   document.getElementById('loginScreen').classList.add('active');
   document.getElementById('loginName').value='';
@@ -2211,6 +2236,45 @@ function loadAnnouncement(){
         bar.style.display = 'flex';
       }, ()=>{});
   }catch(e){ /* never hold up the app for a banner */ }
+}
+
+/* ============ PRIVATE MESSAGE (written from the admin dashboard) ============
+   A note for this one learner. It is handed back by login_check, which returns
+   it only after the password has verified — it is not a broadcast, and it is not
+   readable with the public key the way the announcement is. pendingMessages is
+   set in login()'s server-verified branch and nowhere else, so a brand-new
+   account or the legacy sign-in path shows nothing rather than somebody else's
+   note. */
+function msgSeenKey(id){ return 'cnnMsgSeen_' + String(id); }
+function renderMessages(){
+  // Wrapped end to end: this runs inside enterApp(), which runs inside login()'s
+  // try block, so anything thrown here would surface as "Could not sign in" to a
+  // learner who is in fact signed in.
+  try{
+    const bar = document.getElementById('msgBar');
+    const tx  = document.getElementById('msgText');
+    if(!bar || !tx) return;
+    bar.style.display = 'none';   // never leave the previous learner's note up
+    tx.textContent = '';
+    const m = pendingMessages;
+    if(!m || !m.body || m.id == null) return;
+    let seen = false;
+    try{ seen = localStorage.getItem(msgSeenKey(m.id)) === '1'; }catch(e){}
+    if(seen) return;
+    tx.textContent = String(m.body);   // textContent, never innerHTML
+    bar.style.display = 'flex';
+  }catch(e){ /* never hold up sign-in for a note */ }
+}
+// Dismissal is per-device and keyed by message id, which is globally unique — so
+// one learner dismissing a note can never suppress a different note on the same
+// device. The row stays on the server; the dashboard's Clear removes it.
+function dismissMessage(){
+  try{
+    const m = pendingMessages;
+    if(m && m.id != null){ localStorage.setItem(msgSeenKey(m.id), '1'); }
+  }catch(e){}
+  const bar = document.getElementById('msgBar');
+  if(bar) bar.style.display = 'none';
 }
 
 /* ============ INIT ============ */

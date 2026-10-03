@@ -983,3 +983,338 @@ grant execute on function public.create_account(text, text) to anon, authenticat
 --   select public.admin_delete_user('forged', 'ds');                                   -- unauthorized
 --   select public.admin_restore_user('forged', 1);                                     -- unauthorized
 -- ============================================================================
+
+
+-- ============================================================================
+-- STAGE 5 — a private message for one learner.
+-- ============================================================================
+-- Additive and idempotent. Safe to run on the live database, safe to re-run.
+--
+-- WHAT THIS IS. A note the admin writes to ONE named learner, shown to her in a
+-- banner the next time she signs in.
+--
+-- THE WHOLE DESIGN PROBLEM: the naive version makes every private message
+-- public. Learner names are not secret — public.progress is world-readable with
+-- the anon key that ships inside index.html, so anyone can list all of them. A
+-- messages table keyed by name and reachable through PostgREST with that same
+-- key would let anyone read a note meant for one person. There is no application
+-- server here and no session: index.html does not even keep the password after
+-- sign-in (enterApp only stores the name).
+--
+-- THE ONE MOMENT THE APP CAN PROVE WHO A LEARNER IS is inside login_check(),
+-- which already verifies the password and already returns that learner's
+-- profile. So the message rides home on that response. That gives private
+-- messaging with NO new client credential and NO new read path: the table below
+-- is readable by nobody through the API, and its only reader is a function that
+-- has already checked the password.
+--
+-- !! 5a RE-DECLARES login_check — THE HIGHEST-RISK EDIT IN THIS REPO. !!
+-- It is the only door into the app. Read 5a's own comment before running it.
+-- ============================================================================
+
+
+-- ---------------------------------------------------------------------------
+-- 5a. login_check, re-declared to carry the message home.
+--
+--     `create or replace` swaps the ENTIRE definition, so anything not restated
+--     below is silently lost. Three things must be restated verbatim:
+--
+--       * `security definer` — otherwise the function runs as the caller (anon)
+--         and cannot read the locked credentials table at all, and every login
+--         in the app fails.
+--       * `set search_path = public, extensions, pg_temp` — otherwise digest()
+--         and gen_random_bytes() stop resolving.
+--       * The parameter NAMES p_user / p_pass — PostgREST resolves named
+--         arguments, so renaming them breaks the client without any error here.
+--
+--     Everything between here and the two additions is byte-identical to the
+--     live definition in supabase-auth-hardening.sql: the same three verification
+--     branches (a) hash in the locked table, (b) hash still in the progress row,
+--     (c) legacy plaintext, the same no_user / bad_password returns, and the same
+--     profile select. Only two things are new: the v_messages declaration, and
+--     'messages' added to the object returned at the end.
+--
+--     The messages read sits AFTER the `if not v_ok` gate. That ordering IS the
+--     privacy claim: no correct password, no message.
+--
+--     'messages' is a SIBLING of 'profile', never a key inside it — enterApp()
+--     hands window.userProgress (= srv.profile) to saveLocal(), so a key inside
+--     profile would be written into the learner's local cache.
+-- ---------------------------------------------------------------------------
+create or replace function public.login_check(p_user text, p_pass text)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public, extensions, pg_temp
+as $$
+declare
+  v_name    text;
+  v_csalt   text;   -- salt in the locked table
+  v_chash   text;   -- hash  in the locked table
+  v_psalt   text;   -- salt still in the progress row
+  v_phash   text;   -- hash  still in the progress row
+  v_plain   text;   -- legacy plaintext column
+  v_ok      boolean := false;
+  v_new     text;
+  v_profile jsonb;
+  v_messages jsonb;
+begin
+  select p.user_name, c.pass_salt, c.pass_hash, p.pass_salt, p.pass_hash, p.password
+    into v_name, v_csalt, v_chash, v_psalt, v_phash, v_plain
+    from public.progress p
+    left join public.credentials c on c.user_name = p.user_name
+   where lower(p.user_name) = lower(btrim(coalesce(p_user, '')))
+   limit 1;
+
+  if v_name is null then
+    return jsonb_build_object('status', 'no_user');
+  end if;
+
+  -- (a) normal case: hash lives in the locked table
+  if v_chash is not null
+     and v_chash = encode(digest(coalesce(v_csalt, '') || '::' || p_pass, 'sha256'), 'hex') then
+    v_ok := true;
+
+  -- (b) hash still in the progress row (pre-migration, or just written by the
+  --     admin reset button): verify it, then move it somewhere unreadable.
+  elsif v_phash is not null
+     and v_phash = encode(digest(coalesce(v_psalt, '') || '::' || p_pass, 'sha256'), 'hex') then
+    v_ok := true;
+    insert into public.credentials (user_name, pass_salt, pass_hash)
+    values (v_name, coalesce(v_psalt, ''), v_phash)
+    on conflict (user_name) do update
+       set pass_salt = excluded.pass_salt,
+           pass_hash = excluded.pass_hash,
+           updated_at = now();
+    update public.progress
+       set pass_hash = null, pass_salt = null
+     where user_name = v_name;
+
+  -- (c) legacy plaintext: verify it, then store a salted hash instead
+  elsif v_plain is not null and v_plain = p_pass then
+    v_ok := true;
+    v_new := encode(gen_random_bytes(16), 'hex');
+    insert into public.credentials (user_name, pass_salt, pass_hash)
+    values (v_name, v_new, encode(digest(v_new || '::' || p_pass, 'sha256'), 'hex'))
+    on conflict (user_name) do update
+       set pass_salt = excluded.pass_salt,
+           pass_hash = excluded.pass_hash,
+           updated_at = now();
+    update public.progress set password = null where user_name = v_name;
+  end if;
+
+  if not v_ok then
+    return jsonb_build_object('status', 'bad_password');
+  end if;
+
+  -- ------- the only new behaviour: the newest message, after the gate -------
+  -- Keyed on v_name — the EXACT stored spelling that was just authenticated
+  -- against. One pair of names in this roster differs only in case, so a
+  -- case-insensitive match here would hand one learner's note to whoever holds
+  -- the other one's password.
+  --
+  -- The exception block is deliberate insurance, not decoration. This function
+  -- is the only way into the app, and if it raises, index.html's serverLogin
+  -- returns null and EVERY learner is silently told her correct password is
+  -- wrong. So a missing user_messages table degrades to "no message" rather
+  -- than to "nobody can sign in" — which is what running STAGE 5 without
+  -- STAGE 4 would otherwise do, given it takes about ten seconds to do that.
+  begin
+    select jsonb_build_object('id', m.id, 'body', m.body, 'created_at', m.created_at)
+      into v_messages
+      from public.user_messages m
+     where m.user_name = v_name
+     order by m.id desc
+     limit 1;
+  exception when undefined_table then
+    v_messages := null;
+  end;
+
+  select to_jsonb(p) - 'pass_hash' - 'pass_salt' - 'password'
+    into v_profile
+    from public.progress p
+   where p.user_name = v_name;
+
+  return jsonb_build_object('status', 'ok', 'profile', v_profile, 'messages', v_messages);
+end;
+$$;
+
+-- `create or replace` preserves the existing ACL, but restating it costs nothing
+-- and removes the doubt. Mirrors supabase-auth-hardening.sql.
+revoke all on function public.login_check(text, text) from public;
+grant execute on function public.login_check(text, text) to anon, authenticated;
+
+
+-- ---------------------------------------------------------------------------
+-- 5b. admin_list_messages — the outstanding note for one learner, for the
+--     dashboard's user sheet. `message` is null when there is none, and `count`
+--     is how many rows exist (the sheet clears them all, the learner sees one).
+-- ---------------------------------------------------------------------------
+create or replace function public.admin_list_messages(p_token text, p_user text)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public, extensions, pg_temp
+as $$
+declare
+  v_admin text;
+  v_name  text;
+  v_msg   jsonb;
+  v_count integer;
+begin
+  v_admin := public._admin_verify_token(p_token);
+  if v_admin is null then return jsonb_build_object('status', 'unauthorized'); end if;
+
+  -- Resolve to the canonical spelling stored in progress, so the key used here
+  -- is exactly the one login_check will look up.
+  select p.user_name into v_name
+    from public.progress p
+   where lower(p.user_name) = lower(btrim(coalesce(p_user, '')))
+   limit 1;
+
+  if v_name is null then return jsonb_build_object('status', 'no_user'); end if;
+
+  select count(*) into v_count from public.user_messages where user_name = v_name;
+
+  select jsonb_build_object('id', m.id, 'body', m.body,
+                            'created_at', m.created_at, 'created_by', m.created_by)
+    into v_msg
+    from public.user_messages m
+   where m.user_name = v_name
+   order by m.id desc
+   limit 1;
+
+  return jsonb_build_object('status', 'ok', 'message', v_msg, 'count', v_count);
+end; $$;
+
+
+-- ---------------------------------------------------------------------------
+-- 5c. admin_send_message — writes the note. Appends rather than replaces, so
+--     "Clear" in the dashboard clears all of a learner's messages and each send
+--     is auditable on its own.
+-- ---------------------------------------------------------------------------
+create or replace function public.admin_send_message(p_token text, p_user text, p_text text)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public, extensions, pg_temp
+as $$
+declare
+  v_admin text;
+  v_name  text;
+  v_text  text;
+  v_id    bigint;
+begin
+  v_admin := public._admin_verify_token(p_token);
+  if v_admin is null then return jsonb_build_object('status', 'unauthorized'); end if;
+
+  select p.user_name into v_name
+    from public.progress p
+   where lower(p.user_name) = lower(btrim(coalesce(p_user, '')))
+   limit 1;
+
+  if v_name is null then return jsonb_build_object('status', 'no_user'); end if;
+
+  -- Same 500-character cap the announcement uses.
+  v_text := left(btrim(coalesce(p_text, '')), 500);
+  if v_text = '' then return jsonb_build_object('status', 'empty'); end if;
+
+  insert into public.user_messages (user_name, body, created_by)
+  values (v_name, v_text, v_admin)
+  returning id into v_id;
+
+  -- Length, not content: the message already lives in user_messages, and an
+  -- audit trail is about who did what, not a second copy of the text.
+  insert into public.admin_audit (admin_name, action, target, details)
+  values (v_admin, 'message_sent', v_name,
+          jsonb_build_object('message_id', v_id, 'length', length(v_text)));
+
+  return jsonb_build_object('status', 'ok', 'message_id', v_id);
+end; $$;
+
+
+-- ---------------------------------------------------------------------------
+-- 5d. admin_clear_message — removes every message for one learner.
+-- ---------------------------------------------------------------------------
+create or replace function public.admin_clear_message(p_token text, p_user text)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public, extensions, pg_temp
+as $$
+declare
+  v_admin text;
+  v_name  text;
+  v_n     integer;
+begin
+  v_admin := public._admin_verify_token(p_token);
+  if v_admin is null then return jsonb_build_object('status', 'unauthorized'); end if;
+
+  select p.user_name into v_name
+    from public.progress p
+   where lower(p.user_name) = lower(btrim(coalesce(p_user, '')))
+   limit 1;
+
+  if v_name is null then return jsonb_build_object('status', 'no_user'); end if;
+
+  delete from public.user_messages where user_name = v_name;
+  get diagnostics v_n = row_count;
+
+  insert into public.admin_audit (admin_name, action, target, details)
+  values (v_admin, 'message_cleared', v_name, jsonb_build_object('cleared', v_n));
+
+  return jsonb_build_object('status', 'ok', 'cleared', v_n);
+end; $$;
+
+
+-- ---------------------------------------------------------------------------
+-- 5e. Grants. Privileged RPCs stay reachable by anon — that is all the dashboard
+--     has — and prove identity themselves with the token. The token check is the
+--     boundary; the grant is not.
+-- ---------------------------------------------------------------------------
+revoke all on function public.admin_list_messages(text, text)        from public;
+revoke all on function public.admin_send_message(text, text, text)   from public;
+revoke all on function public.admin_clear_message(text, text)        from public;
+
+grant execute on function public.admin_list_messages(text, text)      to anon, authenticated;
+grant execute on function public.admin_send_message(text, text, text) to anon, authenticated;
+grant execute on function public.admin_clear_message(text, text)      to anon, authenticated;
+
+
+-- ---------------------------------------------------------------------------
+-- 5f. Verify. Run these after STAGE 5.
+-- ---------------------------------------------------------------------------
+-- The table is still readable by nobody through the API (expect 401, which is
+-- "exists and locked" — a 404 would mean it is not there at all):
+--   --   curl -s -o /dev/null -w '%{http_code}\n' \
+--   --     -H "apikey: <ANON_KEY>" "https://<project>.supabase.co/rest/v1/user_messages?select=id"
+--
+-- Logins still work. This is the one that matters most, because 5a re-declared
+-- the function every learner signs in through. Use a real learner and her real
+-- password, and expect status ok:
+--   select public.login_check('<a real learner>', '<her password>');   -- ok
+--   select public.login_check('<a real learner>', 'definitely-wrong'); -- bad_password
+--   select public.login_check('nobody at all', 'x');                    -- no_user
+--
+-- The three new RPCs exist and refuse a forged token:
+--   select public.admin_list_messages('forged', 'ds');       -- unauthorized
+--   select public.admin_send_message('forged', 'ds', 'hi');  -- unauthorized
+--   select public.admin_clear_message('forged', 'ds');       -- unauthorized
+--
+-- The privacy claim, end to end. Send a note to a throwaway learner, then read
+-- back with the WRONG password and with a DIFFERENT learner — both must come
+-- back with no message at all:
+--
+--   select public.admin_send_message('<a real admin token>', '__probe_msg__', 'hello');
+--   -- as the learner, with her password: messages is the note
+--   select public.login_check('__probe_msg__', 'her-password') -> 'messages';
+--   -- with a wrong password: bad_password, and no messages key at all
+--   select public.login_check('__probe_msg__', 'wrong');
+--   -- as a different learner: messages is null
+--   select public.login_check('<someone else>', '<her password>') -> 'messages';
+--
+-- Then clean up, so no probe rows are left behind:
+--   delete from public.user_messages where user_name = '__probe_msg__';
+--   delete from public.credentials   where user_name = '__probe_msg__';
+--   delete from public.progress      where user_name = '__probe_msg__';
+-- ============================================================================
