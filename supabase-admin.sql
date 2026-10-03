@@ -691,3 +691,295 @@ select admin_name, is_active, key_epoch, created_at from public.admin_secrets;
 --   5. create_account is anon-callable by design, so unlimited accounts can be
 --      created and progress inflated. Worth a cap later.
 -- ============================================================================
+
+
+-- ============================================================================
+-- STAGE 4 — close the create_account account-takeover.
+-- ============================================================================
+-- Additive and idempotent, like STAGE 1. Safe to run on the live database.
+--
+-- This is a SEPARATE stage from STAGE 1-3 on purpose: those are already run and
+-- verified, and this one touches nothing they touched except create_account.
+--
+-- THE BUG. create_account() guarded against duplicate names by reading
+-- public.progress — a table the anon key can both read AND write — while the
+-- insert it guards upserts public.credentials, which is locked. So:
+--
+--     DELETE /rest/v1/progress?user_name=eq.<nurse>      -- anon-writable
+--     POST   /rpc/create_account {"p_user":"<nurse>", "p_pass":"attacker-chosen"}
+--
+-- The guard found no progress row, the `on conflict ... do update` then rewrote
+-- the credential in the LOCKED table, and the attacker could log in as that
+-- nurse. Locking a table does not help when the *guard* is the weak link.
+--
+-- The fix has three parts, and the third is easy to miss:
+--   1. Guard on the locked table, matched case-insensitively (login resolves
+--      names that way), and never overwrite: `on conflict ... do nothing`.
+--   2. Move the delete behind a token-gated RPC, because the guard now consults
+--      credentials — so a deleted learner's credential row has to be dealt with,
+--      or the name could never be registered a second time.
+--   3. PARK that credential row rather than snapshotting it. Snapshots live in
+--      deleted_users, which is WORLD-READABLE — copying a hash there would
+--      re-open the readable-hash hole closed on 2026-09-28. Renaming it keeps
+--      the hash inside the locked table, frees the name, and lets Restore hand
+--      back an account that still works.
+-- ============================================================================
+
+
+-- ---------------------------------------------------------------------------
+-- 4a. A home for per-learner messages. Created here, ahead of the feature that
+--     fills it, so that admin_delete_user below is complete in one place —
+--     deleting a learner must take their messages with them.
+-- ---------------------------------------------------------------------------
+create table if not exists public.user_messages (
+  id         bigserial primary key,
+  user_name  text not null,
+  body       text not null,
+  created_by text not null,
+  created_at timestamptz not null default now()
+);
+alter table public.user_messages enable row level security;
+revoke all on public.user_messages from anon, authenticated;
+
+-- Deliberately NO foreign key to progress. A declared FK is what lets PostgREST
+-- embed one table inside another (`?select=*,user_messages(*)`); without it the
+-- table cannot be reached that way at all. The lookup in login_check does not
+-- need one. There is also only one canonical spelling per learner (see 5c).
+create index if not exists user_messages_user_idx on public.user_messages (user_name, id desc);
+
+
+-- ---------------------------------------------------------------------------
+-- 4b. create_account, with the guard moved to the locked table.
+--
+--     Signature unchanged, so index.html needs no modification. SECURITY
+--     DEFINER and search_path restated verbatim — `create or replace` swaps the
+--     whole definition, and dropping either would change how it runs.
+-- ---------------------------------------------------------------------------
+create or replace function public.create_account(p_user text, p_pass text)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public, extensions, pg_temp
+as $$
+declare
+  v_name     text := lower(btrim(coalesce(p_user, '')));
+  v_salt     text;
+  v_existing text;
+  v_rows     integer;
+begin
+  if v_name = '' or coalesce(p_pass, '') = '' then
+    return jsonb_build_object('status', 'invalid');
+  end if;
+
+  -- The authoritative check. Case-insensitive because login is: create_account
+  -- stores the lowercased name, while rows that predate it keep their original
+  -- spelling, and the roster has both.
+  select c.user_name into v_existing
+    from public.credentials c
+   where lower(c.user_name) = v_name
+   limit 1;
+
+  -- Also refuse a name that is visibly somebody in the roster but has no
+  -- credential row yet, so the roster cannot grow a second spelling of a name
+  -- that is already on it.
+  if v_existing is null then
+    select p.user_name into v_existing
+      from public.progress p
+     where lower(p.user_name) = v_name
+     limit 1;
+  end if;
+
+  if v_existing is not null then
+    return jsonb_build_object('status', 'exists');
+  end if;
+
+  v_salt := encode(gen_random_bytes(16), 'hex');
+
+  -- `do nothing`, not `do update`. Nothing above can legitimately reach an
+  -- existing row any more, so if this ever does conflict it is a race or an
+  -- attack — and silently taking the password over is the one thing that must
+  -- not happen here.
+  insert into public.credentials (user_name, pass_salt, pass_hash)
+  values (v_name, v_salt, encode(digest(v_salt || '::' || p_pass, 'sha256'), 'hex'))
+  on conflict (user_name) do nothing;
+
+  get diagnostics v_rows = row_count;
+  if v_rows = 0 then
+    return jsonb_build_object('status', 'exists');
+  end if;
+
+  return jsonb_build_object('status', 'ok', 'user_name', v_name);
+end;
+$$;
+
+
+-- ---------------------------------------------------------------------------
+-- 4c. Deleting a learner, server-side, so the credential row goes with them.
+--
+--     Snapshots the profile in the SAME shape the dashboard already writes
+--     (data = the progress row), so the Snapshots panel and every snapshot
+--     taken before today keep working untouched.
+-- ---------------------------------------------------------------------------
+create or replace function public.admin_delete_user(p_token text, p_user text)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public, extensions, pg_temp
+as $$
+declare
+  v_admin text;
+  v_name  text;
+  v_row   jsonb;
+  v_id    bigint;
+begin
+  v_admin := public._admin_verify_token(p_token);
+  if v_admin is null then return jsonb_build_object('status', 'unauthorized'); end if;
+
+  select p.user_name into v_name
+    from public.progress p
+   where lower(p.user_name) = lower(btrim(coalesce(p_user, '')))
+   limit 1;
+
+  if v_name is null then
+    return jsonb_build_object('status', 'no_user');
+  end if;
+
+  select to_jsonb(p) into v_row from public.progress p where p.user_name = v_name;
+
+  insert into public.deleted_users (user_name, data, reason)
+  values (v_name, v_row, 'delete')
+  returning id into v_id;
+
+  -- Park the credential row. See the stage header: this keeps the hash inside
+  -- the locked table, makes the name registerable again, and lets Restore
+  -- return an account whose password still works.
+  update public.credentials
+     set user_name = v_name || ' #deleted#' || v_id::text
+   where user_name = v_name;
+
+  delete from public.progress      where user_name = v_name;
+  delete from public.user_messages where user_name = v_name;
+
+  insert into public.admin_audit (admin_name, action, target, details)
+  values (v_admin, 'delete_user', v_name,
+          jsonb_build_object('snapshot_id', v_id,
+                             'study_seconds', coalesce((v_row->>'study_seconds')::numeric, 0)));
+
+  return jsonb_build_object('status', 'ok', 'snapshot_id', v_id);
+end;
+$$;
+
+
+-- ---------------------------------------------------------------------------
+-- 4d. Restoring a learner: un-park the credential row, then rebuild the profile
+--     from the snapshot.
+--
+--     jsonb_populate_record maps only keys that match real columns and ignores
+--     the rest, so this needs no knowledge of the progress schema — which is
+--     important, because progress has no DDL anywhere in this repo.
+-- ---------------------------------------------------------------------------
+create or replace function public.admin_restore_user(p_token text, p_snapshot_id bigint)
+returns jsonb
+language plpgsql
+security definer
+set search_path = public, extensions, pg_temp
+as $$
+declare
+  v_admin  text;
+  v_name   text;
+  v_data   jsonb;
+  v_snap   bigint;
+  v_parked text;
+begin
+  v_admin := public._admin_verify_token(p_token);
+  if v_admin is null then return jsonb_build_object('status', 'unauthorized'); end if;
+
+  select d.user_name, d.data, d.id into v_name, v_data, v_snap
+    from public.deleted_users d
+   where d.id = p_snapshot_id;
+
+  if v_snap is null then
+    return jsonb_build_object('status', 'no_snapshot');
+  end if;
+
+  -- A snapshot with no body would insert an all-null row and trip a constraint,
+  -- which would read as a database fault rather than a bad snapshot.
+  if v_data is null then
+    return jsonb_build_object('status', 'bad_snapshot');
+  end if;
+
+  v_parked := v_name || ' #deleted#' || v_snap::text;
+
+  -- Only un-park when there is a parked row AND nobody has taken the name
+  -- since. If they have, the profile still restores and the learner sets a new
+  -- password; clobbering the new holder's credential would be the same class of
+  -- bug this stage exists to fix.
+  if exists (select 1 from public.credentials c where c.user_name = v_parked)
+     and not exists (select 1 from public.credentials c2 where c2.user_name = v_name) then
+    update public.credentials set user_name = v_name where user_name = v_parked;
+  end if;
+
+  delete from public.progress where user_name = v_name;
+  insert into public.progress select * from jsonb_populate_record(null::public.progress, v_data);
+
+  delete from public.deleted_users where id = v_snap;
+
+  insert into public.admin_audit (admin_name, action, target, details)
+  values (v_admin, 'restore_user', v_name, jsonb_build_object('snapshot_id', v_snap));
+
+  return jsonb_build_object('status', 'ok', 'snapshot_id', v_snap);
+end;
+$$;
+
+
+-- ---------------------------------------------------------------------------
+-- 4e. Grants. Privileged RPCs stay reachable by anon — that is all the
+--     dashboard has — and prove identity with the token themselves.
+-- ---------------------------------------------------------------------------
+revoke all on function public.admin_delete_user(text, text)    from public;
+revoke all on function public.admin_restore_user(text, bigint) from public;
+
+grant execute on function public.admin_delete_user(text, text)    to anon, authenticated;
+grant execute on function public.admin_restore_user(text, bigint) to anon, authenticated;
+
+-- create_account keeps its existing grant; `create or replace` preserves the
+-- ACL, and this restates it so that is not a thing anyone has to know.
+revoke all on function public.create_account(text, text) from public;
+grant execute on function public.create_account(text, text) to anon, authenticated;
+
+
+-- ---------------------------------------------------------------------------
+-- 4f. Verify. Run these after STAGE 4. All four must hold.
+-- ---------------------------------------------------------------------------
+-- Every one of the 15 learners still has exactly one credential row:
+--   select count(*) from public.credentials where user_name not like '% #deleted#%';   -- expect 15
+--
+-- The takeover is closed. This is the decisive one, and it has to be run as a
+-- transaction that ROLLS BACK, because it deliberately creates a throwaway
+-- credential row to attack.
+--
+-- Why it works: create_account writes a credential row but NO progress row, so
+-- __probe_tmp__ has exactly the shape an attacker manufactures by deleting a
+-- victim's progress row — a credential row with nothing in progress to guard
+-- it. Before this stage the second call returned 'ok' and took the account
+-- over; now the guard reads the locked table and must refuse.
+--
+--   begin;
+--     select public.create_account('__probe_tmp__', 'probe-pass-1');  -- expect ok
+--     select public.create_account('__probe_tmp__', 'attacker-chosen'); -- expect exists
+--   rollback;   -- nothing is kept; confirm with the count below
+--
+-- Do NOT test this with an existing learner's name. That returns 'exists'
+-- whether or not the fix is in place — their progress row satisfies the old
+-- guard too, so it proves nothing.
+--
+-- Nothing is parked yet, so this is 0 until the first delete:
+--   select count(*) from public.credentials where user_name like '% #deleted#%';        -- expect 0
+--
+-- And after the rollback above, the throwaway is gone:
+--   select count(*) from public.credentials where user_name = '__probe_tmp__';          -- expect 0
+--
+-- Both new RPCs exist and refuse a forged token:
+--   select public.admin_delete_user('forged', 'ds');                                   -- unauthorized
+--   select public.admin_restore_user('forged', 1);                                     -- unauthorized
+-- ============================================================================

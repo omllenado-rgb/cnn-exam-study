@@ -142,6 +142,14 @@ $$;
 --    writes its own profile row, so this needs no knowledge of that schema.
 --    Idempotent: re-running before the profile row exists returns 'ok' again,
 --    so a failed profile insert can simply be retried.
+--
+--    !! SUPERSEDED 2026-10-02 — DO NOT COPY THIS VERSION FORWARD !!
+--    The existence guard below reads public.progress, which the anon key can
+--    both read and WRITE, while the insert it guards upserts the LOCKED
+--    public.credentials table. Deleting a learner's progress row therefore let
+--    anyone re-register their name and take the account over. The live
+--    definition now guards on credentials and is in supabase-admin.sql STAGE 4.
+--    This copy is kept only as a record of what was run in STAGE 1.
 create or replace function public.create_account(p_user text, p_pass text)
 returns jsonb
 language plpgsql

@@ -853,6 +853,30 @@ async function deleteUser(name){
   if(!confirm('Delete user "'+name+'" and ALL their progress?\n\nThis cannot be undone directly, but a '
              +'snapshot is saved and the user CAN be restored afterwards.')) return;
   try{
+    // Deleting has to be the server's job once STAGE 4 is in, because the
+    // credential row lives in a locked table this page cannot touch, and the
+    // new create_account refuses any name whose credential row is still there.
+    // A client-side delete would therefore leave the name permanently
+    // unregisterable — the learner could never sign up again.
+    if(!legacyMode){
+      let r, missing = false;
+      try{ r = await rpc('admin_delete_user', {p_user:name}); }
+      catch(e){ if(e && e.message === 'NOT_SET_UP') missing = true; else throw e; }
+
+      if(!missing){
+        if(r === null) return;                       // token refused; rpc() already re-authed
+        if(r && r.status === 'ok'){
+          alert('User "'+name+'" deleted. Restore it from the Snapshots panel if needed.');
+          await loadAdmin(); loadDeletedUsers();
+        }else if(r && r.status !== 'no_user'){        // no_user: already gone, not an error
+          alert('Delete was refused: '+((r&&r.status)||'unknown'));
+        }
+        return;
+      }
+      // missing: STAGE 4 has not been run yet, so fall through to the direct
+      // write below — which matches the OLD create_account guard. Same
+      // self-removing fallback shape as the login gate.
+    }
     const {data:row, error:rErr} = await sbClient.from('progress').select('*').eq('user_name',name).single();
     if(rErr || !row){ alert('Could not read the user first, so nothing was deleted.\n\n'+(rErr?rErr.message:'')); return; }
 
@@ -875,6 +899,27 @@ async function restoreUser(id, name){
   if(!adminToken && !legacyMode) return;
   if(!confirm('Restore "'+name+'" from this snapshot?\n\nThis overwrites their current progress row with the snapshot.')) return;
   try{
+    // Server-side restore once STAGE 4 is in: it also un-parks the credential
+    // row, which is what lets a restored learner keep the password they had.
+    // The client cannot do that — the row is in a locked table.
+    if(!legacyMode){
+      let r, missing = false;
+      try{ r = await rpc('admin_restore_user', {p_snapshot_id:id}); }
+      catch(e){ if(e && e.message === 'NOT_SET_UP') missing = true; else throw e; }
+
+      if(!missing){
+        if(r === null) return;                       // token refused; rpc() already re-authed
+        if(r && r.status === 'ok'){
+          alert('User "'+name+'" restored.');
+          await loadAdmin(); loadDeletedUsers();
+        }else{
+          alert('Restore failed: '+((r&&r.status)||'unknown')+'\n\nThe snapshot has been kept.');
+        }
+        return;
+      }
+      // missing: STAGE 4 not run yet — fall through to the direct write below,
+      // which is correct against the old guard.
+    }
     const {data,error} = await sbClient.from('deleted_users').select('*').eq('id',id).single();
     if(error || !data){ alert('Could not find that snapshot.'); return; }
 
