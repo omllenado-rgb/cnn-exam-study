@@ -41,11 +41,19 @@
     /* --link was referenced five times but never defined, so those links
        silently inherited their parent's colour instead. */
     --link:var(--aggie-blue);
-    /* Legacy aliases — kept so nothing breaks; values are historical */
+    /* Legacy aliases — kept so nothing breaks; values are historical, with one
+       deliberate exception. The accent (--gold/--aggie-gold) was #ff5e3a, which
+       is only 2.50:1 on the --border progress-bar track and 3.04:1 on a white
+       card, so the active-tab underline and the card rules barely cleared the
+       3:1 non-text minimum and failed it on the track. #cc4b2e is the same coral
+       hue at 3.75:1 on the track and 4.55:1 on white. It is never used as text
+       on a light surface, so 3:1 is the bar it has to clear; it now clears the
+       4.5:1 text bar too. --brand-3 stays #ff5e3a: that is the gradient's third
+       stop, and the topbar must not move. */
     --violet:#7c3aed;--fuchsia:#c026d3;--coral:#ff5e3a;
-    --navy:#7c3aed;--gold:#ff5e3a;--cyan:#c026d3;--blue:#7c3aed;
+    --navy:#7c3aed;--gold:#cc4b2e;--cyan:#c026d3;--blue:#7c3aed;
     --gray:#5b6472;--green:#2e7d32;--red:#c62828;
-    --aggie-blue:#7c3aed;--aggie-gold:#ff5e3a;--aggie-light:#c026d3;
+    --aggie-blue:#7c3aed;--aggie-gold:#cc4b2e;--aggie-light:#c026d3;
     --aggie-green:#00573f;--aggie-red:#c10230;}
   body.dark{
     --bg:#13111d;--card:#1f1b2e;--stat:#1f1b2e;--light:#2a2340;
@@ -53,6 +61,10 @@
     --ink:#ece7f5;--muted:#9a93ad;
     --blue:#c026d3;--gray:#9a93ad;--navy:#7c3aed;
     --aggie-blue:#7c3aed;--aggie-gold:#ff5e3a;--aggie-light:#c026d3;
+    /* --gold is re-stated here on purpose: the accent is darkened for light
+       surfaces only, and without this the dark bar fills would darken with it
+       against a dark track. This keeps dark byte-identical to before. */
+    --gold:#ff5e3a;
     --ok-bg:#1e3a2a;--ok-ink:#b9e4c6;
     --err-bg:#3d2020;--err-ink:#f2c2c2;
     --focus-row-bg:#22303f;--focus-row-ink:#e6edf5;
