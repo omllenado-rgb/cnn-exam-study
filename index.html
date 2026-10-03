@@ -35,6 +35,7 @@
     --weak-bg:#fff3f3;--weak-ink:#13111d;
     /* Chrome */
     --scrim:rgba(10,8,18,.55);
+    --focus-ring:#7c3aed;   /* keyboard focus ring (the topbar overrides it) */
     --shadow-card:0 1px 4px rgba(0,0,0,.08);--shadow-card-2:0 2px 8px rgba(0,0,0,.1);
     --shadow-modal:0 10px 40px rgba(0,0,0,.35);
     /* --link was referenced five times but never defined, so those links
@@ -56,7 +57,8 @@
     --err-bg:#3d2020;--err-ink:#f2c2c2;
     --focus-row-bg:#22303f;--focus-row-ink:#e6edf5;
     --weak-bg:#3d2020;--weak-ink:#f2c2c2;
-    --link:var(--aggie-gold);}
+    --link:var(--aggie-gold);
+    --focus-ring:#ff5e3a;}
   *{box-sizing:border-box;margin:0;padding:0;}
   body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--ink);transition:background .2s,color .2s;}
   .topbar,nav,main{position:relative;z-index:1;}
@@ -177,6 +179,28 @@
     .flip-btn button{padding:10px 12px;font-size:13px;}
     .login-box{margin:20px auto;}
     input,select,textarea{padding:14px;font-size:16px;}
+  }
+
+  /* ============ ACCESSIBILITY ============
+     Additive only: nothing above changes. Three gaps, all measured.
+
+     1. No focus indicator existed anywhere, so a keyboard user could not see
+        where they were. :focus-visible rather than :focus, so a mouse click
+        doesn't leave a ring behind on a touchscreen.
+     2. Correct/incorrect answers were signalled by colour alone (green fill vs
+        red fill), which WCAG 1.4.1 disallows. In a test-prep app that is not a
+        technicality: a colourblind learner -- roughly 1 in 12 men -- could not
+        see whether she got the question right. The glyph carries the same
+        information in a second channel. It takes its colour from the option
+        itself, so it is legible in both themes without a new token.
+     3. Two transitions ran regardless of the OS motion setting. */
+  :focus-visible{outline:3px solid var(--focus-ring);outline-offset:2px;}
+  /* Violet-on-violet would be invisible in the topbar, which is the gradient. */
+  .topbar :focus-visible{outline-color:var(--on-brand);}
+  .option.correct::after{content:"\00a0\2713";font-weight:700;}
+  .option.wrong::after{content:"\00a0\2717";font-weight:700;}
+  @media (prefers-reduced-motion: reduce){
+    body,.option{transition:none;}
   }
 </style>
 </head>
