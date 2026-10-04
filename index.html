@@ -214,6 +214,31 @@
   @media (prefers-reduced-motion: reduce){
     body,.option{transition:none;}
   }
+  /* ============ KEYBOARD PATHS ============
+     A card whose whole surface opens something cannot be a <div onclick>: it is
+     announced as nothing, never receives focus, and a keyboard user simply cannot
+     get there. The fix is a real <button> carrying the action, with a ::after
+     stretched over the card by the same trick as .option's glyph. The button stays
+     the accessible target and the card is still tappable anywhere -- which is how
+     nurses actually use it on a phone. `position:absolute` appears nowhere else in
+     this file, so `.card{position:relative}` cannot shift an existing layer. */
+  .card{position:relative;}
+  .card-open{display:block;width:100%;background:none;border:0;padding:0;margin:0;
+    font:inherit;color:inherit;text-align:left;cursor:pointer;}
+  .card-open::after{content:"";position:absolute;inset:0;}
+  /* Same problem on the flashcard: a clickable <div>, announced as nothing and
+     unreachable by Tab. renderCard() builds its content from block-level markup,
+     which a <button> may not contain, so those become <span>s with display:block
+     -- identical box, valid content model.
+     width:100% is not redundant: a <button> sizes to its content even at
+     display:flex, so without it the card shrinks to the width of the question. */
+  .fcard{width:100%;padding:0;font:inherit;color:inherit;}
+  .fcard .front,.fcard .back,.fcard .hint{display:block;}
+  /* 2px of padding is not a tap target; WCAG 2.5.8 asks for 24x24. The target is
+     grown with a centred ::after rather than with padding, because padding would
+     make the banner 5px taller and shift the whole app down with it. */
+  .announce .x{position:relative;}
+  .announce .x::after{content:"";position:absolute;left:50%;top:50%;width:26px;height:26px;transform:translate(-50%,-50%);}
 </style>
 </head>
 <body>
@@ -236,8 +261,8 @@
     <h2>Welcome</h2>
     <p class="muted">Enter your name and password to sign in. New users set a password on first login.</p>
     <p class="muted" style="margin:8px 0"><a href="javascript:void(0)" onclick="openHowTo()" style="color:var(--link);font-weight:600">📘 How to Use This App</a></p>
-    <input id="loginName" placeholder="Your name" autocomplete="off">
-    <input type="password" id="loginPass" placeholder="Password" autocomplete="off">
+    <input id="loginName" aria-label="Your name" placeholder="Your name" autocomplete="off">
+    <input type="password" id="loginPass" aria-label="Password" placeholder="Password" autocomplete="off">
     <button class="btn" style="width:100%" onclick="login()">Sign In</button>
     <p class="muted" style="margin-top:10px"><a href="javascript:void(0)" onclick="showForgot()" style="color:var(--link);font-weight:600">Forgot password?</a></p>
     <p class="muted" id="loginMsg" style="margin-top:8px"></p>
@@ -246,9 +271,9 @@
 </div>
 
 <!-- HOW TO USE OVERLAY -->
-<div id="howToOverlay">
+<div id="howToOverlay" role="dialog" aria-modal="true" aria-labelledby="howToTitle">
   <div class="howto-box">
-    <h2>📘 How to Use the CNN Study App <button class="howto-close" onclick="closeHowTo()">Close</button></h2>
+    <h2 id="howToTitle">📘 How to Use the CNN Study App <button class="howto-close" onclick="closeHowTo()">Close</button></h2>
     <h3>1. Getting started</h3>
     <p>Open the app on your phone or computer, sign in with your name and a password, and your progress saves automatically so you can pick up on any device.</p>
     <h3>2. Quiz</h3>
@@ -268,9 +293,9 @@
 </div>
 
 <!-- PROFILE / AFFILIATION MODAL -->
-<div id="profileOverlay">
+<div id="profileOverlay" role="dialog" aria-modal="true" aria-labelledby="profileTitle">
   <div class="howto-box">
-    <h2>👋 Welcome aboard</h2>
+    <h2 id="profileTitle">👋 Welcome aboard</h2>
     <p>Help us tailor the study group to your setting. Where do you work or study?</p>
     <label class="field-label" for="profileStatus">Employment status</label>
     <select id="profileStatus">
@@ -292,9 +317,9 @@
 </div>
 
 <!-- FORGOT PASSWORD MODAL -->
-<div id="forgotOverlay">
+<div id="forgotOverlay" role="dialog" aria-modal="true" aria-labelledby="forgotTitle">
   <div class="howto-box">
-    <h2>🔑 Reset your password</h2>
+    <h2 id="forgotTitle">🔑 Reset your password</h2>
     <p>Enter your name, the reset code your admin gave you, and a new password.</p>
     <label class="field-label" for="forgotName">Your name</label>
     <input id="forgotName" placeholder="Your name" autocomplete="off">
@@ -443,7 +468,7 @@
           <div class="tag" id="lessonTopic"></div>
           <h2 id="lessonTitle" style="font-size:20px;line-height:1.3;margin:4px 0 12px"></h2>
           <div id="lessonImage" style="text-align:center;margin-bottom:14px;display:none">
-            <img id="lessonImg" alt="" style="max-width:100%;max-height:260px;border-radius:10px;border:1px solid #e3e8ee">
+            <img id="lessonImg" alt="" style="max-width:100%;max-height:260px;border-radius:10px;border:1px solid var(--border)">
           </div>
           <div id="lessonBody" style="font-size:16px;line-height:1.7;color:var(--ink)"></div>
           <div class="audio-bar" id="lessonAudio" style="display:none;margin-top:14px;padding:12px;background:var(--light);border-radius:8px">
@@ -498,7 +523,7 @@
     <div id="screen-cards" class="screen">
       <div class="filter" id="cardFilter"></div>
       <div class="count" id="cardCount"></div>
-      <div class="fcard" onclick="flipCard()"><div class="inner" id="cardText"></div></div>
+      <button class="fcard" type="button" onclick="flipCard()"><span class="inner" id="cardText"></span></button>
       <div class="flip-btn">
         <button class="primary" onclick="cardAction('prev')">&#9664; Prev</button>
         <button onclick="flipCard()">Flip</button>
@@ -552,8 +577,8 @@
         <h2>Log Study Hours</h2>
         <p class="muted" style="margin-bottom:8px">Add study time you did outside the app (self-study, renal core, review course, etc.). <a href="javascript:void(0)" onclick="openHowTo()" style="color:var(--link);font-weight:600">How to log hours</a></p>
         <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-          <input type="number" id="logHours" min="0" step="0.5" placeholder="Hours" style="width:90px;flex:0 0 auto">
-          <select id="logType" style="flex:1;min-width:150px">
+          <input type="number" id="logHours" aria-label="Hours studied" min="0" step="0.5" placeholder="Hours" style="width:90px;flex:0 0 auto">
+          <select id="logType" aria-label="Type of study" style="flex:1;min-width:150px">
             <option value="Self-study">Self-study</option>
             <option value="Renal core">Renal core</option>
             <option value="Review course">Review course</option>
@@ -760,30 +785,54 @@ function initTheme(){
 // again so a previously-toggled dark state can't stick across navigation.
 window.addEventListener('pageshow', function(){ try{ initTheme(); }catch(e){} });
 
-/* ============ HOW TO USE OVERLAY ============ */
-function openHowTo(){
-  const el = document.getElementById('howToOverlay');
+/* ============ MODAL PLUMBING ============
+   Shared by the three overlays. They are <div>s that appear over the page, so
+   without help a screen reader reads straight through them into the content
+   behind, focus stays on the page underneath the dialog, and Escape only ever
+   closed How-to. These four helpers fix all three, once. */
+let modalOpener = null;
+function firstFocusable(el){
+  return el.querySelector('button,[href],input,select,textarea,[tabindex]:not([tabindex="-1"])');
+}
+function modalOpen(id){
+  modalOpener = document.activeElement;   // so focus can go back where it came from
+  const el = document.getElementById(id);
+  if(!el) return;
   el.classList.add('show');
   document.body.style.overflow = 'hidden';   // stop background scroll while open
+  const t = firstFocusable(el);
+  if(t && t.focus) t.focus();
 }
-function closeHowTo(){
-  const el = document.getElementById('howToOverlay');
+function modalClose(id){
+  const el = document.getElementById(id);
+  // Closing a dialog that is not open must not unlock the page: with one overlay
+  // stacked over another, an unconditional reset lets the background scroll
+  // behind the one still showing.
+  if(!el || !el.classList.contains('show')) return;
   el.classList.remove('show');
   document.body.style.overflow = '';
+  if(modalOpener && modalOpener.focus){ try{ modalOpener.focus(); }catch(e){} }
+  modalOpener = null;
 }
-document.addEventListener('keydown', function(e){ if(e && e.key === 'Escape') closeHowTo(); });
+function anyModalOpen(){
+  return ['howToOverlay','profileOverlay','forgotOverlay'].some(function(id){
+    const el = document.getElementById(id);
+    return el && el.classList.contains('show');
+  });
+}
+
+/* ============ HOW TO USE OVERLAY ============ */
+function openHowTo(){ modalOpen('howToOverlay'); }
+function closeHowTo(){ modalClose('howToOverlay'); }
+document.addEventListener('keydown', function(e){
+  if(e && e.key === 'Escape' && anyModalOpen()){
+    ['howToOverlay','profileOverlay','forgotOverlay'].forEach(modalClose);
+  }
+});
 
 /* ============ PROFILE / AFFILIATION MODAL ============ */
-function openProfile(){
-  const el = document.getElementById('profileOverlay');
-  el.classList.add('show');
-  document.body.style.overflow = 'hidden';
-}
-function closeProfile(){
-  const el = document.getElementById('profileOverlay');
-  el.classList.remove('show');
-  document.body.style.overflow = '';
-}
+function openProfile(){ modalOpen('profileOverlay'); }
+function closeProfile(){ modalClose('profileOverlay'); }
 function saveProfile(){
   const status = document.getElementById('profileStatus').value;
   const inst = document.getElementById('profileInstitution').value.trim();
@@ -809,13 +858,9 @@ function showForgot(){
   document.getElementById('forgotName').value = '';
   document.getElementById('forgotCode').value = '';
   document.getElementById('forgotPass').value = '';
-  document.getElementById('forgotOverlay').classList.add('show');
-  document.body.style.overflow = 'hidden';
+  modalOpen('forgotOverlay');
 }
-function closeForgot(){
-  document.getElementById('forgotOverlay').classList.remove('show');
-  document.body.style.overflow = '';
-}
+function closeForgot(){ modalClose('forgotOverlay'); }
 async function submitForgot(){
   const name = document.getElementById('forgotName').value.trim();
   const code = document.getElementById('forgotCode').value.trim();
@@ -1657,8 +1702,8 @@ function renderCard(){
   const c=cardState.list[cardState.idx];
   document.getElementById('cardCount').textContent=`Card ${cardState.idx+1} of ${cardState.list.length}`;
   document.getElementById('cardText').innerHTML = cardState.flipped
-    ? `<div class="back">${c.back}</div><div class="hint">tap to flip</div>`
-    : `<div class="front">${c.front}</div><div class="hint">tap to flip</div>`;
+    ? `<span class="back">${c.back}</span><span class="hint">tap to flip</span>`
+    : `<span class="front">${c.front}</span><span class="hint">tap to flip</span>`;
 }
 function flipCard(){ cardState.flipped=!cardState.flipped; renderCard(); }
 /* ============ READ-ALOUD (Web Speech API) ============ */
@@ -2137,9 +2182,9 @@ function renderLessons(){
   let html='';
   list.forEach((l,i)=>{
     const preview = (l.body||'').replace(/\n/g,' ').slice(0,90) + '...';
-    html+=`<div class="card" style="cursor:pointer;border-left:4px solid var(--gold)" onclick="openLesson(${i})">
+    html+=`<div class="card" style="border-left:4px solid var(--gold)">
       <div class="tag">${l.topic}</div>
-      <h2 style="font-size:16px;margin:0 0 4px">${l.title}</h2>
+      <h2 style="font-size:16px;margin:0 0 4px"><button class="card-open" onclick="openLesson(${i})">${l.title}</button></h2>
       <p class="muted" style="margin:0 0 6px">${preview}</p>
       <span style="color:var(--link);font-weight:600;font-size:13px">Read lesson &#9654;</span>
     </div>`;
@@ -2162,8 +2207,13 @@ function openLesson(i){
   const imgWrap = document.getElementById('lessonImage');
   if(img){
     document.getElementById('lessonImg').src = img;
+    // These are not decorations: each is a labelled teaching diagram whose own
+    // header is the lesson title. An empty alt told a screen-reader user nothing
+    // was there at all.
+    document.getElementById('lessonImg').alt = 'Diagram: ' + l.title;
     imgWrap.style.display = 'block';
   } else {
+    document.getElementById('lessonImg').alt = '';
     imgWrap.style.display = 'none';
   }
   // Render body as readable paragraphs, highlighting key terms
@@ -2253,9 +2303,9 @@ function renderStrategies(){
   let html='';
   list.forEach((s,i)=>{
     const preview = (s.body||'').replace(/\n/g,' ').slice(0,90) + '...';
-    html+=`<div class="card" style="cursor:pointer;border-left:4px solid var(--cyan)" onclick="openStrategy(${i})">
+    html+=`<div class="card" style="border-left:4px solid var(--cyan)">
       <div class="tag">${s.category}</div>
-      <h2 style="font-size:16px;margin:0 0 4px">${s.title}</h2>
+      <h2 style="font-size:16px;margin:0 0 4px"><button class="card-open" onclick="openStrategy(${i})">${s.title}</button></h2>
       <p class="muted" style="margin:0 0 6px">${preview}</p>
       <span style="color:var(--link);font-weight:600;font-size:13px">Read strategy &#9654;</span>
     </div>`;

@@ -71,6 +71,11 @@
   th{background:var(--navy);color:#fff;padding:10px 11px;text-align:left;font-weight:600;
     white-space:nowrap;position:sticky;top:0;}
   th.sortable{cursor:pointer;user-select:none;}
+  /* The sort control is a real <button> now, so a header is sortable from the
+     keyboard and announced as a button. The <th> keeps the cursor and the arrow
+     position; the button is stripped back to look like the plain label it was. */
+  th .th-sort{background:none;border:0;padding:0;margin:0;font:inherit;color:inherit;
+    text-align:left;width:100%;cursor:pointer;}
   th.sortable:hover{background:var(--navy-2);}
   th .arrow{opacity:.45;font-size:11px;}
   th.sorted .arrow{opacity:1;}
@@ -82,7 +87,9 @@
   .btn-sm:hover{border-color:var(--navy);color:var(--navy);}
   .btn-danger{color:var(--red);border-color:#f2d5d5;}
   .btn-danger:hover{background:#fdf0f0;border-color:var(--red);color:var(--red);}
-  .namelink{color:var(--navy);font-weight:600;cursor:pointer;text-decoration:underline;
+  /* font:inherit comes before font-weight so the weight below still wins */
+  .namelink{background:none;border:0;padding:0;margin:0;font:inherit;text-align:left;
+    color:var(--navy);font-weight:600;cursor:pointer;text-decoration:underline;
     text-decoration-style:dotted;text-underline-offset:3px;}
   .namelink:hover{color:var(--navy-2);}
 
@@ -775,8 +782,10 @@ function renderTable(){
   let html = '<tr>';
   COLS.forEach(c=>{
     const sorted = c.key === sortKey;
-    html += '<th class="sortable'+(sorted?' sorted':'')+'" onclick="setSort('+jsStr(c.key)+')">'+
-            esc(c.label)+' <span class="arrow">'+(sorted ? (sortDir>0?'▲':'▼') : '⇅')+'</span></th>';
+    html += '<th class="sortable'+(sorted?' sorted':'')+'" aria-sort="'+
+            (sorted ? (sortDir>0?'ascending':'descending') : 'none')+'">'+
+            '<button class="th-sort" type="button" onclick="setSort('+jsStr(c.key)+')">'+
+            esc(c.label)+' <span class="arrow">'+(sorted ? (sortDir>0?'▲':'▼') : '⇅')+'</span></button></th>';
   });
   html += '<th>Actions</th></tr>';
 
@@ -785,7 +794,7 @@ function renderTable(){
     COLS.forEach(c=>{
       const val = c.render ? c.render(m) : c.get(m);
       if(c.key === 'name'){
-        html += '<td><span class="namelink" onclick="openUser('+jsStr(m.name)+')">'+esc(val)+'</span></td>';
+        html += '<td><button class="namelink" type="button" onclick="openUser('+jsStr(m.name)+')">'+esc(val)+'</button></td>';
       } else if(c.key === 'emp' || c.key === 'inst' || c.key === 'weakest'){
         html += '<td>'+esc(val)+'</td>';
       } else if(c.key === 'lastActiveRaw'){
@@ -1352,7 +1361,7 @@ async function loadReadiness(){
     }
     return {name:n, latest:l, p:p, n:list.length, trend:trend};
   }).sort((a,b)=>a.p - b.p).forEach(r=>{
-    h += '<tr><td><span class="namelink" onclick="openUser('+jsStr(r.name)+')">'+esc(r.name)+'</span></td>'+
+    h += '<tr><td><button class="namelink" type="button" onclick="openUser('+jsStr(r.name)+')">'+esc(r.name)+'</button></td>'+
          '<td>'+esc(fmtDate(r.latest.created_at))+'</td><td>'+accPill(r.p)+'</td>'+
          '<td>'+r.n+'</td><td>'+r.trend+'</td></tr>';
   });
