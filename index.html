@@ -72,7 +72,17 @@
     --link:var(--aggie-gold);
     --focus-ring:#ff5e3a;}
   *{box-sizing:border-box;margin:0;padding:0;}
-  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--ink);transition:background .2s,color .2s;}
+  /* NOTE: no `transition` on the theme-driven background/color here. A transition
+     on `background`/`color` while --bg/--ink swap underneath it leaves the body's
+     computed colours stuck at the previous theme (observed: light background with
+     dark ink, on dark cards) for an unpredictable interval. Custom properties
+     change instantly, so transitioning the properties derived from them is both
+     pointless and racy. Theme changes are now instant and always correct. */
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;background:var(--bg);color:var(--ink);}
+  /* Declare which scheme the UA should use for form controls, scrollbars and
+     default canvas, so an OS in dark mode can't repaint our surfaces. */
+  :root{color-scheme:light;}
+  body.dark{color-scheme:dark;}
   .topbar,nav,main{position:relative;z-index:1;}
   .topbar{background:var(--grad);color:var(--on-brand);padding:18px 20px;border-bottom:4px solid var(--on-brand-rule);display:flex;justify-content:space-between;align-items:center;gap:10px;}
   .topbar .tb-text{min-width:0;}
@@ -148,7 +158,12 @@
   .flip-btn{display:flex;gap:10px;justify-content:center;margin:10px 0;flex-wrap:wrap;}
   .flip-btn button{background:var(--card);border:1.5px solid var(--aggie-blue);color:var(--aggie-blue);border-radius:8px;padding:8px 14px;font-size:13px;font-weight:600;cursor:pointer;}
   body.dark .flip-btn button{color:var(--aggie-gold);border-color:var(--aggie-gold);}
+  /* The dark-mode rule above is `body.dark .flip-btn button`, which out-specifies
+     a bare `.flip-btn button.primary`, so it was repainting the FILLED primary
+     button's text coral on its violet fill (1.88:1 -- effectively unreadable).
+     Re-assert the on-brand text for the filled variant at matching specificity. */
   .flip-btn button.primary{background:var(--aggie-blue);color:var(--on-brand);}
+  body.dark .flip-btn button.primary{background:var(--aggie-blue);color:var(--on-brand);border-color:var(--aggie-blue);}
   .count{text-align:center;color:var(--gray);font-size:13px;margin:8px 0;}
 .score-live{color:var(--ink);margin-top:-2px;}
   .score-live strong{font-weight:700;color:var(--aggie-blue);}
