@@ -43,6 +43,10 @@
   .topbar button:hover{border-color:var(--navy);color:var(--navy);}
   .topbar button.export-btn{background:var(--navy);border-color:var(--navy);color:#fff;}
   .topbar button.export-btn:hover{background:var(--navy-2);border-color:var(--navy-2);color:#fff;}
+  /* Progress Report stands out from the other export buttons — it is the one
+     action here a non-technical user takes to get something they can send on. */
+  .topbar button.report-btn{background:linear-gradient(135deg,#7c3aed,#db2777);border-color:transparent;color:#fff;}
+  .topbar button.report-btn:hover{filter:brightness(1.08);border-color:transparent;color:#fff;}
 
   /* ---------- nav ---------- */
   .nav{display:flex;gap:6px;flex-wrap:wrap;border-bottom:2px solid var(--border);margin-bottom:22px;}
@@ -180,6 +184,7 @@
       <button onclick="refreshAll()">⟳ Refresh</button>
       <button class="export-btn" onclick="exportCSV()">⬇ CSV</button>
       <button class="export-btn" onclick="exportXLSX()">📊 Excel</button>
+      <button class="export-btn report-btn" onclick="generateProgressReport()" title="Build the full study-group progress report in a new tab, with a Print / Save as PDF button">📄 Progress Report</button>
       <button onclick="openPasswordModal()">🔑 Change Password</button>
       <button onclick="logout()">Log Out</button>
     </div>
@@ -1705,6 +1710,221 @@ function exportXLSX(){
   a.download = 'cnn_study_progress.xls';
   a.click();
   logAction('export_xlsx', null, {rows: rows.length});
+}
+
+/* ============================================= study-group progress report
+
+   Builds the same report the daily email sends, but on demand from the dashboard:
+   group growth over time, every learner with join date and progress, day-by-day
+   totals and who has not started. Opens in a new tab with a Print / Save as PDF
+   button.
+
+   HISTORY: the app only stores cumulative totals, so a past day cannot be
+   reconstructed from the database. Past dates therefore come from the recorded
+   history series, and today comes from the live rows. When no history file is
+   reachable the report still renders, simply without the day-by-day section —
+   it is never left blank and it never invents numbers.
+*/
+async function loadHistorySeries(){
+  for(const url of ['cnn_history.json','https://omllenado-rgb.github.io/cnn-exam-study/cnn_history.json']){
+    try{
+      const r = await fetch(url + '?t=' + Date.now());
+      if(!r.ok) continue;
+      const j = await r.json();
+      const arr = Array.isArray(j) ? j : (j.days || null);
+      if(arr && arr.length) return arr;
+    }catch(e){ /* try the next source */ }
+  }
+  return [];
+}
+
+function generateProgressReport(){
+  if(!adminToken && !legacyMode) return;
+  if(!mapped.length){ alert('No learner data loaded yet. Press Refresh, then try again.'); return; }
+  const W = window.open('', '_blank');
+  if(!W){ alert('Your browser blocked the new tab. Allow pop-ups for this page and try again.'); return; }
+  W.document.write('<p style="font:15px system-ui;padding:30px">Building the progress report…</p>');
+  logAction('progress_report', null, {users: mapped.length});
+
+  loadHistorySeries().then(history => {
+    W.document.open();
+    W.document.write(progressReportHTML(history));
+    W.document.close();
+  }).catch(()=>{
+    W.document.open();
+    W.document.write(progressReportHTML([]));
+    W.document.close();
+  });
+}
+
+function progressReportHTML(history){
+  const days  = Array.isArray(history) ? history : [];
+  const today = new Date().toISOString().slice(0,10);
+  const rows  = mapped.slice().sort((a,b)=>(b.answered||0)-(a.answered||0));
+  const live  = rows.filter(m=>m.answered>0);
+  const zero  = rows.filter(m=>!m.answered);
+  const dorm  = rows.filter(m=>!m.answered || (m.lastActiveRaw && (Date.now()-m.lastActiveRaw) > 21*86400000));
+
+  const totalAns = rows.reduce((s,m)=>s+(m.answered||0),0);
+  const totalCor = rows.reduce((s,m)=>s+(m.correct||0),0);
+  const totalMin = rows.reduce((s,m)=>s+m.totalMin,0);
+  const acc      = totalAns ? Math.round(totalCor/totalAns*100) : 0;
+
+  // Earliest join on record = when the app opened, as far as the data shows.
+  const joins = rows.map(m=>m.raw.first_started).filter(Boolean).sort();
+  const appStart = joins.length ? joins[0].slice(0,10) : '—';
+  const spanDays = joins.length
+    ? Math.round((Date.now() - new Date(joins[0]).getTime())/86400000) : 0;
+
+  const firstRec = days.length ? days[0] : null;
+  const firstByKey = {};
+  if(firstRec && firstRec.users){
+    Object.keys(firstRec.users).forEach(k=>{ firstByKey[k] = firstRec.users[k]; });
+  }
+
+  const td  = 'padding:7px 10px;border-bottom:1px solid #e6e2f0;';
+  const tdr = td + 'text-align:right;font-variant-numeric:tabular-nums;';
+  const th  = 'padding:7px 10px;background:#022851;color:#fff;font-size:11.5px;text-transform:uppercase;letter-spacing:.04em;text-align:left;';
+  const thr = th + 'text-align:right;';
+  const accColor = p => p>=75 ? '#0f7a4f' : (p>=60 ? '#9a6a00' : '#b4232a');
+
+  // ---- growth milestones: weekly points from history, plus today from live rows
+  let growth = '';
+  days.forEach((d,i)=>{
+    if(i>0 && i < days.length-1 && i % 7 !== 0) return;
+    const uCount = d.users ? Object.keys(d.users).length : '—';
+    const cor = d.total_correct, ans = d.total_answered;
+    const p = ans ? Math.round(cor/ans*100) : null;
+    const active = d.users ? Object.keys(d.users).filter(k=>(d.users[k].last_study||'')===d.as_of).length : null;
+    growth += '<tr><td style="'+td+'">'+esc(d.as_of)+'</td><td style="'+tdr+'">'+uCount+'</td>'
+           +  '<td style="'+tdr+'">'+(ans==null?'—':ans.toLocaleString())+'</td>'
+           +  '<td style="'+tdr+'">'+(p==null?'—':p+'%')+'</td>'
+           +  '<td style="'+tdr+'">'+(active==null?'—':active)+'</td></tr>';
+  });
+  growth += '<tr style="background:#f4fbf7"><td style="'+td+'"><b>Today ('+esc(today)+')</b></td>'
+         +  '<td style="'+tdr+'"><b>'+rows.length+'</b></td>'
+         +  '<td style="'+tdr+'"><b>'+totalAns.toLocaleString()+'</b></td>'
+         +  '<td style="'+tdr+'"><b>'+acc+'%</b></td>'
+         +  '<td style="'+tdr+'"><b>'+live.length+'</b></td></tr>';
+
+  // ---- per-learner rows
+  let memberRows = '';
+  rows.slice().sort((a,b)=>{
+    const A=a.raw.first_started||'9999', B=b.raw.first_started||'9999';
+    return A<B ? -1 : (A>B ? 1 : 0);
+  }).forEach(m=>{
+    const early = firstByKey[String(m.name||'').trim().toLowerCase()];
+    const earlyAns = early ? (early.answered||0) : 0;
+    const gained = m.answered - earlyAns;
+    const joined = m.raw.first_started ? m.raw.first_started.slice(0,10) : '—';
+    const accCell = m.answered
+      ? '<span style="color:'+accColor(m.accNum)+';font-weight:600">'+m.accNum+'%</span>'
+      : '<span style="color:#8a879c">not started</span>';
+    const last = m.raw.last_study ? String(m.raw.last_study).slice(0,10) : (m.raw.last_active ? daysAgo(m.raw.last_active) : '—');
+    memberRows += '<tr><td style="'+td+'"><b>'+esc(m.name)+'</b></td>'
+      + '<td style="'+tdr+'">'+esc(joined)+'</td>'
+      + '<td style="'+tdr+'">'+(earlyAns?earlyAns.toLocaleString():'—')+'</td>'
+      + '<td style="'+tdr+'">'+(m.answered||0).toLocaleString()+'</td>'
+      + '<td style="'+tdr+'color:'+(gained>0?'#0f7a4f':'#8a879c')+';font-weight:600">'+(gained>0?'+'+gained.toLocaleString():'0')+'</td>'
+      + '<td style="'+tdr+'">'+accCell+'</td>'
+      + '<td style="'+tdr+'">'+(m.raw.sessions||0)+'</td>'
+      + '<td style="'+tdr+'">'+(m.studyDays||0)+'</td>'
+      + '<td style="'+tdr+'">'+esc(last)+'</td></tr>';
+  });
+
+  // ---- not engaged: accounts with zero answers, and roster names with no account
+  let idleRows = '';
+  zero.slice().sort((a,b)=>(b.studyDays||0)-(a.studyDays||0)).forEach(m=>{
+    const note = m.studyDays ? ('Opened it '+m.studyDays+' time(s)') : 'Signed up, never came back';
+    idleRows += '<tr><td style="'+td+'"><b>'+esc(m.name)+'</b></td><td style="'+td+'">Account, 0 questions &mdash; '+esc(note)+'</td>'
+             +  '<td style="'+tdr+'">'+esc(m.lastActive||'never')+'</td></tr>';
+  });
+
+  // ---- day-by-day tail
+  let dayRows = '';
+  const tail = days.slice(-14);
+  const mx = tail.reduce((s,d)=>Math.max(s, d.total_answered||0), 1);
+  tail.forEach(d=>{
+    const w = Math.max(3, Math.round(100*(d.total_answered||0)/mx));
+    dayRows += '<tr><td style="'+td+'">'+esc(d.as_of)+'</td>'
+            +  '<td style="'+tdr+'">'+(d.total_answered||0).toLocaleString()+'</td>'
+            +  '<td style="'+tdr+'">'+(d.users?Object.keys(d.users).length:'—')+'</td>'
+            +  '<td style="'+td+'"><span style="display:block;height:9px;width:'+w+'%;background:linear-gradient(90deg,#8b6bff,#d94fd2);border-radius:5px"></span></td></tr>';
+  });
+
+  const histNote = days.length
+    ? 'Day-by-day figures come from the recorded history series, which begins ' + esc(days[0].as_of) + '.'
+    : '<b>No history series was reachable from this page</b>, so the growth and day-by-day sections are omitted. '
+      + 'Everything else is built from the live records. (The daily job writes the series; the email report has the full history.)';
+
+  return '<!DOCTYPE html><html lang="en"><head><meta charset="utf-8">'
+  + '<meta name="viewport" content="width=device-width,initial-scale=1">'
+  + '<title>CNN Study Group Progress Report &mdash; ' + esc(today) + '</title><style>'
+  + 'body{margin:0;background:#f6f4fb;color:#13111d;font:16px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Inter,sans-serif}'
+  + '.wrap{max-width:1020px;margin:0 auto;padding:28px 20px 60px}'
+  + 'h1{font-size:28px;margin:0 0 4px;letter-spacing:-.02em}h2{font-size:18px;margin:30px 0 8px}'
+  + '.sub{color:#6b6880;margin:0 0 22px}'
+  + '.card{background:#fff;border:1px solid #e6e2f0;border-radius:14px;padding:18px 20px;margin-bottom:8px}'
+  + 'table{width:100%;border-collapse:collapse;font-size:14px}'
+  + '.kpis{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:6px}'
+  + '.kpi{flex:1 1 150px;background:#fff;border:1px solid #e6e2f0;border-radius:14px;padding:14px 16px}'
+  + '.kpi .v{font-size:25px;font-weight:700;letter-spacing:-.02em}'
+  + '.kpi .l{font-size:11.5px;color:#6b6880;text-transform:uppercase;letter-spacing:.04em}'
+  + '.why{background:#eef3ff;border:1px solid #cfdcff;border-radius:12px;padding:14px 16px;font-size:14.5px}'
+  + '.note{background:#fff8e6;border:1px solid #f0dca8;border-radius:12px;padding:14px 16px;font-size:14.5px}'
+  + '.tiny{font-size:12.5px;color:#6b6880}'
+  + '.btn{position:fixed;right:22px;bottom:22px;background:linear-gradient(135deg,#7c3aed,#db2777);color:#fff;'
+  + 'border:0;border-radius:10px;padding:14px 22px;font-size:15px;font-weight:700;cursor:pointer;'
+  + 'box-shadow:0 6px 20px rgba(124,58,237,.35)}'
+  + '@media print{.btn{display:none}body{background:#fff}}'
+  + '</style></head><body><div class="wrap">'
+  + '<h1>CNN Study Group &mdash; Progress Report</h1>'
+  + '<p class="sub">Built from the admin dashboard on <b>' + esc(today) + '</b>. '
+  + 'App opened <b>' + esc(appStart) + '</b> &mdash; a <b>' + spanDays + '-day</b> span.</p>'
+  + '<div class="kpis">'
+  +   '<div class="kpi"><div class="v">' + rows.length + '</div><div class="l">learners on the app</div></div>'
+  +   '<div class="kpi"><div class="v">' + totalAns.toLocaleString() + '</div><div class="l">questions answered</div></div>'
+  +   '<div class="kpi"><div class="v">' + acc + '%</div><div class="l">group accuracy</div></div>'
+  +   '<div class="kpi"><div class="v">' + Math.round(totalMin/60) + 'h</div><div class="l">total study time</div></div>'
+  + '</div>'
+  + '<div class="why"><b>The short version.</b> ' + rows.length + ' learners have answered <b>'
+  +   totalAns.toLocaleString() + '</b> questions at <b>' + acc + '%</b> accuracy over ' + spanDays + ' days. '
+  +   live.length + ' are active; <b>' + dorm.length + '</b> have stalled or never started.'
+  + '</div>'
+  + (days.length === 0 ? '<div class="note" style="margin-top:8px">' + histNote + '</div>' : '')
+  + '<h2>How the group grew</h2><div class="card"><table>'
+  +   '<tr><th style="' + th + '">Milestone</th><th style="' + thr + '">Learners</th>'
+  +   '<th style="' + thr + '">Answered</th><th style="' + thr + '">Accuracy</th><th style="' + thr + '">Active</th></tr>'
+  +   (days.length ? growth : '') + '</table></div>'
+  + '<h2>Every learner &mdash; joined, progress, standing</h2><div class="card"><table>'
+  +   '<tr><th style="' + th + '">Learner</th><th style="' + thr + '">Joined</th><th style="' + thr + '">Early</th>'
+  +   '<th style="' + thr + '">Today</th><th style="' + thr + '">Gained</th><th style="' + thr + '">Accuracy</th>'
+  +   '<th style="' + thr + '">Sessions</th><th style="' + thr + '">Days</th><th style="' + thr + '">Last studied</th></tr>'
+  +   memberRows + '</table>'
+  +   '<p class="tiny" style="margin:8px 0 0">"Early" is the total on record when the history series began'
+  +   (firstRec ? ' (' + esc(firstRec.as_of) + ')' : '') + '; "Gained" is what has been added since. Sorted by join date.</p></div>'
+  + '<h2>Signed up but getting nothing out of it yet</h2><div class="card">'
+  +   (idleRows
+      ? '<table><tr><th style="' + th + '">Learner</th><th style="' + th + '">Status</th>'
+        + '<th style="' + thr + '">Last active</th></tr>' + idleRows + '</table>'
+      : '<p style="margin:0">Everyone on the app has answered at least one question.</p>')
+  + '</div>'
+  + (days.length ? '<h2>Group total, day by day</h2><div class="card"><table>'
+      + '<tr><th style="' + th + '">Date</th><th style="' + thr + '">Total answered</th>'
+      + '<th style="' + thr + '">Learners</th><th style="' + th + '">Relative volume</th></tr>'
+      + dayRows + '</table></div>' : '')
+  + '<h2>How accurate is this report?</h2><div class="card">'
+  +   '<p style="margin:0 0 8px">Every figure comes from the app\'s own records, read live through the dashboard. '
+  +   'Three honest limits:</p><ul style="margin:0;padding-left:20px">'
+  +   '<li><b>Past days are not reconstructable.</b> The app stores only running totals, so history is read from the '
+  +   'recorded daily series' + (days.length ? ', which begins ' + esc(days[0].as_of) : ' (unavailable on this page') + '.</li>'
+  +   '<li><b>Day-level activity is approximate.</b> A record keeps only the last study date.</li>'
+  +   '<li><b>This report is built in your browser.</b> It reflects the rows loaded when you pressed the button.</li>'
+  +   '</ul></div>'
+  + '<p class="tiny" style="margin-top:20px">Generated from the CNN Admin Dashboard on ' + esc(today) + '.</p>'
+  + '</div>'
+  + '<button class="btn" onclick="window.print()">🖨 Print / Save as PDF</button>'
+  + '</body></html>';
 }
 
 /* =============================================================== boot */
