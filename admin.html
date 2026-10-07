@@ -182,7 +182,6 @@
     <h1>CNN <span>Admin Dashboard</span></h1>
     <div class="actions">
       <button onclick="refreshAll()">⟳ Refresh</button>
-      <button class="export-btn" onclick="exportCSV()">⬇ CSV</button>
       <button class="export-btn" onclick="exportXLSX()">📊 Excel</button>
       <button class="export-btn report-btn" onclick="generateProgressReport()" title="Build the full study-group progress report in a new tab, with a Print / Save as PDF button">📄 Progress Report</button>
       <button onclick="openPasswordModal()">🔑 Change Password</button>
@@ -648,12 +647,6 @@ function esc(s){
 }
 // Safe string argument for inline onclick handlers (JSON-encode then HTML-escape).
 function jsStr(s){ return esc(JSON.stringify(s==null?'':s)); }
-// Formula-injection guard for spreadsheet cells, then RFC-4180 quoting.
-function csvCell(s){
-  s = String(s==null?'':s);
-  if(/^[=+\-@]/.test(s)) s = "'" + s;
-  return (/[",\n]/.test(s)) ? '"' + s.replace(/"/g,'""') + '"' : s;
-}
 function fmtDate(iso){
   return iso ? new Date(iso).toLocaleDateString('en-US') : '';
 }
@@ -1678,19 +1671,6 @@ function exportRows(){
     return v;
   }));
   return {headers:headers, rows:rows};
-}
-
-function exportCSV(){
-  if(!adminToken && !legacyMode) return;
-  const {headers, rows} = exportRows();
-  let csv = headers.map(csvCell).join(',') + '\n';
-  rows.forEach(r=>{ csv += r.map(csvCell).join(',') + '\n'; });
-  const blob = new Blob([csv], {type:'text/csv'});
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = 'cnn_study_progress.csv';
-  a.click();
-  logAction('export_csv', null, {rows: rows.length});
 }
 
 function exportXLSX(){
