@@ -2283,8 +2283,8 @@
 },
 {
 "as_of": "2026-10-08",
-"total_answered": 4880,
-"total_correct": 3761,
+"total_answered": 4902,
+"total_correct": 3773,
 "users": {
 "obortai": {
 "answered": 0,
@@ -2364,10 +2364,10 @@
 "study_days": 21
 },
 "oliver": {
-"answered": 628,
-"correct": 382,
+"answered": 650,
+"correct": 394,
 "last_study": "2026-10-07",
-"sessions": 96,
+"sessions": 97,
 "study_days": 33
 }
 }
