@@ -2374,22 +2374,22 @@
 },
 {
 "as_of": "2026-10-09",
-"total_answered": 4884,
-"total_correct": 3764,
+"total_answered": 4906,
+"total_correct": 3776,
 "users": {
-"obortai": {
-"answered": 0,
-"correct": 0,
-"last_study": "2026-10-03",
-"sessions": 0,
-"study_days": 5
-},
 "jocelyn": {
 "answered": 224,
 "correct": 138,
 "last_study": "2026-09-12",
 "sessions": 12,
 "study_days": 8
+},
+"obortai": {
+"answered": 0,
+"correct": 0,
+"last_study": "2026-10-09",
+"sessions": 0,
+"study_days": 6
 },
 "danielle baradas": {
 "answered": 6,
@@ -2462,10 +2462,10 @@
 "study_days": 1
 },
 "oliver": {
-"answered": 628,
-"correct": 382,
+"answered": 650,
+"correct": 394,
 "last_study": "2026-10-09",
-"sessions": 96,
+"sessions": 97,
 "study_days": 35
 }
 }
