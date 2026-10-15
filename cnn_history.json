@@ -2962,8 +2962,8 @@
 },
 {
 "as_of": "2026-10-15",
-"total_answered": 4907,
-"total_correct": 3776,
+"total_answered": 4920,
+"total_correct": 3788,
 "users": {
 "obortai": {
 "answered": 0,
@@ -2982,9 +2982,9 @@
 "jocelyn": {
 "answered": 224,
 "correct": 138,
-"last_study": "2026-10-13",
+"last_study": "2026-10-15",
 "sessions": 12,
-"study_days": 9
+"study_days": 10
 },
 "nancycalton": {
 "answered": 3,
@@ -3050,11 +3050,11 @@
 "study_days": 1
 },
 "oliver": {
-"answered": 651,
-"correct": 394,
-"last_study": "2026-10-10",
-"sessions": 98,
-"study_days": 36
+"answered": 664,
+"correct": 406,
+"last_study": "2026-10-15",
+"sessions": 101,
+"study_days": 37
 }
 }
 }
