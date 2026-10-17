@@ -3134,11 +3134,11 @@
 "study_days": 1
 },
 "cchutuape": {
-"answered": 19,
-"correct": 17,
+"answered": 23,
+"correct": 20,
 "last_study": "2026-10-16",
-"sessions": 1,
-"study_days": 1
+"sessions": 3,
+"study_days": 2
 },
 "nhor jhane ganub": {
 "answered": 3935,
@@ -3146,13 +3146,6 @@
 "last_study": "2026-10-07",
 "sessions": 34,
 "study_days": 21
-},
-"charles": {
-"answered": 4,
-"correct": 3,
-"last_study": "2026-10-09",
-"sessions": 2,
-"study_days": 1
 },
 "oliver": {
 "answered": 686,
