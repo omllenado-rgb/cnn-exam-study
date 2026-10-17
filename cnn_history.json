@@ -3060,8 +3060,8 @@
 },
 {
 "as_of": "2026-10-16",
-"total_answered": 4920,
-"total_correct": 3788,
+"total_answered": 4961,
+"total_correct": 3814,
 "users": {
 "obortai": {
 "answered": 0,
@@ -3133,6 +3133,13 @@
 "sessions": 1,
 "study_days": 1
 },
+"cchutuape": {
+"answered": 19,
+"correct": 17,
+"last_study": "2026-10-16",
+"sessions": 1,
+"study_days": 1
+},
 "nhor jhane ganub": {
 "answered": 3935,
 "correct": 3176,
@@ -3148,11 +3155,11 @@
 "study_days": 1
 },
 "oliver": {
-"answered": 664,
-"correct": 406,
-"last_study": "2026-10-15",
-"sessions": 101,
-"study_days": 37
+"answered": 686,
+"correct": 415,
+"last_study": "2026-10-16",
+"sessions": 104,
+"study_days": 38
 }
 }
 }
