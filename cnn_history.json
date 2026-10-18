@@ -3158,8 +3158,8 @@
 },
 {
 "as_of": "2026-10-17",
-"total_answered": 4961,
-"total_correct": 3814,
+"total_answered": 5006,
+"total_correct": 3852,
 "users": {
 "obortai": {
 "answered": 0,
@@ -3188,13 +3188,6 @@
 "last_study": "2026-10-06",
 "sessions": 1,
 "study_days": 1
-},
-"lynda soohoo": {
-"answered": 43,
-"correct": 28,
-"last_study": "2026-10-02",
-"sessions": 4,
-"study_days": 3
 },
 "maria llenado": {
 "answered": 23,
@@ -3231,19 +3224,19 @@
 "sessions": 1,
 "study_days": 1
 },
-"cchutuape": {
-"answered": 23,
-"correct": 20,
-"last_study": "2026-10-16",
-"sessions": 3,
-"study_days": 2
-},
 "nhor jhane ganub": {
-"answered": 3935,
-"correct": 3176,
-"last_study": "2026-10-07",
+"answered": 3954,
+"correct": 3191,
+"last_study": "2026-10-17",
 "sessions": 34,
-"study_days": 21
+"study_days": 22
+},
+"lynda soohoo": {
+"answered": 45,
+"correct": 30,
+"last_study": "2026-10-17",
+"sessions": 5,
+"study_days": 4
 },
 "oliver": {
 "answered": 686,
@@ -3251,6 +3244,13 @@
 "last_study": "2026-10-16",
 "sessions": 104,
 "study_days": 38
+},
+"cchutuape": {
+"answered": 47,
+"correct": 41,
+"last_study": "2026-10-17",
+"sessions": 4,
+"study_days": 3
 }
 }
 }
