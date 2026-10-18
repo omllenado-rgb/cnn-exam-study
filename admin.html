@@ -1661,6 +1661,16 @@ function loadDeletedUsersIfOpen(){
 
 // Headers and values both come from COLS, so the exports can no longer drift
 // out of step with the table.
+// Formula-injection guard: a cell whose DISPLAY value starts with = + - @ executes
+// as a formula when the file opens in Excel or Sheets (e.g. a learner name crafted
+// as "=HYPERLINK(...)"). The leading apostrophe tells the spreadsheet "this is
+// text, not a formula" and renders invisibly. Numbers are untouched — only
+// STRING cells that begin with a hazard character get the prefix.
+function csvSafe(v){
+  if(typeof v === 'number') return v;
+  const s = String(v==null?'':v);
+  return /^[=+\-@]/.test(s) ? "'"+s : s;
+}
 function exportRows(){
   const headers = COLS.filter(c=>c.export).map(c=>c.label);
   const rows = mapped.map(m=>COLS.filter(c=>c.export).map(c=>{
@@ -1668,9 +1678,9 @@ function exportRows(){
     // The table renders an accuracy pill; the export wants the plain number.
     if(c.key === 'accNum') return m.acc;
     if(c.key === 'lastActiveRaw') return m.lastActive;
-    return v;
+    return csvSafe(v);
   }));
-  return {headers:headers, rows:rows};
+  return {headers:headers.map(csvSafe), rows:rows};
 }
 
 function exportXLSX(){

@@ -644,9 +644,9 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="content.js?v=1315k"></script>
-<script src="original-content.js?v=1315k"></script>
-<script src="explanations.js?v=1315k"></script>
+<script src="content.js?v=1315l"></script>
+<script src="original-content.js?v=1315l"></script>
+<script src="explanations.js?v=1315l"></script>
 <script>
 /* ============ SUPABASE (fill in your keys) ============ */
 const SUPABASE_URL = "https://ymvaslldugwzgjeaxabz.supabase.co";
@@ -947,6 +947,26 @@ function makeSalt(){ // random per-user salt (hex)
 }
 async function hashPass(salt, pass){ return await sha256(salt + '::' + pass); }
 
+/* ============ NAME VALIDATION (client-side) ============
+   Whitelist what a username may contain BEFORE it ever reaches the database.
+   The server accepts anything today (create_account has no pattern check), so
+   this is the only validation layer that exists. Allowed: letters (incl.
+   accented), digits, spaces, dot, dash, apostrophe, underscore — 2–30 chars.
+   'DS', "O'Brien", 'josé', 'nancycalton' pass; quotes, <, >, =, +, @, and
+   control characters do not. This closes the stored-XSS and CSV-formula chains
+   AT THE SOURCE, keeps the whitelist in one place, and validates BOTH creation
+   paths (server RPC and legacy insert). Login is NOT affected: existing
+   accounts sign in by exact name match and every current name passes this. */
+const NAME_RE = /^[\p{L}\p{N} .'\-_]{2,30}$/u;
+function nameValid(raw){
+  let n = String(raw==null?'':raw).trim();
+  // Reject CSV/spreadsheet hazards and dash-leading tokens even though '-'
+  // is an allowed character later in the name ("jean-luc" fine, "-danger" not).
+  if(/^[-+=@]/.test(n)) return null;
+  if(!NAME_RE.test(n)) return null;
+  return n;
+}
+
 /* ============ SERVER-SIDE CREDENTIAL CHECK ============
    Calls the functions in supabase-auth-hardening.sql. Both return null when
    those functions are not deployed yet, which makes login() fall back to the
@@ -1008,7 +1028,11 @@ async function login(){
         return;
       }
       if(srv.status === 'no_user'){
-        const cr = await serverCreateAccount(name, pass);
+        // The account does not exist yet — validate the name before creation.
+        // This is the one door to the database, so the whitelist gates it here.
+        const cleanName = nameValid(rawName);
+        if(!cleanName){ msg.textContent = 'Names can use letters, numbers, spaces, . - \' _ only (2-30 characters).'; return; }
+        const cr = await serverCreateAccount(cleanName, pass);
         if(cr && cr.status === 'exists'){ msg.textContent = 'Incorrect password.'; return; }
         if(cr && cr.status === 'ok'){
           // Credentials are already stored server-side, so the profile row is
@@ -1050,6 +1074,8 @@ async function login(){
       name = existingKey; // use the stored canonical name going forward
     } else {
       // New user - create account with hashed password (never store plaintext)
+      // Same whitelist gate on the legacy path — both doors, one rule.
+      if(!nameValid(rawName)){ msg.textContent = 'Names can use letters, numbers, spaces, . - \' _ only (2-30 characters).'; return; }
       const salt = makeSalt();
       const pass_hash = await hashPass(salt, pass);
       const newUser = {user_name:name, pass_salt:salt, pass_hash:pass_hash, answered:0, correct:0, known:0, sessions:0, streak:0, last_study:null, answers:{}, wrong:{}, known_cards:{}, topic_stats:{}, study_seconds:0, study_days:0, today_seconds:0, today_date:null, first_started:new Date().toISOString(), last_active:new Date().toISOString()};
