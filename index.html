@@ -499,6 +499,7 @@
           <div class="audio-bar" id="lessonAudio" style="display:none;margin-top:14px;padding:12px;background:var(--light);border-radius:8px">
             <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
               <button class="btn secondary" style="padding:8px 14px;font-size:13px;margin:0" onclick="speakLesson()">🔊 Listen</button>
+              <button class="btn secondary" id="autoPlayBtn" style="padding:8px 14px;font-size:13px;margin:0" onclick="toggleAutoPlay()" aria-pressed="false">▶️ Auto-Play</button>
               <button class="btn secondary" style="padding:8px 14px;font-size:13px;margin:0" onclick="stopSpeech()">⏹ Stop</button>
               <label style="font-size:12px;color:var(--gray)">Speed
                 <select id="speechRate" style="width:auto;padding:6px;font-size:12px;margin:0" onchange="setSpeechRate()">
@@ -644,9 +645,9 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="content.js?v=1315l"></script>
-<script src="original-content.js?v=1315l"></script>
-<script src="explanations.js?v=1315l"></script>
+<script src="content.js?v=1315m"></script>
+<script src="original-content.js?v=1315m"></script>
+<script src="explanations.js?v=1315m"></script>
 <script>
 /* ============ SUPABASE (fill in your keys) ============ */
 const SUPABASE_URL = "https://ymvaslldugwzgjeaxabz.supabase.co";
@@ -1893,24 +1894,74 @@ function speechPronounce(t){
     .replace(/≤/g,' less than or equal to ');
 }
 
-function speak(text){
+let autoPlayLessons = false;   // continuous lesson playback (driving mode)
+let autoPlayWaiting = false;   // the queued "advance to next lesson after speech" guard
+let autoPlayGen = 0;           // generation token: OFF invalidates every queued timer
+
+function toggleAutoPlay(){
+  autoPlayLessons = !autoPlayLessons;
+  const btn = document.getElementById('autoPlayBtn');
+  if(btn){
+    btn.setAttribute('aria-pressed', autoPlayLessons ? 'true' : 'false');
+    btn.textContent = autoPlayLessons ? '⏸️ Auto-Play On' : '▶️ Auto-Play';
+  }
+  if(autoPlayLessons){
+    if(!('speechSynthesis' in window)) { alert('Audio not supported on this device.'); autoPlayLessons=false; syncAutoBtn(); return; }
+    if(!speechSynthesis.speaking && !speechSynthesis.pending) speakLesson();
+  } else {
+    autoPlayGen++;             // any scheduled advance from the old run is stale
+    autoPlayWaiting = false;
+    stopSpeech();
+  }
+}
+function syncAutoBtn(){
+  const btn = document.getElementById('autoPlayBtn');
+  if(btn){ btn.setAttribute('aria-pressed', autoPlayLessons?'true':'false');
+           btn.textContent = autoPlayLessons ? '⏸️ Auto-Play On' : '▶️ Auto-Play'; }
+}
+function speak(text, onDone){
   if(!('speechSynthesis' in window)){ alert('Audio not supported on this device.'); return; }
   if(!voiceList.length) loadVoices();   // in case 'voiceschanged' never fired
   stopSpeech();
   const v = pickVoice();
-  speechChunks(speechPronounce(text)).forEach(chunk=>{
+  const chunks = speechChunks(speechPronounce(text));
+  chunks.forEach((chunk, ci)=>{
     const u = new SpeechSynthesisUtterance(chunk);
     u.rate = speechRate;
     u.pitch = 1;
     if(v) u.voice = v;
+    // On the FINAL chunk, notify the caller (drives auto-advance)
+    if(ci === chunks.length-1 && onDone) u.onend = () => { try{ onDone(); }catch(e){} };
     speechSynthesis.speak(u);   // the engine queues these in order
   });
 }
 function stopSpeech(){ if('speechSynthesis' in window) speechSynthesis.cancel(); }
 function speakLesson(){
-  const l = lessonFilter==="all" ? LESSONS[lessonIndex] : LESSONS.filter(x=>x.topic===lessonFilter)[lessonIndex];
+  const list = lessonFilter==="all" ? LESSONS : LESSONS.filter(x=>x.topic===lessonFilter);
+  const l = list[lessonIndex];
   if(!l) return;
-  speak(l.title + '. ' + l.body.replace(/\n+/g,' '));
+  const myGen = autoPlayGen;      // bind this chain to the run it started in
+  autoPlayWaiting = false;
+  speak(l.title + '. ' + l.body.replace(/\n+/g,' '), ()=>{
+    if(!autoPlayLessons || autoPlayGen !== myGen) return;  // toggled off mid-chain: do nothing
+    // Brief pause so the lesson change does not clip the last word.
+    autoPlayWaiting = true;
+    setTimeout(()=>{
+      if(!autoPlayLessons || autoPlayGen !== myGen) return;  // staleness re-check after EVERY timer
+      autoPlayWaiting = false;
+      const atEnd = lessonIndex >= list.length-1;
+      if(atEnd){
+        // Loop to the first lesson of the SAME filtered list — driving mode
+        // should keep going without needing the phone again.
+        openLesson(0);
+        window.scrollTo(0,0);
+        setTimeout(()=>{ if(autoPlayLessons && autoPlayGen === myGen){ autoPlayWaiting=false; speakLesson(); } }, 400);
+      } else {
+        lessonNav(1);
+        setTimeout(()=>{ if(autoPlayLessons && autoPlayGen === myGen){ autoPlayWaiting=false; speakLesson(); } }, 400);
+      }
+    }, 900);
+  });
 }
 function speakCard(){
   const c = cardState.list[cardState.idx];
@@ -2294,6 +2345,7 @@ function openLesson(i){
   document.getElementById('lessonBody').innerHTML = paras.map(p=>`<p style="margin:0 0 14px">${highlightKey(p)}</p>`).join('');
   // Show read-aloud bar
   document.getElementById('lessonAudio').style.display='block';
+  syncAutoBtn();
   // Prev/Next nav
   document.getElementById('lessonPos').textContent = `Lesson ${i+1} of ${list.length}`;
   document.getElementById('lessonPrev').style.visibility = i>0 ? 'visible' : 'hidden';
@@ -2345,6 +2397,7 @@ function highlightKey(text){
   return out;
 }
 function backToLessons(){
+  if(autoPlayLessons){ toggleAutoPlay(); }   // leave lesson view = stop continuous mode
   document.getElementById('lessonView').style.display='none';
   document.getElementById('lessonList').style.display='block';
 }
