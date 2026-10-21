@@ -645,9 +645,9 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="content.js?v=1315m"></script>
-<script src="original-content.js?v=1315m"></script>
-<script src="explanations.js?v=1315m"></script>
+<script src="content.js?v=1315n"></script>
+<script src="original-content.js?v=1315n"></script>
+<script src="explanations.js?v=1315n"></script>
 <script>
 /* ============ SUPABASE (fill in your keys) ============ */
 const SUPABASE_URL = "https://ymvaslldugwzgjeaxabz.supabase.co";
@@ -1181,7 +1181,29 @@ function showScreen(s){
 // Local fallback so the app works even if the backend isn't ready
 function localKey(){ return 'cnnStudy_' + (currentUser||'anon'); }
 function loadLocal(){ try { return JSON.parse(localStorage.getItem(localKey())) || null; } catch(e){ return null; } }
-function saveLocal(p){ try { localStorage.setItem(localKey(), JSON.stringify(p)); } catch(e){} }
+function saveLocal(p){
+  try { localStorage.setItem(localKey(), JSON.stringify(p)); }
+  catch(e){
+    // Quota or serialization failure: silently ignoring this cost learners data
+    // (the Oct-2026 stale-device incident chain). Surfacing + pruning:
+    if(e && (e.name==='QuotaExceededError' || (typeof e.code==='number' && e.code===22))){
+      try{
+        // Prune heaviest optional structures first (never the counters)
+        const p2 = JSON.parse(JSON.stringify(p));
+        delete p2.ai_cache; delete p2.cnn_ai_;        // model output caches
+        if(p2.known_cards && p2.topic_stats){}        // keep both (small, load-bearing)
+        else if(p2.known_cards){ delete p2.known_cards; }
+        try { localStorage.setItem(localKey(), JSON.stringify(p2)); }
+        catch(e2){ /* still over — alert once per session */ }
+        window.userProgress = p2;
+      }catch(pe){}
+      if(!window.__quotaWarned){
+        window.__quotaWarned = true;
+        try{ msgBar && (msgBar.textContent = 'Device storage is full — progress still saved to the server, but clear old browsers/other accounts on this device when you can.'); }catch(me){}
+      }
+    }
+  }
+}
 
 function defaultProgress(){
   return {user_name:currentUser, answered:0, correct:0, known:0, sessions:0, streak:0, last_study:null, answers:{}, wrong:{}, known_cards:{}, topic_stats:{}, study_seconds:0, study_days:0, today_seconds:0, today_date:null, first_started:new Date().toISOString(), last_active:new Date().toISOString()};
@@ -1214,11 +1236,66 @@ async function loadUserProgress(){
     if(data){ window.userProgress = data; saveLocal(data); }
   } catch(e){ /* backend unavailable - local data is fine */ }
 }
+/* ============ STALE-DEVICE GUARD (anti-overwrite) ============
+   Failure mode (bit Oliver twice, Sept + Oct 2026): a device holding an OLD
+   copy of progress answers more questions and upserts, OVERWRITING newer
+   server state (server 650 answers <- device 628). The union-merge below is
+   the recover_oliver.py logic applied client-side at every save:
+   - fetch the server row once
+   - if server counters >= local nothing to merge -> save normally
+   - else merge: answers (server ∪ local), wrong (union), known_cards (union),
+     card_reps per-key max 'interval'/'due', topic_stats summed, counters maxed
+   - then upsert the MERGED object so nothing is ever lost on either side */
+let _staleGuardBusy = false;
+async function mergeWithServer(p){
+  if(!sbClient || _staleGuardBusy) return p;
+  _staleGuardBusy = true;
+  try {
+    const { data: srv, error } = await sbClient.from('progress').select(
+      'answered,correct,known,sessions,streak,study_seconds,study_days,answers,wrong,known_cards,card_reps,topic_stats'
+    ).eq('user_name', currentUser).single();
+    if(error || !srv) return p;
+    const sAns = srv.answered || 0, lAns = p.answered || 0;
+    if(sAns <= lAns) return p;                   // local is fresh enough — normal save path
+    // union-merge every additive structure (never lose either side)
+    const merged = JSON.parse(JSON.stringify(p));
+    merged.answers  = Object.assign({}, srv.answers || {}, p.answers || {});
+    merged.wrong    = Object.assign({}, srv.wrong || {}, p.wrong || {});
+    merged.known_cards = Object.assign({}, srv.known_cards || {}, p.known_cards || {});
+    merged.card_reps = Object.assign({}, srv.card_reps || {}, p.card_reps || {});
+    for(const k in merged.card_reps){
+      const a = srv.card_reps && srv.card_reps[k], b = merged.card_reps[k];
+      if(a && b) merged.card_reps[k] = { interval: Math.max(a.interval||0, b.interval||0), due: Math.max(a.due||0, b.due||0) };
+    }
+    merged.topic_stats = Object.assign({}, srv.topic_stats || {}, p.topic_stats || {});
+    for(const t in srv.topic_stats || {}){
+      const s = srv.topic_stats[t], m = merged.topic_stats[t] || (merged.topic_stats[t]={answered:0,correct:0});
+      m.answered = Math.max(m.answered||0, s.answered||0);
+      m.correct  = Math.max(m.correct||0,  s.correct||0);
+    }
+    merged.answered = Math.max(sAns, lAns);
+    merged.correct  = Math.max(srv.correct||0, p.correct||0);
+    merged.known    = Math.max(srv.known||0, p.known||0);
+    merged.sessions = Math.max(srv.sessions||0, p.sessions||0);
+    merged.study_days = Math.max(srv.study_days||0, p.study_days||0);
+    merged.study_seconds = Math.max(srv.study_seconds||0, p.study_seconds||0);
+    // streak: keep the larger running streak
+    merged.streak = Math.max(srv.streak||0, p.streak||0);
+    return merged;
+  } catch(e){ return p; }
+  finally { _staleGuardBusy = false; }
+}
+
 async function saveProgress(){
   if(!currentUser) return;
   flushCurrentSection(); // keep per-section time in lockstep with study_seconds
-  const p = window.userProgress || {};
+  let p = window.userProgress || {};
   p.last_active = new Date().toISOString(); // keep fresh on each save
+  // Stale-device guard: if the server row is AHEAD of this device, merge both
+  // sides first (answer counters only ever move forward). Cheap on normal
+  // saves: one indexed select.
+  try { p = await mergeWithServer(p); } catch(e){}
+  window.userProgress = p;   // keep in-memory state consistent with merged
   saveLocal(p); // always save locally first
   try {
     await sbClient.from('progress').upsert({
