@@ -1247,6 +1247,8 @@ async function loadUserProgress(){
      card_reps per-key max 'interval'/'due', topic_stats summed, counters maxed
    - then upsert the MERGED object so nothing is ever lost on either side */
 let _staleGuardBusy = false;
+let _progressDirty = false;   // set by every meaningful mutation; cleared on save
+function markDirty(){ _progressDirty = true; }
 async function mergeWithServer(p){
   if(!sbClient || _staleGuardBusy) return p;
   _staleGuardBusy = true;
@@ -1286,7 +1288,7 @@ async function mergeWithServer(p){
   finally { _staleGuardBusy = false; }
 }
 
-async function saveProgress(){
+async function saveProgress(opts){
   if(!currentUser) return;
   flushCurrentSection(); // keep per-section time in lockstep with study_seconds
   let p = window.userProgress || {};
@@ -1297,6 +1299,18 @@ async function saveProgress(){
   try { p = await mergeWithServer(p); } catch(e){}
   window.userProgress = p;   // keep in-memory state consistent with merged
   saveLocal(p); // always save locally first
+  // Heartbeat economics: the study-timer tick normally accrues ~30s of
+  // study_seconds. Network-saving only when >=60s accumulated since the last
+  // upload OR a real mutation happened — cuts full-blob upserts in half on
+  // idle tab time and removes most of the 30s no-change rewrites, which at
+  // 100 users meant ~12k full-JSONB rewrites/hour for nothing.
+  const heartbeat = opts && opts.heartbeat;
+  if(heartbeat && !_progressDirty){
+    if(!window.__lastSavedSec || (p.study_seconds||0) - window.__lastSavedSec >= 60){
+      _progressDirty = true;           // enough new time accrued: flush upstream
+    }
+    if(!_progressDirty){ saveLocal(p); return; }   // local-only tick (no network)
+  }
   try {
     await sbClient.from('progress').upsert({
       user_name: currentUser,
@@ -1313,6 +1327,8 @@ async function saveProgress(){
       employment_status: p.employment_status||null,
       institution: p.institution||null
     }, { onConflict: 'user_name' });
+    _progressDirty = false;
+    window.__lastSavedSec = p.study_seconds||0;
   } catch(e){ /* backend unavailable - local save is enough for now */ }
 }
 function recordAnswer(q, isCorrect){
@@ -1327,6 +1343,7 @@ function recordAnswer(q, isCorrect){
   p.topic_stats[q.topic] = p.topic_stats[q.topic]||{answered:0,correct:0};
   p.topic_stats[q.topic].answered++;
   if(isCorrect) p.topic_stats[q.topic].correct++;
+  markDirty();
   // streak (local calendar day; the manual logger and study timer share this rule)
   markStudyDay(p, todayStr());
   saveProgress();
@@ -1334,10 +1351,12 @@ function recordAnswer(q, isCorrect){
 function recordSession(){
   const p = window.userProgress;
   p.sessions = (p.sessions||0)+1;
+  markDirty();
   saveProgress();
 }
 function recordKnown(card){
   const p = window.userProgress;
+  markDirty();
   p.known_cards = p.known_cards||{};
   if(!p.known_cards[card.front]){ p.known_cards[card.front]=true; p.known=(p.known||0)+1; }
   // Spaced repetition: double the interval each time you know it
@@ -2214,7 +2233,7 @@ function renderTrackers(){
   topics.forEach(t=>{
     const ts=(p.topic_stats||{})[t]||{answered:0,correct:0};
     const pct=ts.answered?Math.round(ts.correct/ts.answered*100):0;
-    html+=`<div style="margin:8px 0"><div style="display:flex;justify-content:space-between;font-size:13px"><span>${t}</span><span>${ts.correct}/${ts.answered} (${pct}%)</span></div><div class="bar"><div style="width:${ts.answered?pct:0}%"></div></div></div>`;
+    html+=`<div style="margin:8px 0"><div style="display:flex;justify-content:space-between;font-size:13px"><span>${esc(t)}</span><span>${ts.correct}/${ts.answered} (${pct}%)</span></div><div class="bar"><div style="width:${ts.answered?pct:0}%"></div></div></div>`;
   });
   document.getElementById('tTopicBars').innerHTML=html;
   renderFocusSuggestions();
@@ -2243,6 +2262,7 @@ function logStudyHours(){
   if(!hrs || hrs<=0){ alert('Enter a number of hours.'); return; }
   const type=document.getElementById('logType').value;
   p.manual_hours = p.manual_hours||{};
+  markDirty();
   p.manual_hours[type] = (p.manual_hours[type]||0) + hrs;
   // Also add to total study seconds and today
   const secs = Math.round(hrs*3600);
@@ -2349,9 +2369,9 @@ function startStudyTimer(){
       if(currentSection) sectionStart = Date.now();
       return;
     }
-    // Tally the elapsed time since the last tick and persist it.
+    // Tally the elapsed time since the last tick.
     flushStudyWindow();
-    saveProgress();
+    saveProgress({ heartbeat: true });
   }, 30000);
 }
 function stopStudyTimer(){

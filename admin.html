@@ -377,10 +377,10 @@ const SECTION_LABELS = {quiz:'Quiz', lessons:'Lessons', strategies:'Strategies',
    all rows (index.html:832). Only moving them out of `progress` closes that. */
 const LIST_COLS = ['user_name','employment_status','institution','first_started','last_active',
                    'answered','correct','known','sessions','streak','study_days','study_seconds',
-                   'manual_hours','topic_stats','section_seconds'].join(',');
+                   'manual_hours','topic_stats'].join(',');   // section_seconds pruned: unused in list view (was parsed for 100 users per refresh for nothing)
 
 // Extra blobs, fetched only when a single learner is opened.
-const DETAIL_COLS = LIST_COLS + ',answers,wrong,known_cards,card_reps,today_seconds,today_date';
+const DETAIL_COLS = LIST_COLS + ',section_seconds,answers,wrong,known_cards,card_reps,today_seconds,today_date';
 
 /* Every column of the users table, defined once. The table header, the table
    body, and both exports are all driven from this — previously the same mapping
@@ -404,6 +404,15 @@ const COLS = [
 ];
 
 /* ------------------------------------------------------------------ state */
+/* Privacy guard: never snapshot password material. The archive row was
+   anon-readable (verified Oct 2026), so anything inside data is public the
+   moment it lands. Salt+hash+legacy password are stripped at the door. */
+function snapshotOf(row){
+  const snap = Object.assign({}, row.data || row);
+  delete snap.pass_salt; delete snap.pass_hash; delete snap.password;
+  return snap;
+}
+
 let adminToken   = null;   // HMAC token from admin_login(); the real credential
 let tokenExpiry  = 0;      // epoch seconds
 let expiryTimer  = null;
@@ -837,7 +846,7 @@ async function resetUser(name){
     const {data:row, error:sErr} = await sbClient.from('progress').select('*').eq('user_name',name).single();
     if(sErr || !row){ alert('Could not read the user first, so nothing was changed.\n\n'+(sErr?sErr.message:'')); return; }
 
-    const {error:insErr} = await sbClient.from('deleted_users').insert({user_name:row.user_name, data:row, reason:'reset'});
+    const {error:insErr} = await sbClient.from('deleted_users').insert({user_name:row.user_name, data:snapshotOf(row), reason:'reset'});
     if(insErr){ alert('Could not save the backup snapshot, so nothing was changed.\n\n'+insErr.message); return; }
 
     const {error:updErr} = await sbClient.from('progress').update({
@@ -887,7 +896,7 @@ async function deleteUser(name){
     const {data:row, error:rErr} = await sbClient.from('progress').select('*').eq('user_name',name).single();
     if(rErr || !row){ alert('Could not read the user first, so nothing was deleted.\n\n'+(rErr?rErr.message:'')); return; }
 
-    const {error:insErr} = await sbClient.from('deleted_users').insert({user_name:row.user_name, data:row, reason:'delete'});
+    const {error:insErr} = await sbClient.from('deleted_users').insert({user_name:row.user_name, data:snapshotOf(row), reason:'delete'});
     // ABORT if the snapshot failed. The old code deleted anyway, which meant a
     // failed backup silently destroyed the row with no way back.
     if(insErr){ alert('Could not save the backup snapshot, so nothing was deleted.\n\n'+insErr.message); return; }
