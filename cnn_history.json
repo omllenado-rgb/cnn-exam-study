@@ -3844,9 +3844,16 @@
 },
 {
 "as_of": "2026-10-24",
-"total_answered": 5008,
-"total_correct": 3853,
+"total_answered": 5183,
+"total_correct": 3984,
 "users": {
+"nhor jhane ganub": {
+"answered": 4129,
+"correct": 3322,
+"last_study": "2026-10-24",
+"sessions": 35,
+"study_days": 24
+},
 "obortai": {
 "answered": 0,
 "correct": 0,
@@ -3909,13 +3916,6 @@
 "last_study": "2026-10-01",
 "sessions": 1,
 "study_days": 1
-},
-"nhor jhane ganub": {
-"answered": 3954,
-"correct": 3191,
-"last_study": "2026-10-18",
-"sessions": 34,
-"study_days": 23
 },
 "oliver": {
 "answered": 688,
