@@ -13,14 +13,14 @@
      longer describe their values (--navy is violet, --gold is coral). Prefer
      the semantic names in new code. */
   :root{
-    /* Brand — the gradient and every primary action */
-    --brand-1:#7c3aed;--brand-2:#c026d3;--brand-3:#ff5e3a;
+    /* Brand — liinks light: ink primary with blue tail */
+    --brand-1:#1d1d28;--brand-2:#32323f;--brand-3:#1b97f5;
     --grad:linear-gradient(135deg,var(--brand-1) 0%,var(--brand-2) 55%,var(--brand-3) 100%);
-    --grad-soft:linear-gradient(135deg,rgba(124,58,237,.10),rgba(192,38,211,.10),rgba(255,94,58,.10));
+    --grad-soft:linear-gradient(135deg,rgba(116,138,255,.10),rgba(255,182,222,.10),rgba(27,151,245,.10));
     /* Surfaces & ink */
-    --bg:#f6f4fb;--card:#fff;--stat:#fff;--light:#f3edf9;
-    --border:#ece7f5;--input-border:#dcd4ec;
-    --ink:#13111d;--muted:#5b6472;
+    --bg:#ffffff;--card:#fff;--stat:#fff;--light:#f4f6fb;
+    --border:#e9e9ef;--input-border:#d9dce6;
+    --ink:#1d1d28;--muted:#6f6f7d;
     /* Text drawn on the brand gradient */
     --on-brand:#fff;--on-brand-soft:#ffe9dd;
     --on-brand-rule:rgba(255,255,255,.5);--on-brand-fill:rgba(255,255,255,.15);--on-brand-edge:rgba(255,255,255,.4);
@@ -35,7 +35,7 @@
     --weak-bg:#fff3f3;--weak-ink:#13111d;
     /* Chrome */
     --scrim:rgba(10,8,18,.55);
-    --focus-ring:#7c3aed;   /* keyboard focus ring (the topbar overrides it) */
+    --focus-ring:#1b97f5;   /* keyboard focus ring (the topbar overrides it) */
     --shadow-card:0 1px 4px rgba(0,0,0,.08);--shadow-card-2:0 2px 8px rgba(0,0,0,.1);
     --shadow-modal:0 10px 40px rgba(0,0,0,.35);
     /* --link was referenced five times but never defined, so those links
@@ -50,27 +50,11 @@
        on a light surface, so 3:1 is the bar it has to clear; it now clears the
        4.5:1 text bar too. --brand-3 stays #ff5e3a: that is the gradient's third
        stop, and the topbar must not move. */
-    --violet:#7c3aed;--fuchsia:#c026d3;--coral:#ff5e3a;
-    --navy:#7c3aed;--gold:#cc4b2e;--cyan:#c026d3;--blue:#7c3aed;
+    --violet:#32323f;--fuchsia:#1b97f5;--coral:#ff5e3a;
+    --navy:#1d1d28;--gold:#cc4b2e;--cyan:#1b97f5;--blue:#1b97f5;
     --gray:#5b6472;--green:#2e7d32;--red:#c62828;
-    --aggie-blue:#7c3aed;--aggie-gold:#cc4b2e;--aggie-light:#c026d3;
+    --aggie-blue:#1b97f5;--aggie-gold:#cc4b2e;--aggie-light:#748AFF;
     --aggie-green:#00573f;--aggie-red:#c10230;}
-  body.dark{
-    --bg:#13111d;--card:#1f1b2e;--stat:#1f1b2e;--light:#2a2340;
-    --border:#312a49;--input-border:#3d3459;
-    --ink:#ece7f5;--muted:#9a93ad;
-    --blue:#c026d3;--gray:#9a93ad;--navy:#7c3aed;
-    --aggie-blue:#7c3aed;--aggie-gold:#ff5e3a;--aggie-light:#c026d3;
-    /* --gold is re-stated here on purpose: the accent is darkened for light
-       surfaces only, and without this the dark bar fills would darken with it
-       against a dark track. This keeps dark byte-identical to before. */
-    --gold:#ff5e3a;
-    --ok-bg:#1e3a2a;--ok-ink:#b9e4c6;
-    --err-bg:#3d2020;--err-ink:#f2c2c2;
-    --focus-row-bg:#22303f;--focus-row-ink:#e6edf5;
-    --weak-bg:#3d2020;--weak-ink:#f2c2c2;
-    --link:var(--aggie-gold);
-    --focus-ring:#ff5e3a;}
   *{box-sizing:border-box;margin:0;padding:0;}
   /* NOTE: no `transition` on the theme-driven background/color here. A transition
      on `background`/`color` while --bg/--ink swap underneath it leaves the body's
@@ -82,7 +66,6 @@
   /* Declare which scheme the UA should use for form controls, scrollbars and
      default canvas, so an OS in dark mode can't repaint our surfaces. */
   :root{color-scheme:light;}
-  body.dark{color-scheme:dark;}
   .topbar,nav,main{position:relative;z-index:1;}
   .topbar{background:var(--grad);color:var(--on-brand);padding:18px 20px;border-bottom:4px solid var(--on-brand-rule);display:flex;justify-content:space-between;align-items:center;gap:10px;}
   .topbar .tb-text{min-width:0;}
@@ -97,12 +80,10 @@
      someone who is signed in. */
   .announce .x{flex:none;background:none;border:0;color:var(--notice-x);font-size:15px;line-height:1.3;cursor:pointer;padding:0 2px;margin:0;}
   .announce .x:hover{color:var(--notice-ink);}
-  .theme-toggle{background:var(--on-brand-fill);border:1px solid var(--on-brand-edge);color:var(--on-brand);border-radius:20px;padding:7px 12px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap;}
   nav{display:flex;background:var(--card);border-bottom:1px solid var(--border);overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
   nav::-webkit-scrollbar{display:none;}
   nav button{flex:1;min-width:90px;padding:14px 4px;border:none;background:none;font-size:14px;font-weight:600;color:var(--gray);cursor:pointer;border-bottom:3px solid transparent;white-space:nowrap;}
   nav button.active{color:var(--aggie-blue);border-bottom-color:var(--aggie-gold);}
-  body.dark nav button.active{color:var(--aggie-gold);}
   main{max-width:760px;margin:0 auto;padding:16px;}
   .screen{display:none;}
   .screen.active{display:block;}
@@ -111,7 +92,6 @@
   .stat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px;}
   .stat{background:var(--stat);border-radius:10px;padding:14px;text-align:center;box-shadow:var(--shadow-card);}
   .stat .num{font-size:24px;font-weight:700;color:var(--aggie-blue);}
-  body.dark .stat .num{color:var(--aggie-gold);}
   .stat .lbl{font-size:11px;color:var(--gray);margin-top:2px;}
   .option{display:block;width:100%;text-align:left;background:var(--card);border:1.5px solid var(--input-border);border-radius:10px;padding:13px 14px;margin:8px 0;font-size:15px;cursor:pointer;transition:all .15s;color:var(--ink);}
   .option:hover{border-color:var(--blue);}
@@ -119,13 +99,11 @@
   .option.wrong{border-color:var(--red);background:var(--err-bg);color:var(--err-ink);}
   .btn{background:var(--aggie-blue);color:var(--on-brand);border:none;border-radius:10px;padding:13px 18px;font-size:15px;font-weight:600;cursor:pointer;margin-top:10px;}
   .btn.secondary{background:var(--card);color:var(--aggie-blue);border:1.5px solid var(--aggie-blue);}
-  body.dark .btn.secondary{color:var(--aggie-gold);border-color:var(--aggie-gold);}
   /* ===== In-app "How to Use" overlay ===== */
   #howToOverlay{display:none;position:fixed;inset:0;z-index:999;background:var(--scrim);backdrop-filter:blur(3px);align-items:center;justify-content:center;padding:16px;}
   #howToOverlay.show{display:flex;}
   .howto-box{background:var(--card);color:var(--ink);border-radius:14px;max-width:520px;width:100%;max-height:82vh;overflow-y:auto;padding:20px;box-shadow:var(--shadow-modal);}
   .howto-box h2{margin:0 0 12px;color:var(--aggie-blue);display:flex;justify-content:space-between;align-items:center;gap:10px;}
-  body.dark .howto-box h2{color:var(--aggie-gold);}
   .howto-box h3{font-size:15px;margin:16px 0 6px;color:var(--blue);}
   .howto-box p,.howto-box li{font-size:14px;line-height:1.55;color:var(--ink);}
   .howto-box ul{margin:4px 0 0 18px;}
@@ -136,8 +114,6 @@
   #forgotOverlay{display:none;position:fixed;inset:0;z-index:1001;background:var(--scrim);backdrop-filter:blur(3px);align-items:center;justify-content:center;padding:16px;}
   #forgotOverlay.show{display:flex;}
   .field-label{display:block;font-size:13px;font-weight:600;color:var(--aggie-blue);margin:12px 0 0;}
-  body.dark .field-label{color:var(--aggie-gold);}
-  body.dark .howto-close{color:var(--aggie-gold);}
   .btn:disabled{opacity:.5;cursor:not-allowed;}
   .explain{background:var(--light);border-left:4px solid var(--blue);padding:12px;border-radius:8px;margin-top:12px;font-size:14px;color:var(--ink);}
   .wrong-note{margin-top:10px;padding:10px 12px;background:var(--err-tint);border-left:4px solid var(--err-text);border-radius:6px;font-size:13.5px;line-height:1.5;}
@@ -145,7 +121,6 @@
   .why-note{margin-top:8px;padding:9px 11px;background:var(--ok-tint);border-left:4px solid var(--green);border-radius:6px;font-size:13.5px;line-height:1.5;}
   .why-others{margin-top:10px;padding:10px 12px;background:var(--light);border-left:4px solid var(--gray);border-radius:6px;font-size:13.5px;line-height:1.5;}
   .why-others-h{font-weight:700;margin-bottom:4px;color:var(--aggie-blue);}
-  body.dark .why-others-h{color:var(--aggie-gold);}
   .why-other{margin-top:6px;}
 
   /* ===== "Explain more" (deeper pre-written explanation) ===== */
@@ -155,33 +130,25 @@
   .deep-btn:hover{background:var(--violet);color:#fff;}
   .deep-note{margin-top:10px;padding:11px 13px;background:var(--light);border-left:4px solid var(--violet);
     border-radius:6px;font-size:13.5px;line-height:1.6;}
-  body.dark .deep-btn{color:var(--aggie-gold);border-color:var(--aggie-gold);}
-  body.dark .deep-btn:hover{background:var(--aggie-gold);color:#161129;}
   .tag{display:inline-block;background:var(--light);color:var(--aggie-blue);font-size:11px;font-weight:600;padding:3px 9px;border-radius:20px;margin-bottom:8px;}
-  body.dark .tag{color:var(--aggie-gold);}
   .fcard{background:var(--card);border-radius:12px;box-shadow:var(--shadow-card-2);margin:12px 0;cursor:pointer;user-select:none;min-height:200px;display:flex;align-items:center;justify-content:center;text-align:center;border:2px solid var(--aggie-blue);}
   .fcard .inner{padding:24px;font-size:19px;line-height:1.4;}
   .fcard .front{font-weight:600;}
   .fcard .back{color:var(--aggie-blue);}
-  body.dark .fcard .back{color:var(--aggie-gold);}
   .fcard .hint{font-size:11px;color:var(--gray);margin-top:12px;}
   .flip-btn{display:flex;gap:10px;justify-content:center;margin:10px 0;flex-wrap:wrap;}
   .flip-btn button{background:var(--card);border:1.5px solid var(--aggie-blue);color:var(--aggie-blue);border-radius:8px;padding:8px 14px;font-size:13px;font-weight:600;cursor:pointer;}
-  body.dark .flip-btn button{color:var(--aggie-gold);border-color:var(--aggie-gold);}
-  /* The dark-mode rule above is `body.dark .flip-btn button`, which out-specifies
+  /* The (now-removed) dark-mode rule used to out-specify
      a bare `.flip-btn button.primary`, so it was repainting the FILLED primary
      button's text coral on its violet fill (1.88:1 -- effectively unreadable).
      Re-assert the on-brand text for the filled variant at matching specificity. */
   .flip-btn button.primary{background:var(--aggie-blue);color:var(--on-brand);}
-  body.dark .flip-btn button.primary{background:var(--aggie-blue);color:var(--on-brand);border-color:var(--aggie-blue);}
   .count{text-align:center;color:var(--gray);font-size:13px;margin:8px 0;}
 .score-live{color:var(--ink);margin-top:-2px;}
   .score-live strong{font-weight:700;color:var(--aggie-blue);}
-  body.dark .score-live strong{color:var(--aggie-gold);}
   .filter{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;}
   .filter button{border:1.5px solid var(--input-border);background:var(--card);border-radius:20px;padding:7px 13px;font-size:13px;cursor:pointer;color:var(--gray);}
   .filter button.active{border-color:var(--aggie-blue);color:var(--aggie-blue);background:var(--light);font-weight:600;}
-  body.dark .filter button.active{color:var(--aggie-gold);border-color:var(--aggie-gold);}
   .btn-row{display:flex;gap:10px;flex-wrap:wrap;}
   .muted{color:var(--gray);font-size:13px;}
   .bar{background:var(--border);border-radius:6px;height:8px;overflow:hidden;}
@@ -196,7 +163,6 @@
   table{width:100%;border-collapse:collapse;font-size:13px;}
   th,td{padding:9px 8px;text-align:left;border-bottom:1px solid var(--border);}
   th{background:var(--light);color:var(--aggie-blue);font-weight:600;}
-  body.dark th{color:var(--aggie-gold);}
   /* ===== MOBILE OPTIMIZATIONS ===== */
   @media(max-width:480px){
     .topbar{padding:14px 14px;}
@@ -267,13 +233,11 @@
 </style>
 </head>
 <body>
-<script>try{ document.body.classList.remove('dark'); }catch(e){}</script>
 <div class="topbar">
   <div class="tb-text">
     <h1>Certified Nephrology Nurse Exam Prep Course</h1>
     <p>Certified Nephrology Nurse - Quiz, Flashcards, Trackers</p>
   </div>
-  <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()">&#127769; Dark</button>
 </div>
 
 <!-- ANNOUNCEMENT BANNER — set from the admin dashboard, stored in app_settings.
@@ -645,9 +609,9 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="content.js?v=1315n"></script>
-<script src="original-content.js?v=1315n"></script>
-<script src="explanations.js?v=1315n"></script>
+<script src="content.js?v=1315o"></script>
+<script src="original-content.js?v=1315o"></script>
+<script src="explanations.js?v=1315o"></script>
 <script>
 /* ============ SUPABASE (fill in your keys) ============ */
 const SUPABASE_URL = "https://ymvaslldugwzgjeaxabz.supabase.co";
@@ -819,19 +783,8 @@ let objFilter = 0; // 0 = all objectives
 let cardFilter = "all";
 
 /* ============ THEME ============ */
-function toggleTheme(){
-  const isDark = document.body.classList.toggle('dark');
-  document.getElementById('themeToggle').textContent = isDark ? '\u2600\ufe0f Light' : '\u{1F319} Dark';
-  try { localStorage.setItem('cnn_theme', isDark ? 'dark' : 'light'); } catch(e){}
-}
-function initTheme(){
-  // Always start on light mode (per project preference).
-  document.body.classList.remove('dark');
-  document.getElementById('themeToggle').textContent = '\u{1F319} Dark';
-}
-// iPhone Safari uses back-forward cache: on restore (pageshow), force light
-// again so a previously-toggled dark state can't stick across navigation.
-window.addEventListener('pageshow', function(){ try{ initTheme(); }catch(e){} });
+// Dark theme removed — liinks light is the only theme.
+;
 
 /* ============ MODAL PLUMBING ============
    Shared by the three overlays. They are <div>s that appear over the page, so
