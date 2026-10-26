@@ -3942,7 +3942,7 @@
 },
 {
 "as_of": "2026-10-25",
-"total_answered": 5183,
+"total_answered": 5185,
 "total_correct": 3984,
 "users": {
 "nhor jhane ganub": {
@@ -4016,10 +4016,10 @@
 "study_days": 1
 },
 "oliver": {
-"answered": 688,
+"answered": 690,
 "correct": 416,
 "last_study": "2026-10-25",
-"sessions": 107,
+"sessions": 108,
 "study_days": 42
 },
 "lynda soohoo": {
