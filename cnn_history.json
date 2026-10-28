@@ -4138,22 +4138,22 @@
 },
 {
 "as_of": "2026-10-27",
-"total_answered": 5185,
-"total_correct": 3984,
+"total_answered": 5399,
+"total_correct": 4165,
 "users": {
-"nhor jhane ganub": {
-"answered": 4129,
-"correct": 3322,
-"last_study": "2026-10-24",
-"sessions": 35,
-"study_days": 24
-},
 "obortai": {
 "answered": 0,
 "correct": 0,
 "last_study": "2026-10-09",
 "sessions": 0,
 "study_days": 6
+},
+"rizalina": {
+"answered": 2,
+"correct": 1,
+"last_study": "2026-10-27",
+"sessions": 2,
+"study_days": 1
 },
 "danielle baradas": {
 "answered": 6,
@@ -4210,6 +4210,13 @@
 "last_study": "2026-10-01",
 "sessions": 1,
 "study_days": 1
+},
+"nhor jhane ganub": {
+"answered": 4341,
+"correct": 3502,
+"last_study": "2026-10-27",
+"sessions": 35,
+"study_days": 25
 },
 "oliver": {
 "answered": 690,
