@@ -244,6 +244,26 @@
      Hidden unless something is actually set, so the app is unchanged by default. -->
 <div class="announce" id="announceBar" style="display:none"><span class="ic">&#128227;</span><span class="tx" id="announceText"></span></div>
 
+
+<!-- CE CREDITS MODAL — the CNN rule: 30 contact hours in the last 2 years.
+     Asks at login when missing/stale (see maybePromptCE). -->
+<div id="ceOverlay" role="dialog" aria-modal="true" aria-labelledby="ceTitle">
+  <div class="howto-box">
+    <h2 id="ceTitle">🎓 Your CE Credits</h2>
+    <p class="muted">CNN needs <b>30 contact hours in the last 2 years</b>. Enter your current CE below — update it here any time you earn more.</p>
+    <label class="field-label" for="ceLifetime">Total CE hours earned (all years, lifetime)</label>
+    <input type="number" id="ceLifetime" min="0" step="0.25" inputmode="decimal" placeholder="e.g. 48">
+    <label class="field-label" for="ceWindow">CE hours earned in the last 2 years</label>
+    <input type="number" id="ceWindow" min="0" step="0.25" inputmode="decimal" placeholder="e.g. 32.5">
+    <label class="field-label" for="ceSource">Where they came from (optional — one line)</label>
+    <input type="text" id="ceSource" maxlength="120" placeholder="e.g. UC Learning, ANNA, CN3 project">
+    <p class="muted" id="ceMsg" style="margin-top:8px"></p>
+    <div style="text-align:right;margin-top:14px">
+      <button class="howto-close" onclick="saveCE()">Save CE</button>
+    </div>
+  </div>
+</div>
+
 <!-- LOGIN / PROFILE -->
 <div id="loginScreen" class="screen active">
   <div class="login-box card">
@@ -563,6 +583,16 @@
         <div class="bar" style="height:14px"><div id="goalBar" style="height:100%;width:0%;background:var(--gold)"></div></div>
         <p class="muted" style="margin-top:8px" id="goalMsg">Keep going — every hour counts toward exam readiness.</p>
       </div>
+      <div class="card" style="border-left:4px solid var(--accent)">
+        <h2>🎓 CE Credits</h2>
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:8px">
+          <div><div style="font-size:22px;font-weight:800" id="ceHoursTotal">—</div><div class="muted" style="font-size:11px">LIFETIME HOURS</div></div>
+          <div><div style="font-size:22px;font-weight:800" id="ceHoursWindow">—</div><div class="muted" style="font-size:11px">LAST 2 YEARS</div></div>
+        </div>
+        <div style="height:10px;border-radius:5px;background:rgba(29,29,40,.08);overflow:hidden;margin-bottom:6px"><div id="ceBar" style="height:100%;width:0%;background:var(--accent);transition:width .8s"></div></div>
+        <p class="muted" id="ceMsgTxt">30 hours in the last 2 years is the CNN requirement.</p>
+        <button class="btn" style="margin-top:10px" onclick="openCE()">Update CE Credits</button>
+      </div>
       <div class="card" style="border-left:4px solid var(--cyan)">
         <h2>Log Study Hours</h2>
         <p class="muted" style="margin-bottom:8px">Add study time you did outside the app (self-study, renal core, review course, etc.). <a href="javascript:void(0)" onclick="openHowTo()" style="color:var(--link);font-weight:600">How to log hours</a></p>
@@ -609,9 +639,9 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="content.js?v=1315o"></script>
-<script src="original-content.js?v=1315o"></script>
-<script src="explanations.js?v=1315o"></script>
+<script src="content.js?v=1315p"></script>
+<script src="original-content.js?v=1315p"></script>
+<script src="explanations.js?v=1315p"></script>
 <script>
 /* ============ SUPABASE (fill in your keys) ============ */
 const SUPABASE_URL = "https://ymvaslldugwzgjeaxabz.supabase.co";
@@ -954,6 +984,7 @@ function enterApp(name){
   startStudyTimer();
   document.getElementById('loginMsg').textContent = '';
   maybePromptProfile();
+  maybePromptCE();
   renderMessages();
 }
 async function login(){
@@ -1278,11 +1309,40 @@ async function saveProgress(opts){
       section_seconds: p.section_seconds||{},
       card_reps: p.card_reps||{},
       employment_status: p.employment_status||null,
-      institution: p.institution||null
+      institution: p.institution||null,
+      ...(window.__ceColsOk !== false ? {
+        ce_hours: p.ce_hours ?? null, ce_hours_window: p.ce_hours_window ?? null,
+        ce_source: p.ce_source || null, ce_updated: p.ce_updated || null } : {})
     }, { onConflict: 'user_name' });
     _progressDirty = false;
     window.__lastSavedSec = p.study_seconds||0;
-  } catch(e){ /* backend unavailable - local save is enough for now */ }
+    if(window.__ceColsOk === undefined) window.__ceColsOk = true;   // worked: columns exist
+  } catch(e){
+    /* The ce_* columns land via SQL; until Oliver runs that file, the upsert
+       fails with a column-not-found error. Detect it once, flip the flag, and
+       retry the save WITHOUT ce fields so every other field still syncs. */
+    const em = String(e && (e.message || e) || '');
+    if(/ce_hours|ce_updated|PGRST204/i.test(em) && window.__ceColsOk !== false){
+      window.__ceColsOk = false;
+      try {
+        const q = window.userProgress || {};
+        await sbClient.from('progress').upsert({
+          user_name: currentUser,
+          pass_salt: q.pass_salt || null, pass_hash: q.pass_hash || null,
+          answered: q.answered||0, correct: q.correct||0, known: q.known||0,
+          sessions: q.sessions||0, streak: q.streak||0, last_study: q.last_study||null,
+          answers: q.answers||{}, wrong: q.wrong||{}, known_cards: q.known_cards||{}, topic_stats: q.topic_stats||{},
+          study_seconds: q.study_seconds||0, study_days: q.study_days||0,
+          today_seconds: q.today_seconds||0, today_date: q.today_date||null,
+          first_started: q.first_started||null, last_active: q.last_active||null,
+          manual_hours: q.manual_hours||{}, section_seconds: q.section_seconds||{}, card_reps: q.card_reps||{},
+          employment_status: q.employment_status||null, institution: q.institution||null
+        }, { onConflict: 'user_name' });
+        _progressDirty = false; window.__lastSavedSec = q.study_seconds||0;
+      } catch(e2){ /* backend unavailable - local save is enough for now */ }
+    }
+    /* backend unavailable - local save is enough for now */
+  }
 }
 function recordAnswer(q, isCorrect){
   const p = window.userProgress;
@@ -2149,6 +2209,7 @@ function renderBlueprintTrend(){
 
 /* ============ TRACKERS ============ */
 function renderTrackers(){
+  renderCE();
   const p=window.userProgress||{};
   document.getElementById('tStreak').textContent=p.streak||0;
   document.getElementById('tSessions').textContent=p.sessions||0;
