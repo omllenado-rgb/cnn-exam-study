@@ -111,6 +111,9 @@
   /* ===== Profile / affiliation modal (reuses howto box) ===== */
   #profileOverlay{display:none;position:fixed;inset:0;z-index:1000;background:var(--scrim);backdrop-filter:blur(3px);align-items:center;justify-content:center;padding:16px;}
   #profileOverlay.show{display:flex;}
+#ceOverlay{display:none;position:fixed;inset:0;z-index:1000;background:var(--scrim);backdrop-filter:blur(3px);align-items:center;justify-content:center;padding:16px;}
+#ceOverlay.show{display:flex;}
+
   #forgotOverlay{display:none;position:fixed;inset:0;z-index:1001;background:var(--scrim);backdrop-filter:blur(3px);align-items:center;justify-content:center;padding:16px;}
   #forgotOverlay.show{display:flex;}
   .field-label{display:block;font-size:13px;font-weight:600;color:var(--aggie-blue);margin:12px 0 0;}
@@ -639,9 +642,9 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="content.js?v=1315s"></script>
-<script src="original-content.js?v=1315s"></script>
-<script src="explanations.js?v=1315s"></script>
+<script src="content.js?v=1315t"></script>
+<script src="original-content.js?v=1315t"></script>
+<script src="explanations.js?v=1315t"></script>
 <script>
 
 /* BUILD BADGE + one-time legacy-state purge — makes staleness DIAGNOSABLE */
