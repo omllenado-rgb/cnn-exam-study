@@ -861,6 +861,51 @@ document.addEventListener('keydown', function(e){
   }
 });
 
+/* ============ CE CREDITS (CNN rule: 30 contact hours in the last 2 years) ====
+   Stored on the progress row: ce_hours (lifetime), ce_hours_window (last 2 yrs),
+   ce_source (one line), ce_updated (ISO). Login re-asks at >90 days. */
+function openCE(){ modalOpen('ceOverlay'); }
+function closeCE(){ modalClose('ceOverlay'); }
+function saveCE(){
+  const lt = parseFloat(document.getElementById('ceLifetime').value);
+  const w2 = parseFloat(document.getElementById('ceWindow').value);
+  const src = document.getElementById('ceSource').value.trim();
+  const msg = document.getElementById('ceMsg');
+  if(isNaN(lt) || lt < 0){ msg.textContent = 'Enter your lifetime CE total (0 is fine).'; return; }
+  if(isNaN(w2) || w2 < 0){ msg.textContent = 'Enter your last-2-years CE total.'; return; }
+  if(w2 > lt){ msg.textContent = 'Last-2-years cannot exceed your lifetime total.'; return; }
+  const p = window.userProgress || {};
+  p.ce_hours = lt; p.ce_hours_window = w2; p.ce_source = src || null;
+  p.ce_updated = new Date().toISOString();
+  saveProgress();
+  closeCE();
+  renderTrackers();
+}
+function cePromptNeeded(p){
+  if(!p || p.ce_hours === undefined || p.ce_hours === null) return true;
+  if(!p.ce_updated) return true;
+  return (Date.now() - Date.parse(p.ce_updated)) > 90*86400000;
+}
+function maybePromptCE(){ try{ const p = window.userProgress || {}; if(cePromptNeeded(p)) openCE(); }catch(e){} }
+function renderCE(){
+  const p = window.userProgress || {};
+  const ltEl = document.getElementById('ceHoursTotal');
+  if(!ltEl) return;
+  const wEl = document.getElementById('ceHoursWindow');
+  const bar = document.getElementById('ceBar');
+  const msg = document.getElementById('ceMsgTxt');
+  ltEl.textContent = (p.ce_hours ?? '—') + ' h';
+  wEl.textContent = (p.ce_hours_window ?? '—') + ' h';
+  const w = p.ce_hours_window || 0;
+  const pct = Math.min(100, Math.round(w/30*100));
+  bar.style.width = pct + '%';
+  bar.style.background = w>=30 ? '#1c7c46' : (w>=15 ? 'var(--gold)' : 'var(--accent)');
+  const upd = p.ce_updated ? new Date(p.ce_updated) : null;
+  if(w >= 30) msg.textContent = 'You meet the CNN 30-hour rule. Last confirmed ' + (upd?upd.toLocaleDateString():'') + '.';
+  else if(w >= 15) msg.textContent = 'Halfway — ' + (30-w) + ' more hours in the last 2 years.';
+  else msg.textContent = (w>0 ? (30-w) + ' hours to go in the last 2 years.' : 'Enter your CE to start tracking the CNN 30-hour rule.');
+}
+/* ============ PROFILE / AFFILIATION MODAL ============ */
 /* ============ PROFILE / AFFILIATION MODAL ============ */
 function openProfile(){ modalOpen('profileOverlay'); }
 function closeProfile(){ modalClose('profileOverlay'); }
