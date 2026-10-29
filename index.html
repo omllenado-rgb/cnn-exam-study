@@ -642,15 +642,15 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="content.js?v=1315v"></script>
-<script src="original-content.js?v=1315v"></script>
-<script src="explanations.js?v=1315v"></script>
+<script src="content.js?v=1315w"></script>
+<script src="original-content.js?v=1315w"></script>
+<script src="explanations.js?v=1315w"></script>
 <script>
 /* BUILD GUARD — own script, never blocks the app: reloads only when the served
    build token differs from the remembered one (real update). First visit stores
    and moves on. */
 (function(){
-  var V = "1315v", S = "Oct 29 2";
+  var V = "1315w", S = "Oct 29 3";
   try {
     var seen = localStorage.getItem('cnn_app_build');
     if(!seen){ localStorage.setItem('cnn_app_build', V); }
@@ -894,6 +894,7 @@ document.addEventListener('keydown', function(e){
 
 /* ============ CE CREDITS (CNN rule: 30 contact hours in the last 2 years) ====
    Update from the Trackers tab button. No login prompt.
+   ============================================================================ */
 function openCE(){ modalOpen('ceOverlay'); }
 function closeCE(){ modalClose('ceOverlay'); }
 function saveCE(){
