@@ -663,6 +663,12 @@ function fmtDateTime(iso){
   return iso ? new Date(iso).toLocaleString('en-US') : '';
 }
 function pct(n){ return Math.round(n)+'%'; }
+function cePill(h){
+  if(h === null || h === undefined) return '<span class="pill in">'+'—'+'</span>';
+  if(h >= 30) return '<span class="pill ok">'+h+' h</span>';
+  if(h >= 15) return '<span class="pill warn">'+h+' h</span>';
+  return '<span class="pill bad">'+h+' h</span>';
+}
 function accPill(p){
   const cls = p >= 80 ? 'ok' : (p >= 60 ? 'warn' : 'bad');
   return '<span class="pill '+cls+'">'+pct(p)+'</span>';
@@ -681,6 +687,10 @@ function mapUser(u){
     name:     u.user_name,
     emp:      u.employment_status || '—',
     inst:     u.institution || '—',
+    ceLife:   (u.ce_hours === null || u.ce_hours === undefined) ? null : Number(u.ce_hours),
+    ceWin:    (u.ce_hours_window === null || u.ce_hours_window === undefined) ? null : Number(u.ce_hours_window),
+    ceSrc:    u.ce_source || '',
+    ceUpdRaw: u.ce_updated || '',
     first:    u.first_started ? new Date(u.first_started).toLocaleDateString('en-US',{month:'short',day:'numeric'}) : '—',
     inAppMin: sp.inAppMin,
     manualHrs: parseFloat(sp.manualHrs),
