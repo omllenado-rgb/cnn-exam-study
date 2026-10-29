@@ -156,6 +156,9 @@
   .muted{color:var(--gray);font-size:13px;}
   .bar{background:var(--border);border-radius:6px;height:8px;overflow:hidden;}
   .bar>div{background:var(--gold);height:100%;}
+  /* Daily-goal ring chips (Trackers tab) — the .filter-button idiom */
+  .dgseg{border:1.5px solid var(--input-border);background:var(--card);border-radius:999px;padding:5px 11px;font-size:12px;cursor:pointer;color:var(--gray);margin:0;}
+  .dgseg.active{border-color:var(--aggie-blue);color:var(--aggie-blue);background:var(--light);font-weight:600;}
   .focus-row{background:var(--focus-row-bg);color:var(--focus-row-ink);}
   .focus-row.focus-weak{background:var(--weak-bg);color:var(--weak-ink);}
   input,select,textarea{width:100%;padding:12px;border:1.5px solid var(--input-border);border-radius:10px;font-size:15px;margin:6px 0;font-family:inherit;background:var(--card);color:var(--ink);}
@@ -585,6 +588,24 @@
         </div>
         <div class="bar" style="height:14px"><div id="goalBar" style="height:100%;width:0%;background:var(--gold)"></div></div>
         <p class="muted" style="margin-top:8px" id="goalMsg">Keep going — every hour counts toward exam readiness.</p>
+        <div style="display:flex;gap:14px;align-items:flex-start;margin-top:12px;flex-wrap:wrap;border-top:1px solid var(--border);padding-top:12px">
+          <svg width="64" height="64" viewBox="0 0 62 62" role="img" aria-label="Minutes studied today against the daily goal" style="flex:0 0 auto">
+            <circle cx="31" cy="31" r="27" fill="none" stroke="var(--border)" stroke-width="6"/>
+            <circle id="dgArc" cx="31" cy="31" r="27" fill="none" stroke="var(--cyan)" stroke-width="6" stroke-linecap="round" transform="rotate(-90 31 31)" stroke-dasharray="0 169.6" visibility="hidden"/>
+            <text id="dgMin" x="31" y="31" text-anchor="middle" font-size="13" font-weight="800" fill="var(--ink)">0m</text>
+            <text id="dgOf" x="31" y="43" text-anchor="middle" font-size="8.5" fill="var(--gray)">of 30 m</text>
+          </svg>
+          <div style="flex:1 1 150px;min-width:0">
+            <div class="muted" style="font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;margin-bottom:5px">Daily goal</div>
+            <div style="display:flex;gap:5px;flex-wrap:wrap">
+              <button class="dgseg" id="dg15" onclick="setDailyGoal(15)">15 m</button>
+              <button class="dgseg" id="dg30" onclick="setDailyGoal(30)">30 m</button>
+              <button class="dgseg" id="dg60" onclick="setDailyGoal(60)">60 m</button>
+              <button class="dgseg" id="dg90" onclick="setDailyGoal(90)">90 m</button>
+            </div>
+            <p class="muted" id="dgLeft" style="font-size:12px;margin:6px 0 0">30 minutes to do today.</p>
+          </div>
+        </div>
       </div>
       <div class="card" style="border-left:4px solid var(--accent)">
         <h2>🎓 CE Credits</h2>
@@ -650,7 +671,7 @@
    build token differs from the remembered one (real update). First visit stores
    and moves on. */
 (function(){
-  var V = "1315x", S = "Oct 29 3";
+  var V = "1316x", S = "Oct 28 1";
   try {
     var seen = localStorage.getItem('cnn_app_build');
     if(!seen){ localStorage.setItem('cnn_app_build', V); }
@@ -1264,7 +1285,7 @@ function saveLocal(p){
 }
 
 function defaultProgress(){
-  return {user_name:currentUser, answered:0, correct:0, known:0, sessions:0, streak:0, last_study:null, answers:{}, wrong:{}, known_cards:{}, topic_stats:{}, study_seconds:0, study_days:0, today_seconds:0, today_date:null, first_started:new Date().toISOString(), last_active:new Date().toISOString()};
+  return {user_name:currentUser, answered:0, correct:0, known:0, sessions:0, streak:0, last_study:null, answers:{}, wrong:{}, known_cards:{}, topic_stats:{}, study_seconds:0, study_days:0, today_seconds:0, today_date:null, daily_goal_minutes:30, first_started:new Date().toISOString(), last_active:new Date().toISOString()};
 }
 
 /* Local calendar-day helpers: day boundaries follow the user's clock, not UTC,
@@ -1312,7 +1333,7 @@ async function mergeWithServer(p){
   _staleGuardBusy = true;
   try {
     const { data: srv, error } = await sbClient.from('progress').select(
-      'answered,correct,known,sessions,streak,study_seconds,study_days,answers,wrong,known_cards,card_reps,topic_stats'
+      'answered,correct,known,sessions,streak,study_seconds,study_days,answers,wrong,known_cards,card_reps,topic_stats,daily_goal_minutes'
     ).eq('user_name', currentUser).single();
     if(error || !srv) return p;
     const sAns = srv.answered || 0, lAns = p.answered || 0;
@@ -1341,6 +1362,8 @@ async function mergeWithServer(p){
     merged.study_seconds = Math.max(srv.study_seconds||0, p.study_seconds||0);
     // streak: keep the larger running streak
     merged.streak = Math.max(srv.streak||0, p.streak||0);
+    // daily goal: keep either side's explicit choice; fall back to the default
+    merged.daily_goal_minutes = p.daily_goal_minutes || srv.daily_goal_minutes || 30;
     return merged;
   } catch(e){ return p; }
   finally { _staleGuardBusy = false; }
@@ -1380,7 +1403,7 @@ async function saveProgress(opts){
        (!p.wrong || !Object.keys(p.wrong).length) &&
        (!p.topic_stats || !Object.keys(p.topic_stats).length)){
       const {data: srvRow} = await sbClient.from('progress').select(
-        'answers,wrong,known_cards,topic_stats,study_seconds,study_days,sessions,streak,card_reps'
+        'answers,wrong,known_cards,topic_stats,study_seconds,study_days,sessions,streak,card_reps,daily_goal_minutes'
       ).eq('user_name', currentUser).single();
       if(srvRow){
         p.answers      = Object.assign({}, srvRow.answers || {}, p.answers || {});
@@ -1398,6 +1421,7 @@ async function saveProgress(opts){
         p.sessions      = Math.max(p.sessions||0, srvRow.sessions||0);
         p.streak        = Math.max(p.streak||0, srvRow.streak||0);
         p.known         = Math.max(p.known||0, srvRow.known||0);
+        if(p.daily_goal_minutes == null) p.daily_goal_minutes = srvRow.daily_goal_minutes || 30;
       }
     }
     await sbClient.from('progress').upsert({
@@ -1414,6 +1438,7 @@ async function saveProgress(opts){
       card_reps: p.card_reps||{},
       employment_status: p.employment_status||null,
       institution: p.institution||null,
+      ...(window.__dgColsOk !== false ? { daily_goal_minutes: p.daily_goal_minutes||30 } : {}),
       ...(window.__ceColsOk !== false ? {
         ce_hours: p.ce_hours ?? null, ce_hours_window: p.ce_hours_window ?? null,
         ce_source: p.ce_source || null, ce_updated: p.ce_updated || null } : {})
@@ -1426,6 +1451,32 @@ async function saveProgress(opts){
        fails with a column-not-found error. Detect it once, flip the flag, and
        retry the save WITHOUT ce fields so every other field still syncs. */
     const em = String(e && (e.message || e) || '');
+    if(/daily_goal_minutes/i.test(em) && window.__dgColsOk !== false){
+      /* The daily-goal column lands via SQL; until Oliver runs that file the
+         upsert fails with column-not-found. Same degrade as ce_*: flip once,
+         retry the save WITHOUT daily_goal_minutes — the ring then rides on
+         the 30m default and still renders from today_seconds. */
+      window.__dgColsOk = false;
+      try {
+        const q = window.userProgress || {};
+        await sbClient.from('progress').upsert({
+          user_name: currentUser,
+          pass_salt: q.pass_salt || null, pass_hash: q.pass_hash || null,
+          answered: q.answered||0, correct: q.correct||0, known: q.known||0,
+          sessions: q.sessions||0, streak: q.streak||0, last_study: q.last_study||null,
+          answers: q.answers||{}, wrong: q.wrong||{}, known_cards: q.known_cards||{}, topic_stats: q.topic_stats||{},
+          study_seconds: q.study_seconds||0, study_days: q.study_days||0,
+          today_seconds: q.today_seconds||0, today_date: q.today_date||null,
+          first_started: q.first_started||null, last_active: q.last_active||null,
+          manual_hours: q.manual_hours||{}, section_seconds: q.section_seconds||{}, card_reps: q.card_reps||{},
+          employment_status: q.employment_status||null, institution: q.institution||null,
+          ...(window.__ceColsOk !== false ? {
+            ce_hours: q.ce_hours ?? null, ce_hours_window: q.ce_hours_window ?? null,
+            ce_source: q.ce_source || null, ce_updated: q.ce_updated || null } : {})
+        }, { onConflict: 'user_name' });
+        _progressDirty = false; window.__lastSavedSec = q.study_seconds||0;
+      } catch(e2){ /* backend unavailable - local save is enough for now */ }
+    }
     if(/ce_hours|ce_updated|PGRST204/i.test(em) && window.__ceColsOk !== false){
       window.__ceColsOk = false;
       try {
@@ -2345,6 +2396,27 @@ function renderTrackers(){
   else if(totalHrs >= 60) goalMsg.textContent = 'Almost there — ' + (80-totalHrs).toFixed(1) + ' hours to go.';
   else if(totalHrs >= 40) goalMsg.textContent = 'Halfway! Keep the momentum going.';
   else goalMsg.textContent = 'Keep going — every hour counts toward exam readiness.';
+  // Daily-goal ring — display-only. Reads today_seconds (which already
+  // includes manually logged hours via logStudyHours) against
+  // daily_goal_minutes; an absent/unsaved field means the 30m default.
+  // Streak logic, markStudyDay and the anti-clobber guards are untouched.
+  const dg = Math.max(5, Math.round(p.daily_goal_minutes||30));
+  const C = 2*Math.PI*27;
+  const dgPct = Math.min(100, Math.round(todaySec/(dg*60)*100));
+  const dgArc = document.getElementById('dgArc');
+  if(dgArc){
+    // zero-length round-cap dash paints a stray dot; hide at rest instead
+    dgArc.setAttribute('visibility', dgPct>0 ? 'visible':'hidden');
+    dgArc.setAttribute('stroke-dasharray', (dgPct/100*C).toFixed(1)+' '+C.toFixed(1));
+    document.getElementById('dgMin').textContent = Math.round(todaySec/60)+'m';
+    document.getElementById('dgOf').textContent = 'of '+dg+' m';
+    document.getElementById('dgLeft').textContent = dgPct>=100
+      ? 'Daily goal met — nice.' : (Math.ceil((dg*60-todaySec)/60)+' minutes left today.');
+    [15,30,60,90].forEach(m=>{
+      const b=document.getElementById('dg'+m);
+      if(b) b.classList.toggle('active', m===dg);
+    });
+  }
   const wrongCount=Object.keys(p.wrong||{}).length;
   document.getElementById('wrongCount').textContent=wrongCount?`${wrongCount} question(s) to review.`:'No missed questions yet.';
   let html='';
@@ -2394,6 +2466,17 @@ function logStudyHours(){
   saveProgress();
   renderTrackers();
   alert('Logged '+hrs+' hr(s) of '+type+'.');
+}
+/* Daily goal pick — one field, saved with the normal progress upsert. The
+   ring is display-only: no streak or day-counting logic changes. If the
+   daily_goal_minutes column isn't on the server yet, keeps working on the
+   30m default without persisting (same degrade path as the ce_* columns). */
+function setDailyGoal(m){
+  const p=window.userProgress||{};
+  p.daily_goal_minutes=m;
+  markDirty();
+  saveProgress();
+  renderTrackers();
 }
 function renderLogBreakdown(){
   const p=window.userProgress||{};
