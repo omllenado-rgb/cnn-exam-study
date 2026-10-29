@@ -349,6 +349,18 @@ const sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // The single admin account name. The server keys admin_secrets by this.
 const ADMIN_USER = 'admin';
+/* Admin-authed client (STAGE 7 in supabase-tracker-privacy.sql): the test_results
+   reads now require a row-level token in the request header. sbAdminAuthed is the
+   anon-key client rebuilt with the x-admin-token header after every admin_login /
+   restore; it is null until a token exists, so pre-login pages can't leak. */
+let sbAdminAuthed = null;
+function adminClient(){
+  if(sbAdminAuthed) return sbAdminAuthed;
+  if(!adminToken) return sbClient;
+  sbAdminAuthed = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY,
+    { global:{ headers:{ 'x-admin-token': adminToken } } });
+  return sbAdminAuthed;
+}
 
 // Mirrors TEST_WEIGHTS in index.html (~line 1289). Used only for the Content
 // health coverage maths and for recognising a completed exam attempt.
@@ -392,7 +404,7 @@ const COLS = [
   {key:'emp',          label:'Employment',   get:m=>m.emp,         export:true},
   {key:'inst',         label:'Institution',  get:m=>m.inst,        export:true},
   {key:'ceWin',        label:'CE (2yr)',    get:m=>m.ceWin,       render:m=>cePill(m.ceWin), export:true},
-  {key:'ceLife',       label:'CE Total',    get:m=>m.ceLife,      export:true},
+  {key:'ceLife',       label:'CE Total',    get:m=>m.ceLife,      render:m=>ceLifeCell(m.ceLife), export:true},
   {key:'first',        label:'First',        get:m=>m.first,       export:true},
   {key:'inAppMin',     label:'In-App(Min)',  get:m=>m.inAppMin,    export:true},
   {key:'manualHrs',    label:'Manual(Hrs)',  get:m=>m.manualHrs,   export:true},
@@ -450,6 +462,7 @@ async function initAuth(){
 
   adminToken  = saved.token;
   tokenExpiry = saved.exp || 0;
+  sbAdminAuthed = null;   /* rebuilt from the restored token on next use */
   if(tokenExpiry && Date.now()/1000 > tokenExpiry) return showLogin('Session expired. Sign in again.');
 
   const st = await pingToken();
@@ -502,6 +515,7 @@ async function doLogin(){
     legacyMode  = false;
     adminToken  = data.token;
     tokenExpiry = data.expires_at ? Math.floor(new Date(data.expires_at).getTime()/1000) : 0;
+    sbAdminAuthed = null;   /* rebuilt from the fresh token on next use */
     try { sessionStorage.setItem('cnn_admin_token', JSON.stringify({token:adminToken, exp:tokenExpiry})); } catch(e){}
     document.getElementById('adminPass').value = '';
     enterDashboard();
@@ -555,7 +569,7 @@ async function legacyLogin(pass){
 }
 
 function clearToken(){
-  adminToken = null; tokenExpiry = 0;
+  adminToken = null; tokenExpiry = 0; sbAdminAuthed = null;
   if(expiryTimer){ clearTimeout(expiryTimer); expiryTimer = null; }
   try { sessionStorage.removeItem('cnn_admin_token'); } catch(e){}
 }
@@ -671,6 +685,14 @@ function cePill(h){
   if(h >= 30) return '<span class="pill ok">'+h+' h</span>';
   if(h >= 15) return '<span class="pill warn">'+h+' h</span>';
   return '<span class="pill bad">'+h+' h</span>';
+}
+/* CE Total: lifetime hours, uncolored. Learners who never opened the CE modal
+   have NULL in the table — that is "not entered yet", not zero, so it shows
+   the same muted dash the CE (2yr) pill shows. ce_hours carries no pass/fail
+   meaning of its own (30 h is the WINDOW rule), so lifetime gets no pill. */
+function ceLifeCell(h){
+  if(h === null || h === undefined) return '<span class="pill mute">—</span>';
+  return esc(h) + ' h';
 }
 function accPill(p){
   const cls = p >= 80 ? 'ok' : (p >= 60 ? 'warn' : 'bad');
@@ -819,8 +841,16 @@ function renderTable(){
         html += '<td>'+esc(val)+'</td>';
       } else if(c.key === 'lastActiveRaw'){
         html += '<td>'+esc(val)+'</td>';
+      } else if(c.render){
+        /* THE CE BUG: render() output IS trusted own-markup (cePill etc.) and
+           was still falling into the generic esc() branch, so every CE (2yr)
+           cell displayed its pill as visible HTML text ("span class=pill…").
+           accNum dodged it through its own special case; ceWin was the only
+           column left hitting it. Renderers escape their own contents
+           (ceLifeCell calls esc on the number); raw get() values still escape. */
+        html += '<td>'+val+'</td>';
       } else {
-        html += '<td>'+(c.key==='accNum' ? val : esc(val))+'</td>';
+        html += '<td>'+esc(val)+'</td>';
       }
     });
     html += '<td>'+
@@ -1087,7 +1117,7 @@ async function openUser(name){
     // every blueprint objective; an abandoned one did not.
     let exams = [], examErr = false;
     try{
-      const res = await sbClient.from('test_results')
+      const res = await adminClient().from('test_results')
         .select('created_at,correct,total_questions,objective_scores')
         .eq('user_name', name).order('created_at',{ascending:true});
       if(res.error) examErr = true;
@@ -1305,7 +1335,7 @@ async function loadReadiness(){
 
   let rows = [], err = false;
   try{
-    const res = await sbClient.from('test_results')
+    const res = await adminClient().from('test_results')
       .select('user_name,created_at,correct,total_questions,objective_scores')
       .order('created_at',{ascending:true});
     if(res.error) err = true; else rows = res.data||[];
@@ -1699,9 +1729,10 @@ function exportRows(){
     const v = c.render ? c.render(m) : c.get(m);
     // The table renders an accuracy pill; the export wants the plain number.
     if(c.key === 'accNum') return m.acc;
-    // The table renders a CE pill ("30 h" wrapped in span markup); the export
-    // wants the bare hours value the pill was built from.
+    // The table renders CE cells (pill / muted dash); the export wants the
+    // bare hours values the cells were built from.
     if(c.key === 'ceWin')  return (m.ceWin === null || m.ceWin === undefined ? '' : m.ceWin + ' h');
+    if(c.key === 'ceLife') return (m.ceLife === null || m.ceLife === undefined ? '' : m.ceLife + ' h');
     if(c.key === 'lastActiveRaw') return m.lastActive;
     return csvSafe(v);
   }));
