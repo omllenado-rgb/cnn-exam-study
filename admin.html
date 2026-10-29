@@ -782,18 +782,29 @@ function renderSummary(){
   const dormant = mapped.filter(m=>m.lastActiveRaw && daysSince(new Date(m.lastActiveRaw).toISOString()) >= 30).length;
   const totalMin = mapped.reduce((s,m)=>s+m.totalMin,0);
   const totalAns = mapped.reduce((s,m)=>s+m.answered,0);
+  /* Cohort study stats (2026-10-29 request): questions, correct, accuracy,
+     hours, study days. Cohort accuracy is volume-weighted (total correct /
+     total answered), not a flat average of per-learner percentages — a
+     learner with 900 answers counts more than one with 9. */
+  const totalCorr = mapped.reduce((s,m)=>s+m.correct,0);
+  const totalDays = mapped.reduce((s,m)=>s+m.studyDays,0);
+  const cohortAcc = totalAns ? Math.round(totalCorr/totalAns*100)+'%' : '—';
 
   document.getElementById('summary').innerHTML =
     '<strong>'+totalUsers+'</strong> learner(s) · <strong>'+Math.round(totalMin/60)+'h</strong> total study · '+
-    '<strong>'+totalAns+'</strong> questions answered · <strong>'+active+'</strong> active in the last 7 days. '+
+    '<strong>'+totalAns+'</strong> questions answered · <strong>'+cohortAcc+'</strong> accuracy · '+
+    '<strong>'+active+'</strong> active in the last 7 days. '+
     'Every privileged action here is recorded in the Audit Log.';
 
   document.getElementById('stats').innerHTML =
     '<div class="stat"><div class="num">'+totalUsers+'</div><div class="lbl">Total Users</div></div>'+
     '<div class="stat"><div class="num">'+active+'</div><div class="lbl">Active (7d)</div></div>'+
     '<div class="stat"><div class="num">'+dormant+'</div><div class="lbl">Dormant (30d+)</div></div>'+
-    '<div class="stat"><div class="num">'+Math.round(totalMin/60)+'h</div><div class="lbl">Total Study</div></div>'+
-    '<div class="stat"><div class="num">'+totalAns+'</div><div class="lbl">Answered</div></div>';
+    '<div class="stat"><div class="num">'+totalAns+'</div><div class="lbl">Questions</div></div>'+
+    '<div class="stat"><div class="num">'+totalCorr+'</div><div class="lbl">Correct</div></div>'+
+    '<div class="stat"><div class="num">'+cohortAcc+'</div><div class="lbl">Accuracy</div></div>'+
+    '<div class="stat"><div class="num">'+Math.round(totalMin/60)+'h</div><div class="lbl">Hours Studied</div></div>'+
+    '<div class="stat"><div class="num">'+totalDays+'</div><div class="lbl">Study Days</div></div>';
 }
 
 function filteredUsers(){
