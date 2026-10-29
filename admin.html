@@ -377,7 +377,8 @@ const SECTION_LABELS = {quiz:'Quiz', lessons:'Lessons', strategies:'Strategies',
    all rows (index.html:832). Only moving them out of `progress` closes that. */
 const LIST_COLS = ['user_name','employment_status','institution','first_started','last_active',
                    'answered','correct','known','sessions','streak','study_days','study_seconds',
-                   'manual_hours','topic_stats'].join(',');   // section_seconds pruned: unused in list view (was parsed for 100 users per refresh for nothing)
+                   'manual_hours','topic_stats',
+                   'ce_hours','ce_hours_window'].join(',');   // ce_*: the CE columns read them; ce_source/ce_updated ride along only in DETAIL_COLS
 
 // Extra blobs, fetched only when a single learner is opened.
 const DETAIL_COLS = LIST_COLS + ',section_seconds,answers,wrong,known_cards,card_reps,today_seconds,today_date';
@@ -666,7 +667,7 @@ function fmtDateTime(iso){
 }
 function pct(n){ return Math.round(n)+'%'; }
 function cePill(h){
-  if(h === null || h === undefined) return '<span class="pill in">'+'—'+'</span>';
+  if(h === null || h === undefined) return '<span class="pill mute">'+'—'+'</span>';
   if(h >= 30) return '<span class="pill ok">'+h+' h</span>';
   if(h >= 15) return '<span class="pill warn">'+h+' h</span>';
   return '<span class="pill bad">'+h+' h</span>';
@@ -1698,6 +1699,9 @@ function exportRows(){
     const v = c.render ? c.render(m) : c.get(m);
     // The table renders an accuracy pill; the export wants the plain number.
     if(c.key === 'accNum') return m.acc;
+    // The table renders a CE pill ("30 h" wrapped in span markup); the export
+    // wants the bare hours value the pill was built from.
+    if(c.key === 'ceWin')  return (m.ceWin === null || m.ceWin === undefined ? '' : m.ceWin + ' h');
     if(c.key === 'lastActiveRaw') return m.lastActive;
     return csvSafe(v);
   }));
