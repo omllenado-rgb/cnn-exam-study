@@ -642,15 +642,15 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="content.js?v=1315w"></script>
-<script src="original-content.js?v=1315w"></script>
-<script src="explanations.js?v=1315w"></script>
+<script src="content.js?v=1315x"></script>
+<script src="original-content.js?v=1315x"></script>
+<script src="explanations.js?v=1315x"></script>
 <script>
 /* BUILD GUARD — own script, never blocks the app: reloads only when the served
    build token differs from the remembered one (real update). First visit stores
    and moves on. */
 (function(){
-  var V = "1315w", S = "Oct 29 3";
+  var V = "1315x", S = "Oct 29 3";
   try {
     var seen = localStorage.getItem('cnn_app_build');
     if(!seen){ localStorage.setItem('cnn_app_build', V); }
@@ -1370,6 +1370,36 @@ async function saveProgress(opts){
     if(!_progressDirty){ saveLocal(p); return; }   // local-only tick (no network)
   }
   try {
+    /* DEFENSIVE UNION: if this device's copy has EMPTY collections while the
+       account is clearly established (answered>0), the local state is suspect
+       (fresh browser profile, cleared storage, test pollution). Never let a
+       hollow copy zero out the server's collections: pull them once and union.
+       Counters take the MAX both ways; collections are object-union'd. */
+    if((p.answered||0) > 0 &&
+       (!p.answers || !Object.keys(p.answers).length) &&
+       (!p.wrong || !Object.keys(p.wrong).length) &&
+       (!p.topic_stats || !Object.keys(p.topic_stats).length)){
+      const {data: srvRow} = await sbClient.from('progress').select(
+        'answers,wrong,known_cards,topic_stats,study_seconds,study_days,sessions,streak,card_reps'
+      ).eq('user_name', currentUser).single();
+      if(srvRow){
+        p.answers      = Object.assign({}, srvRow.answers || {}, p.answers || {});
+        p.wrong        = Object.assign({}, srvRow.wrong || {}, p.wrong || {});
+        p.known_cards  = Object.assign({}, srvRow.known_cards || {}, p.known_cards || {});
+        p.card_reps    = Object.assign({}, srvRow.card_reps || {}, p.card_reps || {});
+        p.topic_stats  = Object.assign({}, srvRow.topic_stats || {}, p.topic_stats || {});
+        for(const k in srvRow.topic_stats || {}){
+          const s = srvRow.topic_stats[k], m = p.topic_stats[k] || (p.topic_stats[k]={answered:0,correct:0});
+          m.answered = Math.max(m.answered||0, s.answered||0);
+          m.correct  = Math.max(m.correct||0, s.correct||0);
+        }
+        p.study_seconds = Math.max(p.study_seconds||0, srvRow.study_seconds||0);
+        p.study_days    = Math.max(p.study_days||0, srvRow.study_days||0);
+        p.sessions      = Math.max(p.sessions||0, srvRow.sessions||0);
+        p.streak        = Math.max(p.streak||0, srvRow.streak||0);
+        p.known         = Math.max(p.known||0, srvRow.known||0);
+      }
+    }
     await sbClient.from('progress').upsert({
       user_name: currentUser,
       pass_salt: p.pass_salt || null,
