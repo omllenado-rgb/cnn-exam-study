@@ -246,7 +246,7 @@
 
 
 <!-- CE CREDITS MODAL — the CNN rule: 30 contact hours in the last 2 years.
-     Asks at login when missing/stale (see maybePromptCE). -->
+     Update via the Trackers tab button. -->
 <div id="ceOverlay" role="dialog" aria-modal="true" aria-labelledby="ceTitle">
   <div class="howto-box">
     <h2 id="ceTitle">🎓 Your CE Credits</h2>
@@ -639,9 +639,9 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="content.js?v=1315p"></script>
-<script src="original-content.js?v=1315p"></script>
-<script src="explanations.js?v=1315p"></script>
+<script src="content.js?v=1315q"></script>
+<script src="original-content.js?v=1315q"></script>
+<script src="explanations.js?v=1315q"></script>
 <script>
 /* ============ SUPABASE (fill in your keys) ============ */
 const SUPABASE_URL = "https://ymvaslldugwzgjeaxabz.supabase.co";
@@ -862,8 +862,7 @@ document.addEventListener('keydown', function(e){
 });
 
 /* ============ CE CREDITS (CNN rule: 30 contact hours in the last 2 years) ====
-   Stored on the progress row: ce_hours (lifetime), ce_hours_window (last 2 yrs),
-   ce_source (one line), ce_updated (ISO). Login re-asks at >90 days. */
+   Update from the Trackers tab button. No login prompt.
 function openCE(){ modalOpen('ceOverlay'); }
 function closeCE(){ modalClose('ceOverlay'); }
 function saveCE(){
@@ -886,7 +885,6 @@ function cePromptNeeded(p){
   if(!p.ce_updated) return true;
   return (Date.now() - Date.parse(p.ce_updated)) > 90*86400000;
 }
-function maybePromptCE(){ try{ const p = window.userProgress || {}; if(cePromptNeeded(p)) openCE(); }catch(e){} }
 function renderCE(){
   const p = window.userProgress || {};
   const ltEl = document.getElementById('ceHoursTotal');
@@ -1029,7 +1027,6 @@ function enterApp(name){
   startStudyTimer();
   document.getElementById('loginMsg').textContent = '';
   maybePromptProfile();
-  maybePromptCE();
   renderMessages();
 }
 async function login(){
