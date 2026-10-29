@@ -673,7 +673,7 @@
    build token differs from the remembered one (real update). First visit stores
    and moves on. */
 (function(){
-  var V = "1317x", S = "Oct 28 2";
+  var V = "1318x", S = "Oct 28 3";
   try {
     var seen = localStorage.getItem('cnn_app_build');
     if(!seen){ localStorage.setItem('cnn_app_build', V); }
@@ -1068,6 +1068,33 @@ async function serverCreateAccount(name, pass){
     return data;
   }catch(e){ return null; }
 }
+
+/* ============ LEARNER SESSION TOKEN (test_results RLS) ============
+   login_check / create_account return a signed token (STAGE 7 in
+   supabase-tracker-privacy.sql). It lives only in sessionStorage — the same
+   lifetime as the tab session's own login. The practice-test history read
+   (loadTestHistory) and its insert (saveTestResult) go through
+   learnerClient(), which carries the token as a request header for the
+   RLS policy to verify. With no token (legacy path, or the SQL not yet
+   applied), those calls ride the normal client and show their existing
+   degrade messages instead of leaking anything. */
+function learnerSessionStore(tok, expIso){
+  try { sessionStorage.setItem('cnn_learner_token', JSON.stringify({token:tok, expires_at:expIso||null})); }
+  catch(e){}
+  window.sbAuthed = null;   /* rebuilt with the fresh token on next use */
+}
+function learnerClient(){
+  if(window.sbAuthed) return window.sbAuthed;
+  let tok = null;
+  try { tok = (JSON.parse(sessionStorage.getItem('cnn_learner_token')||'null')||{}).token || null; } catch(e){}
+  if(tok){
+    window.sbAuthed = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY,
+      { global:{ headers:{ 'x-learner-token': tok } } });
+  } else {
+    window.sbAuthed = sbClient;
+  }
+  return window.sbAuthed;
+}
 // Shared post-sign-in entry, extracted from login() so the server path and the
 // legacy path cannot drift apart.
 function enterApp(name){
@@ -1106,6 +1133,7 @@ async function login(){
         // A sibling of profile, never a key inside it: enterApp hands
         // window.userProgress to saveLocal(), which would cache it on the device.
         pendingMessages = srv.messages || null;
+        if(srv.token) learnerSessionStore(srv.token, srv.expires_at);
         enterApp(srv.profile.user_name);
         return;
       }
@@ -1123,6 +1151,7 @@ async function login(){
           const {error:insErr} = await sbClient.from('progress').insert(newUser);
           if(insErr){ msg.textContent = 'Could not create account. Try again.'; return; }
           window.userProgress = newUser;
+          if(cr.token) learnerSessionStore(cr.token, cr.expires_at);
           enterApp(name);
           return;
         }
@@ -1173,6 +1202,9 @@ function logout(){
   saveProgress(); // persist the final seconds of this session (also flushes section time)
   currentUser = null;
   pendingMessages = null;
+  // Drop this tab's learner session with the login itself
+  try { sessionStorage.removeItem('cnn_learner_token'); } catch(e){}
+  window.sbAuthed = null;
   const mb = document.getElementById('msgBar');
   const mt = document.getElementById('msgText');
   if(mb) mb.style.display = 'none';   // a shared device must not flash the last learner's note
@@ -2004,7 +2036,7 @@ function saveTestResult(correct, total){
     objective_scores[obj] = Math.round(c/t*100);
   });
   try {
-    sbClient.from('test_results').insert({
+    learnerClient().from('test_results').insert({
       user_name: currentUser,
       total_questions: total,
       correct: correct,
@@ -2284,7 +2316,7 @@ function loadTestHistory(){
   renderBlueprintTrend();
   const who=currentUser;
   try{
-    sbClient.from('test_results')
+    learnerClient().from('test_results')
       .select('created_at,correct,total_questions,objective_scores')
       .eq('user_name',who)
       .order('created_at',{ascending:true})
