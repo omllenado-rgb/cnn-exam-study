@@ -4243,8 +4243,8 @@
 },
 {
 "as_of": "2026-10-28",
-"total_answered": 5414,
-"total_correct": 4173,
+"total_answered": 5418,
+"total_correct": 4174,
 "users": {
 "obortai": {
 "answered": 0,
@@ -4324,11 +4324,11 @@
 "study_days": 25
 },
 "oliver": {
-"answered": 690,
-"correct": 416,
-"last_study": "2026-10-26",
+"answered": 694,
+"correct": 417,
+"last_study": "2026-10-28",
 "sessions": 108,
-"study_days": 43
+"study_days": 44
 },
 "rizalina dela cruz": {
 "answered": 15,
