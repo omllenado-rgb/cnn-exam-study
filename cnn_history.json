@@ -4355,8 +4355,8 @@
 },
 {
 "as_of": "2026-10-29",
-"total_answered": 5424,
-"total_correct": 4177,
+"total_answered": 5466,
+"total_correct": 4210,
 "users": {
 "obortai": {
 "answered": 0,
@@ -4435,6 +4435,13 @@
 "sessions": 1,
 "study_days": 1
 },
+"cchutuape": {
+"answered": 89,
+"correct": 74,
+"last_study": "2026-10-29",
+"sessions": 6,
+"study_days": 4
+},
 "nhor jhane ganub": {
 "answered": 4341,
 "correct": 3502,
@@ -4455,13 +4462,6 @@
 "last_study": "2026-10-17",
 "sessions": 5,
 "study_days": 4
-},
-"cchutuape": {
-"answered": 47,
-"correct": 41,
-"last_study": "2026-10-17",
-"sessions": 4,
-"study_days": 3
 }
 }
 }
