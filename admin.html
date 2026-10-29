@@ -1866,6 +1866,7 @@ function progressReportHTML(history){
 
   // ---- per-learner rows
   let memberRows = '';
+  let rTotAns = 0, rTotCor = 0, rTotSess = 0, rTotDays = 0;
   rows.slice().sort((a,b)=>{
     const A=a.raw.first_started||'9999', B=b.raw.first_started||'9999';
     return A<B ? -1 : (A>B ? 1 : 0);
@@ -1878,6 +1879,8 @@ function progressReportHTML(history){
       ? '<span style="color:'+accColor(m.accNum)+';font-weight:600">'+m.accNum+'%</span>'
       : '<span style="color:#8a879c">not started</span>';
     const last = m.raw.last_study ? String(m.raw.last_study).slice(0,10) : (m.raw.last_active ? daysAgo(m.raw.last_active) : '—');
+    rTotAns += (m.answered||0); rTotCor += (m.correct||0);
+    rTotSess += (m.raw.sessions||0); rTotDays += (m.studyDays||0);
     memberRows += '<tr><td style="'+td+'"><b>'+esc(m.name)+'</b></td>'
       + '<td style="'+tdr+'">'+esc(joined)+'</td>'
       + '<td style="'+tdr+'">'+(earlyAns?earlyAns.toLocaleString():'—')+'</td>'
@@ -1888,6 +1891,20 @@ function progressReportHTML(history){
       + '<td style="'+tdr+'">'+(m.studyDays||0)+'</td>'
       + '<td style="'+tdr+'">'+esc(last)+'</td></tr>';
   });
+  /* Total row (2026-10-29): the report previously had no footline, so days in
+     particular were dropped when this table is pasted or printed. Correct is
+     shown rather than a redundant "gained" sum; accuracy is volume-weighted
+     (same definition as the dashboard summary). */
+  const rAcc = rTotAns ? Math.round(rTotCor/rTotAns*100)+'%' : '—';
+  memberRows += '<tr><td style="'+td+'"><b>Total</b></td>'
+    + '<td style="'+tdr+'">—</td>'
+    + '<td style="'+tdr+'">&nbsp;</td>'
+    + '<td style="'+tdr+'"><b>'+rTotAns.toLocaleString()+'</b></td>'
+    + '<td style="'+tdr+'">&nbsp;</td>'
+    + '<td style="'+tdr+'"><b>'+rAcc+'</b></td>'
+    + '<td style="'+tdr+'"><b>'+rTotSess+'</b></td>'
+    + '<td style="'+tdr+'"><b>'+rTotDays+'</b></td>'
+    + '<td style="'+tdr+'">&nbsp;</td></tr>';
 
   // ---- not engaged: accounts with zero answers, and roster names with no account
   let idleRows = '';
