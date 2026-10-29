@@ -639,10 +639,35 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="content.js?v=1315r"></script>
-<script src="original-content.js?v=1315r"></script>
-<script src="explanations.js?v=1315r"></script>
+<script src="content.js?v=1315s"></script>
+<script src="original-content.js?v=1315s"></script>
+<script src="explanations.js?v=1315s"></script>
 <script>
+
+/* BUILD BADGE + one-time legacy-state purge — makes staleness DIAGNOSABLE */
+(function(){
+  var V = "1315s", S = "Oct 28 18:28";
+  try {
+    var seen = localStorage.getItem('cnn_app_build');
+    if(seen && seen !== V){
+      localStorage.setItem('cnn_app_build', V);
+      /* purge modal-open leftovers that old builds may have persisted */
+      try { Object.keys(localStorage).forEach(function(k){
+        if(/modal|overlay|ce_/i.test(k)) localStorage.removeItem(k);
+      }); } catch(e){}
+      location.replace(location.href);
+    } else {
+      localStorage.setItem('cnn_app_build', V);
+      if(!seen) location.replace(location.href);   // brand-new device: reload once to normalize
+    }
+  } catch(e){}
+  document.addEventListener('DOMContentLoaded', function(){
+    var b = document.createElement('div');
+    b.style.cssText = 'position:fixed;bottom:6px;right:8px;font-size:10px;color:#9a9aa6;z-index:9999;opacity:.75';
+    b.textContent = 'Build ' + V + ' · ' + S;
+    document.body.appendChild(b);
+  });
+})();
 
 /* DEPLOY REFRESH GUARD: when the server serves a NEWER ?v token than this
    device's localStorage remembers, force ONE reload so phones never sit on a
