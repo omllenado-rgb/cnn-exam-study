@@ -639,10 +639,22 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="content.js?v=1315q"></script>
-<script src="original-content.js?v=1315q"></script>
-<script src="explanations.js?v=1315q"></script>
+<script src="content.js?v=1315r"></script>
+<script src="original-content.js?v=1315r"></script>
+<script src="explanations.js?v=1315r"></script>
 <script>
+
+/* DEPLOY REFRESH GUARD: when the server serves a NEWER ?v token than this
+   device's localStorage remembers, force ONE reload so phones never sit on a
+   stale HTML bundle after a deploy. */
+(function(){
+  var V = "1315r";
+  try {
+    var seen = localStorage.getItem('cnn_app_build');
+    if(seen && seen !== V){ localStorage.setItem('cnn_app_build', V); location.replace(location.href); return; }
+    localStorage.setItem('cnn_app_build', V);
+  } catch(e){}
+})();
 /* ============ SUPABASE (fill in your keys) ============ */
 const SUPABASE_URL = "https://ymvaslldugwzgjeaxabz.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_EpbSQ2PEnEzOxAPkzkCe1g__Y0ozzi9";
