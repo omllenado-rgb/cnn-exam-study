@@ -156,6 +156,8 @@
   .muted{color:var(--gray);font-size:13px;}
   .bar{background:var(--border);border-radius:6px;height:8px;overflow:hidden;}
   .bar>div{background:var(--gold);height:100%;}
+  /* Weak-topic flag (Trackers, Accuracy by Topic) — label, not color-alone */
+  .topic-flag{font-size:10px;font-weight:700;color:var(--red);letter-spacing:.04em;text-transform:uppercase;}
   /* Daily-goal ring chips (Trackers tab) — the .filter-button idiom */
   .dgseg{border:1.5px solid var(--input-border);background:var(--card);border-radius:999px;padding:5px 11px;font-size:12px;cursor:pointer;color:var(--gray);margin:0;}
   .dgseg.active{border-color:var(--aggie-blue);color:var(--aggie-blue);background:var(--light);font-weight:600;}
@@ -671,7 +673,7 @@
    build token differs from the remembered one (real update). First visit stores
    and moves on. */
 (function(){
-  var V = "1316x", S = "Oct 28 1";
+  var V = "1317x", S = "Oct 28 2";
   try {
     var seen = localStorage.getItem('cnn_app_build');
     if(!seen){ localStorage.setItem('cnn_app_build', V); }
@@ -2420,10 +2422,21 @@ function renderTrackers(){
   const wrongCount=Object.keys(p.wrong||{}).length;
   document.getElementById('wrongCount').textContent=wrongCount?`${wrongCount} question(s) to review.`:'No missed questions yet.';
   let html='';
-  topics.forEach(t=>{
+  // Weakest first: answered topics sorted by accuracy ascending (ties broken
+  // by more answers — a bigger sample is the stronger signal), then bank
+  // order; never-answered topics keep their original place after them.
+  const topicRows=topics.map(t=>{
     const ts=(p.topic_stats||{})[t]||{answered:0,correct:0};
-    const pct=ts.answered?Math.round(ts.correct/ts.answered*100):0;
-    html+=`<div style="margin:8px 0"><div style="display:flex;justify-content:space-between;font-size:13px"><span>${esc(t)}</span><span>${ts.correct}/${ts.answered} (${pct}%)</span></div><div class="bar"><div style="width:${ts.answered?pct:0}%"></div></div></div>`;
+    return { t, answered:ts.answered||0, correct:ts.correct||0,
+      pct: ts.answered?Math.round(ts.correct/ts.answered*100):0 };
+  }).sort((a,b)=>{
+    if(a.answered && b.answered) return a.pct-b.pct || b.answered-a.answered;
+    if(a.answered !== b.answered) return a.answered?-1:1;
+    return 0;
+  });
+  topicRows.forEach(r=>{
+    const weak=r.answered && r.pct<70;
+    html+=`<div style="margin:8px 0"><div style="display:flex;justify-content:space-between;font-size:13px;gap:10px"><span>${esc(r.t)}</span><span>${r.correct}/${r.answered} (${r.pct}%)${weak?' <span class="topic-flag">below 70</span>':''}</span></div><div class="bar"><div style="width:${r.answered?r.pct:0}%;${weak?'background:var(--red);':''}"></div></div></div>`;
   });
   document.getElementById('tTopicBars').innerHTML=html;
   renderFocusSuggestions();
@@ -2439,9 +2452,15 @@ function renderSectionBars(){
   const keys=Object.keys(ss).filter(k=>labels[k]);
   if(keys.length===0){ el.innerHTML='<p class="muted">No section time yet. Spend time in each section to see it here.</p>'; return; }
   let html='';
-  keys.forEach(k=>{
-    const min=Math.round((ss[k]||0)/60);
-    html+=`<div style="margin:8px 0"><div style="display:flex;justify-content:space-between;font-size:13px"><span>${labels[k]}</span><span>${min} min</span></div><div class="bar"><div style="width:${Math.min(100,min)}%"></div></div></div>`;
+  /* Scale fix: bars were Math.min(100, minutes)% — any section over 100
+     minutes rendered full width forever, so 1,240 and 100 looked identical.
+     Bars are now proportional to the largest section, which is the scale a
+     "how is my time split" chart should have. */
+  const mins=keys.map(k=>Math.round((ss[k]||0)/60));
+  const maxMin=Math.max(1, ...mins);
+  keys.forEach((k,i)=>{
+    const min=mins[i];
+    html+=`<div style="margin:8px 0"><div style="display:flex;justify-content:space-between;font-size:13px"><span>${labels[k]}</span><span>${min} min</span></div><div class="bar"><div style="width:${Math.round(min/maxMin*100)}%"></div></div></div>`;
   });
   el.innerHTML=html;
 }
