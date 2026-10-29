@@ -390,6 +390,8 @@ const COLS = [
   {key:'name',         label:'User',         get:m=>m.name,        export:true},
   {key:'emp',          label:'Employment',   get:m=>m.emp,         export:true},
   {key:'inst',         label:'Institution',  get:m=>m.inst,        export:true},
+  {key:'ceWin',        label:'CE (2yr)',    get:m=>m.ceWin,       render:m=>cePill(m.ceWin), export:true},
+  {key:'ceLife',       label:'CE Total',    get:m=>m.ceLife,      export:true},
   {key:'first',        label:'First',        get:m=>m.first,       export:true},
   {key:'inAppMin',     label:'In-App(Min)',  get:m=>m.inAppMin,    export:true},
   {key:'manualHrs',    label:'Manual(Hrs)',  get:m=>m.manualHrs,   export:true},
