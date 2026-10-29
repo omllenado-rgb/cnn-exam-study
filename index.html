@@ -642,47 +642,38 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="content.js?v=1315t"></script>
-<script src="original-content.js?v=1315t"></script>
-<script src="explanations.js?v=1315t"></script>
+<script src="content.js?v=1315u"></script>
+<script src="original-content.js?v=1315u"></script>
+<script src="explanations.js?v=1315u"></script>
 <script>
-
-/* BUILD BADGE + one-time legacy-state purge — makes staleness DIAGNOSABLE */
+/* BUILD GUARD — own script, never blocks the app: reloads only when the served
+   build token differs from the remembered one (real update). First visit stores
+   and moves on. */
 (function(){
-  var V = "1315s", S = "Oct 28 18:28";
+  var V = "1315u", S = "Oct 29";
   try {
     var seen = localStorage.getItem('cnn_app_build');
-    if(seen && seen !== V){
+    if(!seen){ localStorage.setItem('cnn_app_build', V); }
+    else if(seen !== V){
       localStorage.setItem('cnn_app_build', V);
-      /* purge modal-open leftovers that old builds may have persisted */
       try { Object.keys(localStorage).forEach(function(k){
         if(/modal|overlay|ce_/i.test(k)) localStorage.removeItem(k);
-      }); } catch(e){}
-      location.replace(location.href);
-    } else {
-      localStorage.setItem('cnn_app_build', V);
-      if(!seen) location.replace(location.href);   // brand-new device: reload once to normalize
+      }); } catch(e2){}
+      window.addEventListener('load', function(){ setTimeout(function(){ location.replace(location.href); }, 60); });
     }
   } catch(e){}
   document.addEventListener('DOMContentLoaded', function(){
     var b = document.createElement('div');
     b.style.cssText = 'position:fixed;bottom:6px;right:8px;font-size:10px;color:#9a9aa6;z-index:9999;opacity:.75';
-    b.textContent = 'Build ' + V + ' · ' + S;
+    b.textContent = 'Build ' + V + ' - ' + S;
     document.body.appendChild(b);
   });
 })();
+</script>
+<script>
 
-/* DEPLOY REFRESH GUARD: when the server serves a NEWER ?v token than this
-   device's localStorage remembers, force ONE reload so phones never sit on a
-   stale HTML bundle after a deploy. */
-(function(){
-  var V = "1315r";
-  try {
-    var seen = localStorage.getItem('cnn_app_build');
-    if(seen && seen !== V){ localStorage.setItem('cnn_app_build', V); location.replace(location.href); return; }
-    localStorage.setItem('cnn_app_build', V);
-  } catch(e){}
-})();
+
+
 /* ============ SUPABASE (fill in your keys) ============ */
 const SUPABASE_URL = "https://ymvaslldugwzgjeaxabz.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_EpbSQ2PEnEzOxAPkzkCe1g__Y0ozzi9";
