@@ -4355,8 +4355,8 @@
 },
 {
 "as_of": "2026-10-29",
-"total_answered": 5466,
-"total_correct": 4210,
+"total_answered": 5508,
+"total_correct": 4241,
 "users": {
 "obortai": {
 "answered": 0,
@@ -4421,6 +4421,13 @@
 "sessions": 0,
 "study_days": 1
 },
+"rizalina dela cruz": {
+"answered": 57,
+"correct": 39,
+"last_study": "2026-10-29",
+"sessions": 2,
+"study_days": 2
+},
 "rudy": {
 "answered": 14,
 "correct": 8,
@@ -4448,13 +4455,6 @@
 "last_study": "2026-10-27",
 "sessions": 35,
 "study_days": 25
-},
-"rizalina dela cruz": {
-"answered": 15,
-"correct": 8,
-"last_study": "2026-10-27",
-"sessions": 1,
-"study_days": 1
 },
 "lynda soohoo": {
 "answered": 45,
