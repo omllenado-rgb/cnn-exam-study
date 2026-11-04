@@ -4887,15 +4887,15 @@
 },
 {
 "as_of": "2026-11-03",
-"total_answered": 5772,
-"total_correct": 4460,
+"total_answered": 5792,
+"total_correct": 4477,
 "users": {
 "rizalina dela cruz": {
-"answered": 129,
-"correct": 85,
-"last_study": "2026-11-01",
-"sessions": 6,
-"study_days": 4
+"answered": 149,
+"correct": 102,
+"last_study": "2026-11-03",
+"sessions": 7,
+"study_days": 5
 },
 "obortai": {
 "answered": 0,
