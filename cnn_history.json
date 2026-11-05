@@ -4992,15 +4992,15 @@
 },
 {
 "as_of": "2026-11-04",
-"total_answered": 5792,
-"total_correct": 4477,
+"total_answered": 5828,
+"total_correct": 4498,
 "users": {
 "rizalina dela cruz": {
-"answered": 149,
-"correct": 102,
-"last_study": "2026-11-03",
-"sessions": 7,
-"study_days": 5
+"answered": 171,
+"correct": 112,
+"last_study": "2026-11-04",
+"sessions": 9,
+"study_days": 6
 },
 "obortai": {
 "answered": 0,
@@ -5008,13 +5008,6 @@
 "last_study": "2026-10-09",
 "sessions": 0,
 "study_days": 6
-},
-"danielle baradas": {
-"answered": 11,
-"correct": 11,
-"last_study": "2026-11-01",
-"sessions": 3,
-"study_days": 2
 },
 "jocelyn": {
 "answered": 224,
@@ -5085,6 +5078,13 @@
 "last_study": "2026-10-31",
 "sessions": 35,
 "study_days": 26
+},
+"danielle baradas": {
+"answered": 25,
+"correct": 22,
+"last_study": "2026-11-04",
+"sessions": 4,
+"study_days": 3
 },
 "lynda soohoo": {
 "answered": 45,
