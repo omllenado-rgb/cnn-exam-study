@@ -5199,5 +5199,110 @@
 "study_days": 4
 }
 }
+},
+{
+"as_of": "2026-11-06",
+"total_answered": 5828,
+"total_correct": 4498,
+"users": {
+"rizalina dela cruz": {
+"answered": 171,
+"correct": 112,
+"last_study": "2026-11-04",
+"sessions": 9,
+"study_days": 6
+},
+"obortai": {
+"answered": 0,
+"correct": 0,
+"last_study": "2026-10-09",
+"sessions": 0,
+"study_days": 6
+},
+"jocelyn": {
+"answered": 224,
+"correct": 138,
+"last_study": "2026-10-15",
+"sessions": 12,
+"study_days": 10
+},
+"nancycalton": {
+"answered": 3,
+"correct": 2,
+"last_study": "2026-10-06",
+"sessions": 1,
+"study_days": 1
+},
+"maria llenado": {
+"answered": 23,
+"correct": 18,
+"last_study": "2026-09-02",
+"sessions": 1,
+"study_days": 2
+},
+"erica cha": {
+"answered": 3,
+"correct": 2,
+"last_study": "2026-10-05",
+"sessions": 1,
+"study_days": 1
+},
+"eloisa": {
+"answered": 0,
+"correct": 0,
+"last_study": "2026-10-01",
+"sessions": 0,
+"study_days": 1
+},
+"rudy": {
+"answered": 14,
+"correct": 8,
+"last_study": "2026-09-01",
+"sessions": 1,
+"study_days": 3
+},
+"oliver": {
+"answered": 705,
+"correct": 424,
+"last_study": "2026-11-05",
+"sessions": 114,
+"study_days": 50
+},
+"vino ruiz": {
+"answered": 1,
+"correct": 1,
+"last_study": "2026-10-01",
+"sessions": 1,
+"study_days": 1
+},
+"cchutuape": {
+"answered": 89,
+"correct": 74,
+"last_study": "2026-10-29",
+"sessions": 6,
+"study_days": 4
+},
+"nhor jhane ganub": {
+"answered": 4525,
+"correct": 3667,
+"last_study": "2026-10-31",
+"sessions": 35,
+"study_days": 26
+},
+"danielle baradas": {
+"answered": 25,
+"correct": 22,
+"last_study": "2026-11-04",
+"sessions": 4,
+"study_days": 3
+},
+"lynda soohoo": {
+"answered": 45,
+"correct": 30,
+"last_study": "2026-10-17",
+"sessions": 5,
+"study_days": 4
+}
+}
 }
 ]
