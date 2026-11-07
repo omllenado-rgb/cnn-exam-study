@@ -5202,22 +5202,22 @@
 },
 {
 "as_of": "2026-11-06",
-"total_answered": 5828,
-"total_correct": 4498,
+"total_answered": 6052,
+"total_correct": 4654,
 "users": {
-"rizalina dela cruz": {
-"answered": 171,
-"correct": 112,
-"last_study": "2026-11-04",
-"sessions": 9,
-"study_days": 6
-},
 "obortai": {
 "answered": 0,
 "correct": 0,
 "last_study": "2026-10-09",
 "sessions": 0,
 "study_days": 6
+},
+"rizalina dela cruz": {
+"answered": 187,
+"correct": 121,
+"last_study": "2026-11-06",
+"sessions": 10,
+"study_days": 7
 },
 "jocelyn": {
 "answered": 224,
@@ -5261,13 +5261,6 @@
 "sessions": 1,
 "study_days": 3
 },
-"oliver": {
-"answered": 705,
-"correct": 424,
-"last_study": "2026-11-05",
-"sessions": 114,
-"study_days": 50
-},
 "vino ruiz": {
 "answered": 1,
 "correct": 1,
@@ -5283,11 +5276,11 @@
 "study_days": 4
 },
 "nhor jhane ganub": {
-"answered": 4525,
-"correct": 3667,
-"last_study": "2026-10-31",
-"sessions": 35,
-"study_days": 26
+"answered": 4635,
+"correct": 3757,
+"last_study": "2026-11-06",
+"sessions": 36,
+"study_days": 27
 },
 "danielle baradas": {
 "answered": 25,
@@ -5296,12 +5289,26 @@
 "sessions": 4,
 "study_days": 3
 },
+"fsinlao": {
+"answered": 7,
+"correct": 4,
+"last_study": "2026-11-06",
+"sessions": 1,
+"study_days": 1
+},
 "lynda soohoo": {
 "answered": 45,
 "correct": 30,
 "last_study": "2026-10-17",
 "sessions": 5,
 "study_days": 4
+},
+"oliver": {
+"answered": 796,
+"correct": 477,
+"last_study": "2026-11-06",
+"sessions": 117,
+"study_days": 51
 }
 }
 }
