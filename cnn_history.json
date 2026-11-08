@@ -5314,8 +5314,8 @@
 },
 {
 "as_of": "2026-11-07",
-"total_answered": 6102,
-"total_correct": 4686,
+"total_answered": 6122,
+"total_correct": 4696,
 "users": {
 "fsinlao": {
 "answered": 7,
@@ -5416,11 +5416,11 @@
 "study_days": 4
 },
 "oliver": {
-"answered": 846,
-"correct": 509,
-"last_study": "2026-11-06",
-"sessions": 123,
-"study_days": 51
+"answered": 866,
+"correct": 519,
+"last_study": "2026-11-07",
+"sessions": 124,
+"study_days": 52
 }
 }
 }
