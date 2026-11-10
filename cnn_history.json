@@ -5538,8 +5538,8 @@
 },
 {
 "as_of": "2026-11-09",
-"total_answered": 6192,
-"total_correct": 4756,
+"total_answered": 6241,
+"total_correct": 4804,
 "users": {
 "fsinlao": {
 "answered": 7,
@@ -5554,6 +5554,13 @@
 "last_study": "2026-10-09",
 "sessions": 0,
 "study_days": 6
+},
+"oliver": {
+"answered": 915,
+"correct": 567,
+"last_study": "2026-11-09",
+"sessions": 126,
+"study_days": 53
 },
 "rizalina dela cruz": {
 "answered": 187,
@@ -5631,13 +5638,6 @@
 "last_study": "2026-10-17",
 "sessions": 5,
 "study_days": 4
-},
-"oliver": {
-"answered": 866,
-"correct": 519,
-"last_study": "2026-11-07",
-"sessions": 124,
-"study_days": 52
 },
 "nhor jhane ganub": {
 "answered": 4705,
