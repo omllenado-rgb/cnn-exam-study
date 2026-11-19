@@ -6546,8 +6546,8 @@
 },
 {
 "as_of": "2026-11-18",
-"total_answered": 6588,
-"total_correct": 4909,
+"total_answered": 6590,
+"total_correct": 4911,
 "users": {
 "fsinlao": {
 "answered": 7,
@@ -6577,13 +6577,6 @@
 "sessions": 10,
 "study_days": 7
 },
-"jocelyn": {
-"answered": 224,
-"correct": 138,
-"last_study": "2026-10-15",
-"sessions": 12,
-"study_days": 10
-},
 "nancycalton": {
 "answered": 3,
 "correct": 2,
@@ -6597,6 +6590,13 @@
 "last_study": "2026-09-02",
 "sessions": 1,
 "study_days": 2
+},
+"jocelyn": {
+"answered": 226,
+"correct": 140,
+"last_study": "2026-11-18",
+"sessions": 13,
+"study_days": 11
 },
 "erica cha": {
 "answered": 3,
