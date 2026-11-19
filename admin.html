@@ -895,6 +895,30 @@ async function resetUser(name){
   if(!confirm('Reset all progress for "'+name+'"?\n\nA backup snapshot is saved first, so this can be '
              +'rolled back from the Snapshots panel.')) return;
   try{
+    // Reset is the server's job once admin_reset_user exists: the old code wrote
+    // directly to public.progress with only a client-side guard, so anyone with
+    // the public anon key could wipe a learner's progress via the REST API.
+    // Same NOT_SET_UP self-removing fallback shape as deleteUser.
+    if(!legacyMode){
+      let r, missing = false;
+      try{ r = await rpc('admin_reset_user', {p_user:name}); }
+      catch(e){ if(e && e.message === 'NOT_SET_UP') missing = true; else throw e; }
+
+      if(!missing){
+        if(r === null) return;                       // token refused; rpc() already re-authed
+        if(r && r.status === 'ok'){
+          alert('User "'+name+'" reset. A backup is available in Snapshots.');
+          await loadAdmin();
+        }else if(r && r.status !== 'no_user'){        // no_user: nothing to reset, not an error
+          alert('Reset was refused: '+((r&&r.status)||'unknown'));
+        }
+        return;
+      }
+      // missing: admin_reset_user not deployed yet — fall through to the direct
+      // write below, which matches the old behavior exactly.
+    }
+
+    // --- legacy / direct-write fallback (unchanged from today) ---
     // Snapshot BEFORE the reset. Previously this action had no backup at all,
     // unlike delete, so an accidental reset was unrecoverable.
     const {data:row, error:sErr} = await sbClient.from('progress').select('*').eq('user_name',name).single();

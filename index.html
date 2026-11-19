@@ -2536,8 +2536,14 @@ function renderLogBreakdown(){
   const keys=Object.keys(mh);
   if(keys.length===0){ el.textContent='No manual study hours logged yet.'; return; }
   const total=keys.reduce((s,k)=>s+mh[k],0);
-  el.innerHTML='<strong>Manual study hours:</strong> '+total.toFixed(1)+' hr total — '+
-    keys.map(k=>k+': '+mh[k].toFixed(1)+'h').join(', ');
+  // manual_hours keys are attacker-controlled (progress is world-writable), so
+  // never interpolate them into innerHTML. Build the breakdown with textContent.
+  el.replaceChildren();
+  const b=document.createElement('strong'); b.textContent='Manual study hours:';
+  el.appendChild(b);
+  el.appendChild(document.createTextNode(' '+total.toFixed(1)+' hr total — '));
+  el.appendChild(document.createTextNode(
+    keys.map(k=>k+': '+mh[k].toFixed(1)+'h').join(', ')));
 }
 function renderFocusSuggestions(){
   const p=window.userProgress||{};
