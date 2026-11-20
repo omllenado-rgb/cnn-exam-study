@@ -673,7 +673,7 @@
    build token differs from the remembered one (real update). First visit stores
    and moves on. */
 (function(){
-  var V = "1320x", S = "Nov 20 2";
+  var V = "1321x", S = "Nov 20 2";
   try {
     var seen = localStorage.getItem('cnn_app_build');
     if(!seen){ localStorage.setItem('cnn_app_build', V); }
@@ -2429,7 +2429,7 @@ function renderTrackers(){
   if(totalHrs >= 80) goalMsg.textContent = '🎉 80-hour goal reached! Strong study time logged.';
   else if(totalHrs >= 60) goalMsg.textContent = 'Almost there — ' + (80-totalHrs).toFixed(1) + ' hours to go.';
   else if(totalHrs >= 40) goalMsg.textContent = 'Halfway! Keep the momentum going.';
-  else goalMsg.textContent = 'Keep going — every hour counts toward exam readiness.';
+  else goalMsg.textContent = 'Keep going — every hour counts toward your study goal.';
   // Daily-goal ring — display-only. Reads today_seconds (which already
   // includes manually logged hours via logStudyHours) against
   // daily_goal_minutes; an absent/unsaved field means the 30m default.
