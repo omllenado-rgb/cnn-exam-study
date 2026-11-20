@@ -1199,7 +1199,10 @@ async function login(){
 }
 function logout(){
   stopStudyTimer();
-  saveProgress(); // persist the final seconds of this session (also flushes section time)
+  // Flush the final session seconds. saveProgress captures `me` before its
+  // first await, so this in-flight flush keeps targeting the leaving user even
+  // though currentUser is nulled for the UI immediately below (H2).
+  saveProgress();
   currentUser = null;
   pendingMessages = null;
   // Drop this tab's learner session with the login itself
@@ -1361,14 +1364,15 @@ async function loadUserProgress(){
    - then upsert the MERGED object so nothing is ever lost on either side */
 let _staleGuardBusy = false;
 let _progressDirty = false;   // set by every meaningful mutation; cleared on save
+let saveProgressGen = 0;      // M6: monotonic generation for the window.userProgress CAS
 function markDirty(){ _progressDirty = true; }
-async function mergeWithServer(p){
+async function mergeWithServer(p, me){
   if(!sbClient || _staleGuardBusy) return p;
   _staleGuardBusy = true;
   try {
     const { data: srv, error } = await sbClient.from('progress').select(
       'answered,correct,known,sessions,streak,study_seconds,study_days,answers,wrong,known_cards,card_reps,topic_stats,daily_goal_minutes'
-    ).eq('user_name', currentUser).single();
+    ).eq('user_name', me).single();
     if(error || !srv) return p;
     const sAns = srv.answered || 0, lAns = p.answered || 0;
     if(sAns <= lAns) return p;                   // local is fresh enough — normal save path
@@ -1404,15 +1408,20 @@ async function mergeWithServer(p){
 }
 
 async function saveProgress(opts){
-  if(!currentUser) return;
+  const me = currentUser;     // H2: capture ONCE, before any await — an in-flight
+                              // logout nulling currentUser must not re-target null
+  if(!me) return;
+  const myGen = ++saveProgressGen;  // M6: this save's generation, claimed at entry
   flushCurrentSection(); // keep per-section time in lockstep with study_seconds
   let p = window.userProgress || {};
   p.last_active = new Date().toISOString(); // keep fresh on each save
   // Stale-device guard: if the server row is AHEAD of this device, merge both
   // sides first (answer counters only ever move forward). Cheap on normal
   // saves: one indexed select.
-  try { p = await mergeWithServer(p); } catch(e){}
-  window.userProgress = p;   // keep in-memory state consistent with merged
+  try { p = await mergeWithServer(p, me); } catch(e){}
+  // M6 CAS: publish only if no newer save has started since we did — the newer
+  // save publishes its own (fresher) merge, so this staler one must not clobber it.
+  if(myGen === saveProgressGen) window.userProgress = p;
   saveLocal(p); // always save locally first
   // Heartbeat economics: the study-timer tick normally accrues ~30s of
   // study_seconds. Network-saving only when >=60s accumulated since the last
@@ -1432,13 +1441,13 @@ async function saveProgress(opts){
        (fresh browser profile, cleared storage, test pollution). Never let a
        hollow copy zero out the server's collections: pull them once and union.
        Counters take the MAX both ways; collections are object-union'd. */
-    if((p.answered||0) > 0 &&
-       (!p.answers || !Object.keys(p.answers).length) &&
-       (!p.wrong || !Object.keys(p.wrong).length) &&
-       (!p.topic_stats || !Object.keys(p.topic_stats).length)){
+    if((p.answered||0) > 0 && (
+       (!p.answers || !Object.keys(p.answers).length) ||
+       (!p.wrong || !Object.keys(p.wrong).length) ||
+       (!p.topic_stats || !Object.keys(p.topic_stats).length))){
       const {data: srvRow} = await sbClient.from('progress').select(
         'answers,wrong,known_cards,topic_stats,study_seconds,study_days,sessions,streak,card_reps,daily_goal_minutes'
-      ).eq('user_name', currentUser).single();
+      ).eq('user_name', me).single();
       if(srvRow){
         p.answers      = Object.assign({}, srvRow.answers || {}, p.answers || {});
         p.wrong        = Object.assign({}, srvRow.wrong || {}, p.wrong || {});
@@ -1458,8 +1467,8 @@ async function saveProgress(opts){
         if(p.daily_goal_minutes == null) p.daily_goal_minutes = srvRow.daily_goal_minutes || 30;
       }
     }
-    await sbClient.from('progress').upsert({
-      user_name: currentUser,
+    const up = await sbClient.from('progress').upsert({
+      user_name: me,
       pass_salt: p.pass_salt || null,
       pass_hash: p.pass_hash || null,
       answered: p.answered||0, correct: p.correct||0, known: p.known||0,
@@ -1477,6 +1486,13 @@ async function saveProgress(opts){
         ce_hours: p.ce_hours ?? null, ce_hours_window: p.ce_hours_window ?? null,
         ce_source: p.ce_source || null, ce_updated: p.ce_updated || null } : {})
     }, { onConflict: 'user_name' });
+    // SILENT-SAVE FIX: supabase-js returns API errors (RLS denial, PGRST204, …)
+    // in the result instead of throwing. Without this check a failed server
+    // save read as success: _progressDirty got cleared so the next tick sent
+    // nothing, and the column-degrade retries below never ran. Throw into the
+    // existing catch — error message still matches the /daily_goal_minutes/ and
+    // /ce_hours|…|PGRST204/ probes, so the degrade machinery works unchanged.
+    if(up && up.error) throw up.error;
     _progressDirty = false;
     window.__lastSavedSec = p.study_seconds||0;
     if(window.__ceColsOk === undefined) window.__ceColsOk = true;   // worked: columns exist
@@ -1493,8 +1509,8 @@ async function saveProgress(opts){
       window.__dgColsOk = false;
       try {
         const q = window.userProgress || {};
-        await sbClient.from('progress').upsert({
-          user_name: currentUser,
+        const r = await sbClient.from('progress').upsert({
+          user_name: me,
           pass_salt: q.pass_salt || null, pass_hash: q.pass_hash || null,
           answered: q.answered||0, correct: q.correct||0, known: q.known||0,
           sessions: q.sessions||0, streak: q.streak||0, last_study: q.last_study||null,
@@ -1508,6 +1524,7 @@ async function saveProgress(opts){
             ce_hours: q.ce_hours ?? null, ce_hours_window: q.ce_hours_window ?? null,
             ce_source: q.ce_source || null, ce_updated: q.ce_updated || null } : {})
         }, { onConflict: 'user_name' });
+        if(r && r.error) throw r.error;   // silent-save fix (same as main path)
         _progressDirty = false; window.__lastSavedSec = q.study_seconds||0;
       } catch(e2){ /* backend unavailable - local save is enough for now */ }
     }
@@ -1515,8 +1532,8 @@ async function saveProgress(opts){
       window.__ceColsOk = false;
       try {
         const q = window.userProgress || {};
-        await sbClient.from('progress').upsert({
-          user_name: currentUser,
+        const r = await sbClient.from('progress').upsert({
+          user_name: me,
           pass_salt: q.pass_salt || null, pass_hash: q.pass_hash || null,
           answered: q.answered||0, correct: q.correct||0, known: q.known||0,
           sessions: q.sessions||0, streak: q.streak||0, last_study: q.last_study||null,
@@ -1527,6 +1544,7 @@ async function saveProgress(opts){
           manual_hours: q.manual_hours||{}, section_seconds: q.section_seconds||{}, card_reps: q.card_reps||{},
           employment_status: q.employment_status||null, institution: q.institution||null
         }, { onConflict: 'user_name' });
+        if(r && r.error) throw r.error;   // silent-save fix (same as main path)
         _progressDirty = false; window.__lastSavedSec = q.study_seconds||0;
       } catch(e2){ /* backend unavailable - local save is enough for now */ }
     }
