@@ -589,7 +589,7 @@
           <span id="goalPctLabel">0%</span>
         </div>
         <div class="bar" style="height:14px"><div id="goalBar" style="height:100%;width:0%;background:var(--gold)"></div></div>
-        <p class="muted" style="margin-top:8px" id="goalMsg">Keep going — every hour counts toward exam readiness.</p>
+        <p class="muted" style="margin-top:8px" id="goalMsg">Keep going — every hour counts toward your study goal.</p>
         <div style="display:flex;gap:14px;align-items:flex-start;margin-top:12px;flex-wrap:wrap;border-top:1px solid var(--border);padding-top:12px">
           <svg width="64" height="64" viewBox="0 0 62 62" role="img" aria-label="Minutes studied today against the daily goal" style="flex:0 0 auto">
             <circle cx="31" cy="31" r="27" fill="none" stroke="var(--border)" stroke-width="6"/>
@@ -673,7 +673,7 @@
    build token differs from the remembered one (real update). First visit stores
    and moves on. */
 (function(){
-  var V = "1319x", S = "Nov 20 1";
+  var V = "1320x", S = "Nov 20 2";
   try {
     var seen = localStorage.getItem('cnn_app_build');
     if(!seen){ localStorage.setItem('cnn_app_build', V); }
@@ -954,9 +954,9 @@ function renderCE(){
   bar.style.width = pct + '%';
   bar.style.background = w>=30 ? '#1c7c46' : (w>=15 ? 'var(--gold)' : 'var(--accent)');
   const upd = p.ce_updated ? new Date(p.ce_updated) : null;
-  if(w >= 30) msg.textContent = 'You meet the CNN 30-hour rule. Last confirmed ' + (upd?upd.toLocaleDateString():'') + '.';
+  if(w >= 30) msg.textContent = 'This meets the 30-hour figure for CNN initial certification — check nncc-exam.org for the current eligibility rules. Last confirmed ' + (upd?upd.toLocaleDateString():'') + '.';
   else if(w >= 15) msg.textContent = 'Halfway — ' + (30-w) + ' more hours in the last 2 years.';
-  else msg.textContent = (w>0 ? (30-w) + ' hours to go in the last 2 years.' : 'Enter your CE to start tracking the CNN 30-hour rule.');
+  else msg.textContent = (w>0 ? (30-w) + ' more approved hours to reach the initial-certification 30-hour figure.' : 'Enter your CE to start tracking toward the initial-certification 30-hour figure (recertification requirements are separate — see nncc-exam.org).');
 }
 /* ============ PROFILE / AFFILIATION MODAL ============ */
 /* ============ PROFILE / AFFILIATION MODAL ============ */
@@ -1948,7 +1948,7 @@ function finishTest(){
   document.getElementById('testBar').style.width=pct+'%';
   // CNN passing standard is ~70% (standard score 95)
   const pass = pct>=70;
-  document.getElementById('testVerdict').textContent = pass ? '✅ PASS — exam-ready!' : '❌ Below passing (70%). Keep studying.';
+  document.getElementById('testVerdict').textContent = pass ? '✅ PASS — practice score 70% or above. Practice performance does not guarantee your exam result.' : '❌ Below passing (70%). Keep studying.';
   document.getElementById('testVerdict').style.color = pass ? 'var(--green)' : 'var(--red)';
   // Readiness gauge
   renderReadiness(pct);
@@ -1984,7 +1984,7 @@ function drillWeakAreas(){
 // readiness gauge cannot drift apart. Each tier carries the full sentence used by the
 // readiness gauge plus the short name the quiz line has room for.
 function scoreTier(pct){
-  if(pct>=85) return {color:'var(--green)', emoji:'🏆', short:'Strong', label:'🏆 Strong — you are ready for the exam.'};
+  if(pct>=85) return {color:'var(--green)', emoji:'🏆', short:'Strong', label:'🏆 Strong — top band on this practice test.'};
   if(pct>=70) return {color:'var(--green)', emoji:'✅', short:'On track', label:'✅ On track — keep reinforcing weak areas.'};
   if(pct>=50) return {color:'var(--gold)', emoji:'📈', short:'Building', label:'📈 Building — focus on your weak objectives below.'};
   /* else */ return {color:'var(--red)', emoji:'📚', short:'Early stage', label:'📚 Early stage — keep studying and retake soon.'};
@@ -2426,7 +2426,7 @@ function renderTrackers(){
   document.getElementById('goalPctLabel').textContent = goalPct + '%';
   document.getElementById('goalBar').style.width = goalPct + '%';
   const goalMsg = document.getElementById('goalMsg');
-  if(totalHrs >= 80) goalMsg.textContent = '🎉 80-hour goal reached! You are exam-ready.';
+  if(totalHrs >= 80) goalMsg.textContent = '🎉 80-hour goal reached! Strong study time logged.';
   else if(totalHrs >= 60) goalMsg.textContent = 'Almost there — ' + (80-totalHrs).toFixed(1) + ' hours to go.';
   else if(totalHrs >= 40) goalMsg.textContent = 'Halfway! Keep the momentum going.';
   else goalMsg.textContent = 'Keep going — every hour counts toward exam readiness.';
