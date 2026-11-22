@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#1d1d28"/>
+      <stop offset=".55" stop-color="#32323f"/>
+      <stop offset="1" stop-color="#1b97f5"/>
+    </linearGradient>
+    <linearGradient id="kg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="1" stop-color="#ffe9dd"/>
+    </linearGradient>
+  </defs>
+  <rect x="0" y="0" width="512" height="512" rx="108" fill="url(#bg)"/>
+  <!-- kidney glyph, upper area, no text overlap -->
+  <g transform="translate(146,52) scale(6)">
+    <path d="M14 0 C4 0 0 8 0 16 C0 30 10 38 22 38 C18 34 16 30 16 24 C16 14 22 8 30 6 C28 2 22 0 16 0 Z" fill="url(#kg)"/>
+    <path d="M20 40 C28 40 34 36 34 28 C34 22 30 18 24 18 C18 18 14 24 14 30 C14 36 16 40 20 40 Z" fill="url(#kg)" opacity=".9"/>
+  </g>
+  <!-- wordmark below glyph, two lines for balance -->
+  <text x="256" y="396" text-anchor="middle" font-family="'Schibsted Grotesk','Noto Sans',-apple-system,sans-serif" font-size="66" font-weight="700" fill="#ffffff" letter-spacing="2">CNN</text>
+  <text x="256" y="456" text-anchor="middle" font-family="'Schibsted Grotesk','Noto Sans',-apple-system,sans-serif" font-size="36" font-weight="500" fill="#ffe9dd" letter-spacing="6">STUDY</text>
+</svg>

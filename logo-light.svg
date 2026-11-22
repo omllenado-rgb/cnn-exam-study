@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="284" height="56" viewBox="0 0 284 56">
+  <defs>
+    <linearGradient id="kg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#1d1d28"/>
+      <stop offset=".55" stop-color="#32323f"/>
+      <stop offset="1" stop-color="#1b97f5"/>
+    </linearGradient>
+  </defs>
+  <!-- kidney glyph -->
+  <g transform="translate(14,8)">
+    <path d="M14 0 C4 0 0 8 0 16 C0 30 10 38 22 38 C18 34 16 30 16 24 C16 14 22 8 30 6 C28 2 22 0 16 0 Z" fill="url(#kg)"/>
+    <path d="M20 40 C28 40 34 36 34 28 C34 22 30 18 24 18 C18 18 14 24 14 30 C14 36 16 40 20 40 Z" fill="url(#kg)" opacity=".85"/>
+  </g>
+  <!-- wordmark -->
+  <text x="58" y="26" font-family="'Schibsted Grotesk','Noto Sans',-apple-system,sans-serif" font-size="19" font-weight="700" fill="#1d1d28">CNN Study</text>
+  <text x="58" y="44" font-family="'Schibsted Grotesk','Noto Sans',-apple-system,sans-serif" font-size="12" font-weight="500" fill="#6f6f7d">Certified Nephrology Nurse Exam Prep</text>
+</svg>

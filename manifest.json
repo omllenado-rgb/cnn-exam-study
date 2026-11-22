@@ -1,0 +1,23 @@
+{
+  "name": "CNN Study — Certified Nephrology Nurse Exam Prep",
+  "short_name": "CNN Study",
+  "description": "Quiz, flashcards, lessons, trackers, and practice exams for the Certified Nephrology Nurse exam.",
+  "start_url": "./?src=pwa",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#1d1d28",
+  "icons": [
+    {
+      "src": "icons/icon-512.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-512.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ]
+}
