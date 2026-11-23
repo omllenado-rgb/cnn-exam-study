@@ -746,7 +746,7 @@
    build token differs from the remembered one (real update). First visit stores
    and moves on. */
 (function(){
-  var V = "1326x", S = "Nov 22 4";
+  var V = "1327x", S = "Nov 22 5";
   try {
     var seen = localStorage.getItem('cnn_app_build');
     if(!seen){ localStorage.setItem('cnn_app_build', V); }
@@ -1199,6 +1199,17 @@ function updateBankStats(){
 }
 updateBankStats();
 
+// Stall-proof network: supabase-js has no default request timeout, so a dead
+// connection could hold the login button forever. Race each login call against
+// a timer (12s) so the outer catch always shows the "check your connection" path.
+function withTimeout(pr, ms){
+  let t;
+  return Promise.race([
+    pr,
+    new Promise((_,rej)=>{ t=setTimeout(()=>rej(new Error('timeout')), ms); })
+  ]).finally(()=>clearTimeout(t));
+}
+
 async function login(){
   // Normalize the entered name to a canonical key (trim + lowercase) so
   // 'DS', 'ds', 'Ds' all reach the same account, preventing duplicate rows.
@@ -1236,7 +1247,7 @@ async function login(){
           // Credentials are already stored server-side, so the profile row is
           // created without any password material in it.
           const newUser = {user_name:name, answered:0, correct:0, known:0, sessions:0, streak:0, last_study:null, answers:{}, wrong:{}, known_cards:{}, topic_stats:{}, study_seconds:0, study_days:0, today_seconds:0, today_date:null, first_started:new Date().toISOString(), last_active:new Date().toISOString()};
-          const {error:insErr} = await sbClient.from('progress').insert(newUser);
+          const {error:insErr} = await withTimeout(sbClient.from('progress').insert(newUser), 12000);
           if(insErr){ msg.textContent = 'Could not create account. Try again.'; return; }
           window.userProgress = newUser;
           if(cr.token) learnerSessionStore(cr.token, cr.expires_at);
@@ -1249,14 +1260,14 @@ async function login(){
     // Case-insensitive lookup: build a map of lowercase -> actual stored name
     // so 'DS'/'ds'/'Ds' all find the same account, without breaking existing
     // accounts that store a different casing.
-    const {data:allUsers, error:listErr} = await sbClient.from('progress').select('user_name');
+    const {data:allUsers, error:listErr} = await withTimeout(sbClient.from('progress').select('user_name'), 12000);
     if(listErr){ msg.textContent = 'Could not reach the server. Try again.'; return; }
     const byKey = {};
     (allUsers||[]).forEach(u => { if(u.user_name) byKey[String(u.user_name).toLowerCase()] = u.user_name; });
     const existingKey = byKey[name]; // name is already lowercased
     if(existingKey){
       // Existing user - fetch record and verify password against stored hash
-      const {data:rec,error:recErr} = await sbClient.from('progress').select('*').eq('user_name',existingKey).maybeSingle();
+      const {data:rec,error:recErr} = await withTimeout(sbClient.from('progress').select('*').eq('user_name',existingKey).maybeSingle(), 12000);
       if(recErr){ msg.textContent = 'Could not reach the server.'; return; }
       const hash = await hashPass(rec.pass_salt || '', pass);
       let ok = (rec.pass_hash && rec.pass_hash === hash);
@@ -1266,7 +1277,7 @@ async function login(){
       if(rec.password && !rec.pass_hash){
         const salt = makeSalt();
         const nh = await hashPass(salt, pass);
-        await sbClient.from('progress').update({pass_salt:salt, pass_hash:nh, password:null}).eq('user_name',existingKey);
+        await withTimeout(sbClient.from('progress').update({pass_salt:salt, pass_hash:nh, password:null}).eq('user_name',existingKey), 12000);
         rec.pass_salt=salt; rec.pass_hash=nh; rec.password=null;
       }
       window.userProgress = rec;
@@ -1278,7 +1289,7 @@ async function login(){
       const salt = makeSalt();
       const pass_hash = await hashPass(salt, pass);
       const newUser = {user_name:name, pass_salt:salt, pass_hash:pass_hash, answered:0, correct:0, known:0, sessions:0, streak:0, last_study:null, answers:{}, wrong:{}, known_cards:{}, topic_stats:{}, study_seconds:0, study_days:0, today_seconds:0, today_date:null, first_started:new Date().toISOString(), last_active:new Date().toISOString()};
-      const {error:insErr} = await sbClient.from('progress').insert(newUser);
+      const {error:insErr} = await withTimeout(sbClient.from('progress').insert(newUser), 12000);
       if(insErr){ msg.textContent = 'Could not create account. Try again.'; return; }
       window.userProgress = newUser;
     }
@@ -2875,7 +2886,10 @@ let lessonFilter = "all";
 function renderLessonFilter(){
   const el = document.getElementById('lessonFilter');
   let html='<button class="active" data-f="all" onclick="setLessonFilter(this,\'all\')">All</button>';
-  topics.forEach(t=>html+=`<button data-f="${esc(t)}" onclick="setLessonFilter(this,${jsStr(t)})">${esc(t)}</button>`);
+  // Question topics (core) FIRST, then lesson-only topics (special) — so every
+  // lesson topic is reachable by chip instead of only through the 144-item All list.
+  const lessonOnly = [...new Set(LESSONS.map(l=>l.topic))].filter(t=>!topics.includes(t));
+  topics.concat(lessonOnly).forEach(t=>html+=`<button data-f="${esc(t)}" onclick="setLessonFilter(this,${jsStr(t)})">${esc(t)}</button>`);
   el.innerHTML = html;
 }
 function setLessonFilter(el,t){
