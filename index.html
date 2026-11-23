@@ -94,6 +94,29 @@
   .qa .qa-ic{font-size:20px}
   .qa .qa-t{font-size:12.5px;font-weight:600;color:var(--ink);margin-top:4px}
   .qa .qa-d{font-size:10.5px;color:var(--muted);margin-top:2px}
+  /* ===== Phase-3 exam simulator overlays ===== */
+  .ex-ov{position:fixed;inset:0;background:rgba(15,17,26,.72);z-index:1200;display:grid;place-items:center;padding:10px}
+  .ex-panel{background:var(--card);color:var(--ink);width:100%;max-width:640px;max-height:92vh;border-radius:14px;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.45)}
+  .ex-head{display:flex;justify-content:space-between;align-items:center;padding:12px 14px;border-bottom:1px solid var(--border);font-weight:700;font-size:15px}
+  .ex-body{overflow:auto;padding:12px 14px}
+  .ex-filters{display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap}
+  .ex-filters button{padding:6px 11px;border-radius:999px;border:1px solid var(--border);background:var(--bg);font-size:12px;font-weight:600;color:var(--ink);cursor:pointer}
+  .ex-filters button.active{background:var(--aggie-blue);color:#fff;border-color:transparent}
+  .ex-q{border:1px solid var(--border);border-radius:10px;padding:10px;margin-bottom:10px}
+  .ex-qh{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:6px}
+  .ex-badge{font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px}
+  .ex-badge.ok{background:rgba(39,174,96,.15);color:var(--green)}
+  .ex-badge.bad{background:rgba(231,76,60,.12);color:var(--red)}
+  .ex-badge.skip{background:var(--light);color:var(--muted)}
+  .ex-badge.flag{background:rgba(243,156,18,.15);color:#b9770e}
+  .ex-opt{display:block;width:100%;text-align:left;padding:8px 10px;border-radius:8px;border:1px solid var(--border);margin:5px 0;font-size:13.5px;background:var(--bg);color:var(--ink)}
+  .ex-opt.ok{border-color:var(--green);background:rgba(39,174,96,.1)}
+  .ex-opt.bad{border-color:var(--red);background:rgba(231,76,60,.08)}
+  .ex-nav-grid{display:grid;grid-template-columns:repeat(10,1fr);gap:5px}
+  .ex-nav-grid button{padding:7px 0;font-size:11.5px;border-radius:7px;border:1px solid var(--border);background:var(--bg);color:var(--ink);cursor:pointer}
+  .ex-nav-grid button.done{background:var(--aggie-blue);color:#fff;border-color:transparent}
+  .ex-nav-grid button.flagged{box-shadow:inset 0 0 0 2px var(--gold)}
+  .ex-nav-grid button.cur{outline:2px solid var(--ink);outline-offset:1px}
   .topbar h1{font-size:19px;line-height:1.25;font-weight:700;}
   .topbar p{font-size:12px;opacity:.95;margin-top:2px;color:var(--on-brand-soft);}
   /* Announcement banner — written from the admin dashboard (app_settings.announcement) */
@@ -486,6 +509,10 @@
         <div class="card">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
             <span class="tag" id="testTimer">⏱ 3:00:00</span>
+            <span style="display:flex;gap:6px;align-items:center">
+              <button class="tag" id="testFlag" onclick="toggleFlag()" style="cursor:pointer">🚩 Flag</button>
+              <button class="tag" id="testNavBtn" onclick="showExamNav()" style="cursor:pointer">▦ Grid</button>
+            </span>
             <span class="count" id="testCounter">Question 1 of 150</span>
           </div>
           <h2 id="testQuestion" style="font-size:17px;line-height:1.4;"></h2>
@@ -511,6 +538,7 @@
           </div>
           <div class="btn-row" style="justify-content:center">
             <button class="btn" onclick="startPracticeTest()">Take Again</button>
+            <button class="btn secondary" onclick="showExamReview()">📋 Review Answers</button>
             <button class="btn secondary" onclick="showScreen('quiz')">Practice Quiz</button>
             <button class="btn secondary" id="drillBtn" onclick="drillWeakAreas()" style="display:none">🎯 Drill Weak Areas</button>
           </div>
@@ -718,7 +746,7 @@
    build token differs from the remembered one (real update). First visit stores
    and moves on. */
 (function(){
-  var V = "1325x", S = "Nov 22 3";
+  var V = "1326x", S = "Nov 22 4";
   try {
     var seen = localStorage.getItem('cnn_app_build');
     if(!seen){ localStorage.setItem('cnn_app_build', V); }
@@ -1160,9 +1188,11 @@ function enterApp(name){
 // never blocks login if a content bank failed to fetch.
 function updateBankStats(){
   try{
-    var q=(typeof QUESTIONS!=='undefined'?QUESTIONS.length:0)+(typeof ORIG_QUESTIONS!=='undefined'?ORIG_QUESTIONS.length:0);
-    var f=(typeof FLASHCARDS!=='undefined'?FLASHCARDS.length:0)+(typeof ORIG_FLASHCARDS!=='undefined'?ORIG_FLASHCARDS.length:0);
-    var l=(typeof LESSONS!=='undefined'?LESSONS.length:0)+(typeof ORIG_LESSONS!=='undefined'?ORIG_LESSONS.length:0);
+    // Q/F/L are MERGED with the ORIG_* banks at load (index.html top). Lengths
+    // already include originals — do NOT add ORIG_* again (that double-counted).
+    var q=(typeof QUESTIONS!=='undefined'?QUESTIONS.length:0);
+    var f=(typeof FLASHCARDS!=='undefined'?FLASHCARDS.length:0);
+    var l=(typeof LESSONS!=='undefined'?LESSONS.length:0);
     var el=document.getElementById('bankStats');
     if(el&&q) el.textContent=q.toLocaleString()+' questions \u00b7 '+f.toLocaleString()+' flashcards \u00b7 '+l.toLocaleString()+' lessons';
   }catch(e){}
@@ -1888,7 +1918,7 @@ function startWeakDrill(){
 }
 
 /* ============ PRACTICE TEST (150 Q, 3 hr, blueprint-weighted) ============ */
-let testState = {active:false, list:[], idx:0, correct:0, selected:false, timer:null, secondsLeft:0, objCorrect:{}, objTotal:{}, simMode:false, examVersion:0};
+let testState = {active:false, list:[], idx:0, correct:0, selected:false, timer:null, secondsLeft:0, objCorrect:{}, objTotal:{}, simMode:false, examVersion:0, flags:[], picks:[], flagged:false};
 // CNN exam blueprint: 150 questions weighted by objective percentages
 const TEST_WEIGHTS = [
   {label:'Pathologic processes & complications', pct:20, count:30, obj:1},
@@ -1946,7 +1976,7 @@ function startPracticeTest(){
   // Final scramble so each version presents in a fresh order
   seededShuffle(pool);
   const simMode = document.getElementById('simMode').checked;
-  testState = {active:true, list:pool, idx:0, correct:0, selected:false, timer:null, secondsLeft:3*3600, objCorrect:{}, objTotal:{}, simMode:simMode, examVersion:version};
+  testState = {active:true, list:pool, idx:0, correct:0, selected:false, timer:null, secondsLeft:3*3600, objCorrect:{}, objTotal:{}, simMode:simMode, examVersion:version, flags:pool.map(()=>false), picks:pool.map(()=>null), flagged:false};
   document.getElementById('testSetup').style.display='none';
   document.getElementById('testResult').style.display='none';
   document.getElementById('testRun').style.display='block';
@@ -1964,12 +1994,14 @@ function renderTestQuestion(){
   document.getElementById('testOptions').innerHTML=opts.map((o,i)=>`<button class="option" data-i="${i}" data-orig="${o.idx}" onclick="selectTestAnswer(${i})">${String.fromCharCode(65+i)}. ${esc(expandAbbreviations(o.text))}</button>`).join('');
   document.getElementById('testNext').style.display='none';
   document.getElementById('testExplain').style.display='none';
+  var fb=document.getElementById('testFlag'); if(fb) fb.textContent = testState.flags[testState.idx] ? '🚩 Flagged' : '🚩 Flag';
 }
 function selectTestAnswer(i){
   if(testState.selected) return;
   const q=testState.list[testState.idx];
   testState.selected=true;
   const isCorrect = testState.shuffledOpts[i].idx===q.ans;
+  testState.picks[testState.idx] = testState.shuffledOpts[i].idx;
   if(isCorrect) testState.correct++;
   // Track per-objective
   const obj = q.obj || 0;
@@ -2018,6 +2050,9 @@ function finishTest(){
   const total=testState.list.length;
   const correct=testState.correct;
   testState.active=false;
+  // Snapshot for the answer-review overlay (survives until the next exam starts)
+  window.lastExam = {list:testState.list.slice(), picks:testState.picks.slice(), flags:testState.flags.slice(),
+                     correct:correct, total:total, simMode:testState.simMode, version:testState.examVersion};
   document.getElementById('testRun').style.display='none';
   document.getElementById('testResult').style.display='block';
   document.getElementById('testScore').textContent=`${correct} / ${total}`;
@@ -2122,6 +2157,97 @@ function saveTestResult(correct, total){
   } catch(e){ /* non-blocking */ }
 }
 function quitTest(){ finishTest(); }
+
+/* ============ EXAM SIMULATOR OVERLAYS (P3) ============ */
+const EXAMEXAM_OBJ_NAMES={1:'Pathologic processes',2:'Interventions',3:'KRT principles',4:'Teaching/learning',5:'Medications',6:'Infection control',7:'Collaboration/QI'};
+function examOverlayClose(){
+  var ov=document.getElementById('examOverlay');
+  if(ov) ov.remove();
+}
+function examOverlayShell(title, bodyHtml){
+  examOverlayClose();
+  var ov=document.createElement('div');
+  ov.id='examOverlay';
+  ov.className='ex-ov';
+  ov.addEventListener('click',function(e){ if(e.target===ov) examOverlayClose(); });
+  ov.innerHTML='<div class="ex-panel"><div class="ex-head"><span>'+title+'</span><button class="btn secondary" style="padding:6px 14px" onclick="examOverlayClose()">Close</button></div><div class="ex-body">'+bodyHtml+'</div></div>';
+  document.body.appendChild(ov);
+}
+function toggleFlag(){
+  if(!testState.active || !testState.list[testState.idx]) return;
+  testState.flags[testState.idx] = !testState.flags[testState.idx];
+  var fb=document.getElementById('testFlag');
+  if(fb) fb.textContent = testState.flags[testState.idx] ? '🚩 Flagged' : '🚩 Flag';
+}
+function navJump(i){
+  if(!testState.active) return;
+  testState.idx=i;
+  examOverlayClose();
+  renderTestQuestion();
+  window.scrollTo(0,0);
+}
+function showExamNav(){
+  var src = testState.active ? testState : (window.lastExam||null);
+  if(!src || !src.list || !src.list.length){ return; }
+  var cur = testState.active ? testState.idx : -1;
+  let cells='';
+  for(let i=0;i<src.list.length;i++){
+    var done = src.picks[i]!=null;
+    var fl = !!src.flags[i];
+    cells+='<button class="'+(done?'done ':'')+(fl?'flagged ':'')+(i===cur?'cur':'')+'" onclick="navJump('+i+')">'+(i+1)+'</button>';
+  }
+  var legend='<div style="display:flex;gap:10px;font-size:11px;color:var(--muted);margin:8px 2px 10px;flex-wrap:wrap">'
+    +'<span>◻ unanswered</span><span style="color:var(--aggie-blue)">■ answered</span><span>🚩-ringed = flagged</span></div>';
+  examOverlayShell('▦ Question '+(src.list.length),' '+legend+'<div class="ex-nav-grid">'+cells+'</div>');
+}
+function showExamReview(filter, filterId){
+  var ex = window.lastExam;
+  if(!ex){ alert('Finish an exam first.'); return; }
+  filter = filter || (ex._rf || 'all');
+  ex._rf = filter;
+  var wrongN=0, skipN=0, flagN=0;
+  for(let i=0;i<ex.list.length;i++){
+    var pk=ex.picks[i];
+    if(pk==null) skipN++; else if(pk!==ex.list[i].ans) wrongN++;
+    if(ex.flags[i]) flagN++;
+  }
+  var fbtn=(id,lab)=>'<button class="'+(filter===id?'active':'')+'" onclick="showExamReview(\''+id+'\')">'+lab+'</button>';
+  var head='<div class="ex-filters">'+fbtn('all','All '+ex.list.length)+fbtn('wrong','✗ Incorrect '+wrongN)+fbtn('skip','⏭ Unanswered '+skipN)+(flagN?fbtn('flag','🚩 Flagged '+flagN):'')+'</div>';
+  var out='';
+  for(let i=0;i<ex.list.length;i++) out+=reviewRendersRow(ex, filter, i);
+  if(!out.trim()) out='<p class="muted" style="text-align:center;padding:18px 0">Nothing in this filter.</p>';
+  examOverlayShell('📋 Review Answers — Exam '+(ex.version+1)+(ex.simMode?' (exam-day mode)':''), head+out);
+}
+// reviewRendersRow wrapper lets reviewRenders keep a simple signature
+function reviewRendersRow(state, filter, i){
+  const savedI = i; // eslint-disable-line
+  const q = state.list[i];
+  const pick = state.picks[i];
+  const isC = pick===q.ans;
+  const skip = pick==null;
+  const fl = !!state.flags[i];
+  if(filter==='wrong' && (isC || skip)) return '';
+  if(filter==='skip' && !skip) return '';
+  if(filter==='flag' && !fl) return '';
+  const objName=EXAMEXAM_OBJ_NAMES[q.obj]||('Objective '+q.obj);
+  const badge = skip?'<span class="ex-badge skip">⏭ Not answered</span>':isC?'<span class="ex-badge ok">✓ Correct</span>':'<span class="ex-badge bad">✗ Incorrect</span>';
+  let opts='';
+  for(let k=0;k<q.opts.length;k++){
+    let cls='ex-opt';
+    if(k===q.ans) cls+=' ok';
+    if(!skip && k===pick && !isC) cls+=' bad';
+    opts+='<div class="'+cls+'">'+String.fromCharCode(65+k)+'. '+esc(expandAbbreviations(q.opts[k]))+(k===q.ans?' &nbsp;✓':'')+'</div>';
+  }
+  let expl;
+  if(skip){
+    expl='<div class="explain" style="margin-top:8px">'+esc(expandAbbreviations(q.expl||''))
+      +'<div class="wrong-note"><strong>Correct answer:</strong> '+esc(expandAbbreviations(q.opts[q.ans]))+'</div></div>';
+  } else {
+    expl='<div class="explain" style="margin-top:8px">'+explanationHTML(q, isC, pick)+'</div>';
+  }
+  return '<div class="ex-q"><div class="ex-qh"><span><strong>Q'+(i+1)+'</strong> <span class="ex-tag">'+esc(objName)+(fl?' · 🚩 flagged':'')+'</span></span>'+badge+'</div>'
+    +'<div style="font-size:14px;line-height:1.45;margin-bottom:6px">'+esc(expandAbbreviations(q.q))+'</div>'+opts+expl+'</div>';
+}
 
 /* ============ FLASHCARDS ============ */
 function renderCardFilter(){
