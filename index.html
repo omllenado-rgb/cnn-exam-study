@@ -202,7 +202,7 @@
     .topbar h1{font-size:16px;}
     .topbar p{font-size:11px;}
     .theme-toggle{padding:6px 10px;font-size:12px;}
-    nav button{min-width:72px;padding:12px 7px;font-size:13px;}
+    nav button{flex:0 0 auto;min-width:0;padding:12px 11px;font-size:13px;}
     main{padding:12px;}
     .card{padding:15px;border-radius:10px;}
     .option{padding:14px 12px;font-size:15px;}
@@ -718,7 +718,7 @@
    build token differs from the remembered one (real update). First visit stores
    and moves on. */
 (function(){
-  var V = "1324x", S = "Nov 22 2";
+  var V = "1325x", S = "Nov 22 3";
   try {
     var seen = localStorage.getItem('cnn_app_build');
     if(!seen){ localStorage.setItem('cnn_app_build', V); }
