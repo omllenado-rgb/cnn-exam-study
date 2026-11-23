@@ -79,6 +79,21 @@
   .topbar,nav,main{position:relative;z-index:1;}
   .topbar{background:var(--grad);color:var(--on-brand);padding:18px 20px;border-bottom:4px solid var(--on-brand-rule);display:flex;justify-content:space-between;align-items:center;gap:10px;}
   .topbar .tb-text{min-width:0;}
+  /* ===== Phase-2 home hero ===== */
+  .hero-card{background:linear-gradient(135deg,#1d1d28 0%,#32323f 55%,#1b97f5 100%);color:#fff;border-radius:14px;padding:16px 18px;margin-bottom:12px;display:flex;align-items:center;gap:16px;box-shadow:0 8px 20px rgba(29,29,40,.25)}
+  .hero-ring{--pct:0;width:86px;height:86px;border-radius:50%;flex:none;display:grid;place-items:center;position:relative;background:conic-gradient(#ffe9dd calc(var(--pct)*1%),rgba(255,255,255,.16) 0);}
+  .hero-ring::after{content:"";position:absolute;inset:7px;border-radius:50%;background:#1d1d28;}
+  .hero-ring .rv{position:relative;z-index:1;font-size:20px;font-weight:700;text-align:center;line-height:1.05}
+  .hero-ring .rv small{display:block;font-size:10px;font-weight:500;opacity:.75}
+  .hero-line1{font-size:15px;font-weight:700;letter-spacing:.2px}
+  .hero-line2{font-size:12.5px;opacity:.85;margin-top:3px;line-height:1.45}
+  .hero-streak{background:rgba(255,233,221,.15);border:1px solid rgba(255,233,221,.4);border-radius:999px;padding:3px 10px;font-size:11.5px;font-weight:600;margin-top:7px;width:fit-content}
+  .qa-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
+  .qa{background:var(--card);border:1px solid var(--border);border-radius:11px;padding:12px 10px;text-align:center;cursor:pointer;transition:transform .12s ease, box-shadow .12s ease}
+  .qa:active{transform:scale(.97)}
+  .qa .qa-ic{font-size:20px}
+  .qa .qa-t{font-size:12.5px;font-weight:600;color:var(--ink);margin-top:4px}
+  .qa .qa-d{font-size:10.5px;color:var(--muted);margin-top:2px}
   .topbar h1{font-size:19px;line-height:1.25;font-weight:700;}
   .topbar p{font-size:12px;opacity:.95;margin-top:2px;color:var(--on-brand-soft);}
   /* Announcement banner — written from the admin dashboard (app_settings.announcement) */
@@ -187,7 +202,7 @@
     .topbar h1{font-size:16px;}
     .topbar p{font-size:11px;}
     .theme-toggle{padding:6px 10px;font-size:12px;}
-    nav button{min-width:72px;padding:12px 2px;font-size:13px;}
+    nav button{min-width:72px;padding:12px 7px;font-size:13px;}
     main{padding:12px;}
     .card{padding:15px;border-radius:10px;}
     .option{padding:14px 12px;font-size:15px;}
@@ -391,6 +406,21 @@
     <!-- QUIZ -->
     <div id="screen-quiz" class="screen active">
       <div id="quizSetup">
+      <div class="hero-card" id="homeHero">
+        <div class="hero-ring" id="heroRing"><div class="rv"><span id="heroPct">0%</span><small>CNN goal</small></div></div>
+        <div style="min-width:0">
+          <div class="hero-line1" id="heroHi">Welcome back</div>
+          <div class="hero-line2" id="heroSub">You haven't answered any questions yet &mdash; start with a 10-question quiz to set your baseline.</div>
+          <div class="hero-streak" id="heroStreak" style="display:none">&#128293; <span id="heroStreakN">0</span>-day streak</div>
+        </div>
+      </div>
+      <div class="qa-grid">
+        <div class="qa" onclick="startQuiz()"><div class="qa-ic">&#128504;</div><div class="qa-t">Quick Quiz</div><div class="qa-d">10 mixed questions</div></div>
+        <div class="qa" onclick="showScreen('test')"><div class="qa-ic">&#127919;</div><div class="qa-t">Practice Test</div><div class="qa-d">150Q blueprint exam</div></div>
+        <div class="qa" onclick="showScreen('track')"><div class="qa-ic">&#128200;</div><div class="qa-t">Trackers</div><div class="qa-d">Streaks &amp; accuracy</div></div>
+        <div class="qa" onclick="showScreen('lessons')"><div class="qa-ic">&#128218;</div><div class="qa-t">Lessons</div><div class="qa-d">Review key concepts</div></div>
+      </div>
+      <div style="height:4px"></div>
         <div class="card">
           <h2>Practice Quiz</h2>
           <p class="muted">Choose a topic (or All), then start.</p>
@@ -680,15 +710,15 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="content.js?v=1318x"></script>
-<script src="original-content.js?v=1318x"></script>
-<script src="explanations.js?v=1318x"></script>
+<script src="content.js?v=1319x"></script>
+<script src="original-content.js?v=1319x"></script>
+<script src="explanations.js?v=1319x"></script>
 <script>
 /* BUILD GUARD — own script, never blocks the app: reloads only when the served
    build token differs from the remembered one (real update). First visit stores
    and moves on. */
 (function(){
-  var V = "1323x", S = "Nov 22 1";
+  var V = "1324x", S = "Nov 22 2";
   try {
     var seen = localStorage.getItem('cnn_app_build');
     if(!seen){ localStorage.setItem('cnn_app_build', V); }
@@ -1315,6 +1345,7 @@ function showScreen(s){
     document.getElementById('nav'+x.charAt(0).toUpperCase()+x.slice(1)).classList.toggle('active',x===s);
   });
   trackSection(s);
+  if(s==='quiz'){ renderHero(); renderQuizFilter(); renderObjFilter(); }
   if(s==='lessons') renderLessons();
   if(s==='strategies') renderStrategies();
   if(s==='cards') renderCard();
@@ -2442,8 +2473,39 @@ function renderBlueprintTrend(){
   el.innerHTML=html;
 }
 
+/* ============ HOME HERO (Phase 2) ============ */
+function renderHero(){
+  try{
+    var p = window.userProgress || {};
+    var name = currentUser ? currentUser.split(' ')[0] : null;
+    var ans = p.answered || 0;
+    var corr = p.correct || 0;
+    var goal = 1000; // questions-in-bank milestone: % of bank answered at least once
+    var pct = Math.min(100, Math.round(ans / goal * 100));
+    var ring = document.getElementById('heroRing');
+    var pctEl = document.getElementById('heroPct');
+    if(ring) ring.style.setProperty('--pct', pct);
+    if(pctEl) pctEl.textContent = pct + '%';
+    var hi = document.getElementById('heroHi');
+    if(hi) hi.textContent = name ? ('Welcome back, ' + name + '!') : 'Welcome back';
+    var sub = document.getElementById('heroSub');
+    if(sub){
+      var acc = ans ? Math.round(corr/ans*100) : 0;
+      if(!ans){
+        sub.innerHTML = "You haven't answered any questions yet \u2014 start with a 10-question quiz to set your baseline.";
+      } else {
+        var last = p.last_study ? p.last_study : '';
+        sub.innerHTML = '<b>' + ans.toLocaleString() + '</b> questions answered \u00b7 <b>' + acc + '%</b> accuracy' + (last ? (' \u00b7 last studied ' + last) : '');
+      }
+    }
+    var st = document.getElementById('heroStreak'), sn = document.getElementById('heroStreakN');
+    if(st && sn){ sn.textContent = p.streak || 0; st.style.display = (p.streak && p.streak > 0) ? 'inline-block' : 'none'; }
+  }catch(e){}
+}
+
 /* ============ TRACKERS ============ */
 function renderTrackers(){
+  renderHero();
   renderCE();
   const p=window.userProgress||{};
   document.getElementById('tStreak').textContent=p.streak||0;
